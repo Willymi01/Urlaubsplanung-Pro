@@ -1,7 +1,24 @@
 const $=id=>document.getElementById(id),clone=o=>JSON.parse(JSON.stringify(o));
 const STORE='vacationPlannerV091',OLD_STORES=['vacationPlannerV09','vacationPlannerV07','vacationPlannerV06','vacationPlannerV05','vacationPlannerV04','vacationPlannerV03','vacationPlannerV02'];
 let currentUser=null;
-function normalize(raw){const b=clone(window.DEFAULT_DATA),d=raw&&typeof raw==='object'?raw:{};const departments=Array.isArray(d.departments)&&d.departments.length?d.departments:b.departments;const settings={...(b.departmentSettings||{}),...(d.departmentSettings||{})};departments.forEach(x=>{if(settings[x]==null)settings[x]=2});return{users:Array.isArray(d.users)?d.users:b.users,departments,departmentSettings:settings,employees:(Array.isArray(d.employees)?d.employees:b.employees).map(e=>({...e,carryover:Number(e.carryover||0)})),vacations:(Array.isArray(d.vacations)?d.vacations:b.vacations).map(v=>({...v,status:v.status||'Genehmigt',scope:v.scope||'full'})),moves:Array.isArray(d.moves)?d.moves:b.moves}}
+function normalize(raw){
+ const b=clone(window.DEFAULT_DATA),d=raw&&typeof raw==='object'?raw:{};
+ const merged={...b,...d};
+ merged.users=Array.isArray(d.users)?d.users:b.users;
+ merged.departments=Array.isArray(d.departments)&&d.departments.length?d.departments:b.departments;
+ merged.departmentSettings={...(b.departmentSettings||{}),...(d.departmentSettings||{})};
+ merged.departmentMaxAway={...(b.departmentMaxAway||{}),...(d.departmentMaxAway||{})};
+ merged.departmentGroups={...(b.departmentGroups||{}),...(d.departmentGroups||{})};
+ merged.departmentGroupIds={...(b.departmentGroupIds||{}),...(d.departmentGroupIds||{})};
+ merged.planGroupMaxAway={...(b.planGroupMaxAway||{}),...(d.planGroupMaxAway||{})};
+ merged.planGroups=Array.isArray(d.planGroups)?d.planGroups.map(g=>({id:String(g.id||('pg_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7))),name:String(g.name||'').trim(),maxAway:Math.max(0,Number(g.maxAway??2))})).filter(g=>g.name):[];
+ merged.employees=(Array.isArray(d.employees)?d.employees:b.employees).map(e=>({...e,carryover:Number(e.carryover||0),planGroupId:String(e.planGroupId||''),departmentHistory:Array.isArray(e.departmentHistory)?e.departmentHistory:[]}));
+ merged.vacations=(Array.isArray(d.vacations)?d.vacations:b.vacations).map(v=>({...v,status:v.status||'Genehmigt',scope:v.scope||'full'}));
+ merged.moves=Array.isArray(d.moves)?d.moves:b.moves;
+ merged.audit=Array.isArray(d.audit)?d.audit:[];
+ merged.departments.forEach(x=>{if(merged.departmentSettings[x]==null)merged.departmentSettings[x]=0;if(merged.departmentMaxAway[x]==null)merged.departmentMaxAway[x]=Math.max(0,Number(merged.departmentSettings[x]??1));if(merged.departmentGroupIds[x]==null)merged.departmentGroupIds[x]=''});
+ return merged;
+}
 function loadState(){try{let raw=localStorage.getItem(STORE);if(!raw)for(const k of OLD_STORES){raw=localStorage.getItem(k);if(raw)break}return raw?normalize(JSON.parse(raw)):normalize(window.DEFAULT_DATA)}catch{return normalize(window.DEFAULT_DATA)}}
 let state=loadState();
 function saveState(){localStorage.setItem(STORE,JSON.stringify(state))}
@@ -27,7 +44,7 @@ function moveForVacation(v){
 }
 function absenceCode(v){return ({Urlaub:'U',Sonderurlaub:'SU',Fortbildung:'S',Unbezahlt:'N',Krankheit:'K','Geplanter Freier Tag':'F'}[v.type]||'A')+(v.scope!=='full'?'½':'')+(moveForVacation(v)?'↔':'')}
 function vacationTitle(v,date,extra=''){const m=v?moveForVacation(v):null;return [extra,v?.type,v?.status,m?`Verschoben von ${m.oldPeriod} auf ${m.newPeriod}`:'',m?.reason?`Grund: ${m.reason}`:'',v?.note,holidayName(date)].filter(Boolean).join(' · ')}
-function statusBadge(s){const c=s==='Genehmigt'?'approved':s==='Beantragt'?'pending':'planned';return `<span class="badge ${c}">${esc(s)}</span>`}
+function statusBadge(s){const c=s==='Genehmigt'?'approved':s==='Beantragt'?'pending':s==='Abgelehnt'?'rejected':'planned';return `<span class="badge ${c}">${esc(s)}</span>`}
 function init(){fillLogin();setDefaults();bind();renderAll()}
 function fillLogin(){$('loginName').innerHTML=state.users.map(u=>`<option>${esc(u.name)}</option>`).join('')}
 function setDefaults(){const d=new Date(),month=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;$('monthFilter').value=month;$('leaderMonthFilter').value=month;$('yearFilter').value=d.getFullYear();$('weekDate').value=iso(d);$('vacationFrom').value=$('vacationTo').value=iso(d)}
@@ -567,7 +584,7 @@ function maxAwayForGroup(group){
  const exact=planGroups().find(g=>normalizeGroupName(g)===normalizeGroupName(group));
  return Math.max(0,Number(state.planGroupMaxAway?.[exact]??state.planGroupMaxAway?.[group]??1));
 }
-function activeVacationForLimit(v){return v&&v.type==='Urlaub'&&v.status!=='Geplant'}
+function activeVacationForLimit(v){return v&&v.type==='Urlaub'&&!['Geplant','Abgelehnt'].includes(v.status)}
 function departmentVacationAwayCount(dep,date){return state.employees.filter(e=>e.department===dep).filter(e=>vacsFor(e.id).some(v=>activeVacationForLimit(v)&&inRange(date,v.from,v.to))).length}
 function groupVacationAwayCount(group,date){const deps=selectedDepartments('__group__:'+group);return state.employees.filter(e=>deps.includes(e.department)).filter(e=>vacsFor(e.id).some(v=>activeVacationForLimit(v)&&inRange(date,v.from,v.to))).length}
 
@@ -1330,6 +1347,41 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
  window.addEventListener('appinstalled',()=>{if(installButton)installButton.classList.add('hidden')});
  if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(error=>console.warn('Service Worker:',error)));
 
- saveState('Version 1.9 migriert','Separate Plan-Gruppen-Auswahl, stabile Monatspläne und Desktop-Installation aktiviert');
+ saveState('Version 2.0 migriert','Separate Plan-Gruppen-Auswahl, stabile Monatspläne und Desktop-Installation aktiviert');
+ requestAnimationFrame(()=>{fillSelects();renderAll();requestAnimationFrame(renderCalendar)});
+})();
+
+
+/* Version 2.0: dauerhafte Plan-Gruppen, Ablehnung und Rollenlegende */
+(()=>{
+ const createId=()=>`pg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+ function v20GroupById(id){return (state.planGroups||[]).find(g=>String(g.id)===String(id))||null}
+ function v20GroupForDepartment(dep){const canonical=(state.departments||[]).find(d=>norm(d)===norm(dep))||dep;const id=String(state.departmentGroupIds?.[canonical]||'');if(id&&v20GroupById(id))return v20GroupById(id);const legacy=String(state.departmentGroups?.[canonical]||'').trim();return legacy?(state.planGroups||[]).find(g=>norm(g.name)===norm(legacy))||null:null}
+ function v20Persist(){localStorage.setItem(STORE,JSON.stringify(state))}
+ function v20EnsureGroups(){
+  state.planGroups=Array.isArray(state.planGroups)?state.planGroups:[];state.departmentGroupIds=state.departmentGroupIds||{};state.departmentGroups=state.departmentGroups||{};
+  for(const dep of state.departments||[]){let id=String(state.departmentGroupIds[dep]||'');if(id&&!v20GroupById(id))id='';const legacy=String(state.departmentGroups[dep]||'').trim();if(!id&&legacy){let g=state.planGroups.find(x=>norm(x.name)===norm(legacy));if(!g){g={id:createId(),name:legacy,maxAway:Math.max(0,Number(state.planGroupMaxAway?.[legacy]??2))};state.planGroups.push(g)}id=g.id}state.departmentGroupIds[dep]=id;state.departmentGroups[dep]=v20GroupById(id)?.name||''}
+  for(const e of state.employees||[]){const g=v20GroupForDepartment(e.department);if(!e.planGroupId&&g)e.planGroupId=g.id;if(Array.isArray(e.departmentHistory))e.departmentHistory=e.departmentHistory.map(h=>({...h,planGroupId:String(h.planGroupId||v20GroupForDepartment(h.department)?.id||'')}))}
+  v20Persist();
+ }
+ v20EnsureGroups();
+
+ function createStandalonePlanGroup(){const name=$('standalonePlanGroupName')?.value.trim(),max=Math.max(0,Number($('standalonePlanGroupMax')?.value||2));if(!name)return alert('Bitte einen Namen für die Plan-Gruppe eingeben.');if((state.planGroups||[]).some(g=>norm(g.name)===norm(name)))return alert('Diese Plan-Gruppe existiert bereits.');const group={id:createId(),name,maxAway:max};state.planGroups.push(group);state.planGroupMaxAway=state.planGroupMaxAway||{};state.planGroupMaxAway[name]=max;saveState('Plan-Gruppe angelegt',`${name} · Maximum ${max}`);if($('standalonePlanGroupName'))$('standalonePlanGroupName').value='';fillSelects();renderAll()}
+ if($('createPlanGroup'))$('createPlanGroup').onclick=createStandalonePlanGroup;
+
+ const priorFill=fillSelects;fillSelects=function(){v20EnsureGroups();priorFill();const opts='<option value="">Keine Plan-Gruppe</option>'+(state.planGroups||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');if($('employeePlanGroup')){const cur=$('employeePlanGroup').value;$('employeePlanGroup').innerHTML=opts;if([...$('employeePlanGroup').options].some(o=>o.value===cur))$('employeePlanGroup').value=cur}if($('newDepartmentGroup')){const cur=$('newDepartmentGroup').value;$('newDepartmentGroup').innerHTML=opts;if([...$('newDepartmentGroup').options].some(o=>o.value===cur))$('newDepartmentGroup').value=cur}};
+
+ const priorAddDepartment=addDepartment;addDepartment=function(){const before=(state.planGroups||[]).length;priorAddDepartment();v20EnsureGroups();if((state.planGroups||[]).length!==before||$('newDepartmentGroup')){fillSelects();renderDepartments();v20Persist()}};
+
+ window.rejectVacation=function(id){const v=state.vacations.find(x=>x.id===Number(id));if(!v)return;const reason=prompt('Grund für die Ablehnung / erforderliche Verschiebung:','Überschneidung oder Besetzungsgrenze');if(reason===null)return;v.status='Abgelehnt';v.note=`Muss verschoben werden${reason.trim()?': '+reason.trim():''}`;saveState('Urlaub abgelehnt',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)} · ${reason||'ohne Grund'}`);renderAll()};
+ const priorApprove=window.approveVacation;window.approveVacation=function(id){const v=state.vacations.find(x=>x.id===Number(id));if(v){v.note=String(v.note||'').replace(/^Muss verschoben werden:?\s*/i,'')}return priorApprove(id)};
+
+ const priorRenderVacationList=renderVacationList;renderVacationList=function(choice){priorRenderVacationList(choice);const rows=$('vacationList')?.querySelectorAll('tbody tr')||[];const group=groupFromChoice(choice),employees=choice==='__leaders__'?state.employees.filter(e=>e.leader):group?employeesForSelection(choice):employeesForSelection(choice),ids=new Set(employees.map(e=>e.id)),vacations=state.vacations.filter(v=>ids.has(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));rows.forEach((row,i)=>{const v=vacations[i],cell=row.lastElementChild;if(!v||!cell)return;if(v.status!=='Abgelehnt'){const reject=document.createElement('button');reject.className='button tiny reject';reject.textContent='Ablehnen';reject.onclick=()=>window.rejectVacation(v.id);cell.insertBefore(reject,cell.querySelector('.danger'))}else{row.classList.add('rejected-row')}})};
+
+ const priorRenderCalendar=renderCalendar;renderCalendar=function(){priorRenderCalendar();const choice=$('departmentFilter')?.value,employees=employeesForSelection(choice),[year,month]=($('monthFilter')?.value||'').split('-').map(Number),days=new Date(year,month,0).getDate();const bodyRows=[...($('calendarTable')?.querySelectorAll('tbody tr')||[])].filter(r=>!r.classList.contains('department-separator'));let idx=0;for(const e of employees.sort((a,b)=>a.name.localeCompare(b.name,'de'))){const row=bodyRows[idx++];if(!row)continue;for(let d=1;d<=days;d++){const cell=row.children[d],date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));if(v?.status==='Abgelehnt'){cell.className='rejected-cell';cell.textContent=absenceCode(v);cell.title=vacationTitle(v,date)+' · Muss verschoben werden'}}}};
+
+ const oldRenderDepartments=renderDepartments;renderDepartments=function(){v20EnsureGroups();oldRenderDepartments();if($('planGroupSettings')){const groups=state.planGroups||[];$('planGroupSettings').innerHTML=`<h3>Plan-Gruppen</h3><p class="muted">Plan-Gruppen bleiben dauerhaft gespeichert. Ordne anschließend jeder Abteilung über „Plan-Gruppe“ eine Gruppe zu.</p><div class="table-wrapper"><table><thead><tr><th>Plan-Gruppe</th><th>Abteilungen</th><th>Max. Urlauber gesamt</th><th>Aktion</th></tr></thead><tbody>${groups.map(g=>`<tr><td><strong>${esc(g.name)}</strong></td><td>${esc((state.departments||[]).filter(d=>String(state.departmentGroupIds?.[d]||'')===String(g.id)).join(', ')||'Noch keine Abteilung')}</td><td>${g.maxAway}</td><td><button class="button tiny" onclick="editPlanGroupMaximum('${esc(g.id)}')">Maximum ändern</button> <button class="button tiny danger" onclick="deletePlanGroupV20('${esc(g.id)}')">Löschen</button></td></tr>`).join('')||'<tr><td colspan="4" class="muted">Noch keine Plan-Gruppe angelegt.</td></tr>'}</tbody></table></div>`}};
+ window.deletePlanGroupV20=function(id){const g=v20GroupById(id);if(!g)return;const deps=(state.departments||[]).filter(d=>String(state.departmentGroupIds?.[d]||'')===String(id));if(deps.length)return alert(`Die Plan-Gruppe ist noch diesen Abteilungen zugeordnet: ${deps.join(', ')}. Bitte zuerst die Zuordnung entfernen.`);if(!confirm(`Plan-Gruppe „${g.name}“ wirklich löschen?`))return;state.planGroups=state.planGroups.filter(x=>String(x.id)!==String(id));saveState('Plan-Gruppe gelöscht',g.name);fillSelects();renderAll()};
+
  requestAnimationFrame(()=>{fillSelects();renderAll();requestAnimationFrame(renderCalendar)});
 })();

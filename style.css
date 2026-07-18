@@ -76,3 +76,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 1.9 */
 #employeePlanGroup{border-color:#ffd500}.assignment-inactive{background:#171a18!important;opacity:.35}.department-transfer-note{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#555;color:#fff;font-size:11px}.transfer-history{margin-top:4px;color:#b8c0bc;font-size:12px;max-width:420px;white-space:normal}.header-right{flex-wrap:wrap}
+
+/* Version 2.0 */
+.badge.rejected{background:#8d303b;color:#fff}.rejected-cell{background:#d64b55!important;color:#fff!important;font-weight:800;box-shadow:inset 0 0 0 2px #ff8a91}.rejected-row{background:rgba(214,75,85,.12)}.button.reject{background:#b83b47;color:#fff;margin-right:6px}.role-legend td{vertical-align:top;white-space:normal}.role-legend th:first-child{min-width:170px}

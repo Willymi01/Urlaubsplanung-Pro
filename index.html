@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.9</title>
-  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><link rel="stylesheet" href="style.css?v=1.9">
+  <title>Urlaubsplaner Berlin · v2.0</title>
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><link rel="stylesheet" href="style.css?v=2.0">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.9 · GitHub Pages</p>
+    <p class="subtitle">Version 2.0 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.9</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 2.0</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="installAppButton" class="button light hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -64,7 +64,7 @@
             <div><label for="vacationTo">Bis</label><input id="vacationTo" type="date"></div>
             <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Seminar</option><option>Krankheit</option><option>Geplanter Freier Tag</option></select></div>
             <div><label for="vacationScope">Umfang</label><select id="vacationScope"><option value="full">Ganzer Tag</option><option value="half-am">Halber Tag vormittags</option><option value="half-pm">Halber Tag nachmittags</option></select></div>
-            <div><label for="vacationStatus">Status</label><select id="vacationStatus"><option>Beantragt</option><option>Genehmigt</option><option>Geplant</option></select></div>
+            <div><label for="vacationStatus">Status</label><select id="vacationStatus"><option>Beantragt</option><option>Genehmigt</option><option>Geplant</option><option>Abgelehnt</option></select></div>
             <div class="span-2"><label for="vacationNote">Notiz</label><input id="vacationNote" placeholder="optional"></div>
           </div>
           <div class="actions"><button id="saveVacation" class="button primary">Speichern</button><button id="cancelVacation" class="button light">Abbrechen</button></div>
@@ -89,7 +89,7 @@
         <div class="toolbar">
           <div><label for="yearDepartmentFilter">Abteilung</label><select id="yearDepartmentFilter"></select></div>
           <div><label for="yearFilter">Jahr</label><input id="yearFilter" type="number" min="2020" max="2100"></div>
-          <div><label for="yearStatusFilter">Status</label><select id="yearStatusFilter"><option value="all">Alle Status</option><option>Genehmigt</option><option>Beantragt</option><option>Geplant</option></select></div>
+          <div><label for="yearStatusFilter">Status</label><select id="yearStatusFilter"><option value="all">Alle Status</option><option>Genehmigt</option><option>Beantragt</option><option>Geplant</option><option>Abgelehnt</option></select></div>
         </div>
         <div id="yearSummary" class="metrics year-metrics"></div>
         <div class="table-wrapper"><table id="yearTable" class="year-table"></table></div>
@@ -154,6 +154,7 @@
       <div class="panel">
         <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen, umbenennen, maximale gleichzeitig abwesende Urlauber festlegen oder löschen. Beim Löschen können zugeordnete Mitarbeiter in eine andere Abteilung verschoben werden.</p></div></div>
         <div class="subpanel"><h3>Leiterplan</h3><div class="toolbar"><div><label for="leaderMinimum">Maximal gleichzeitig abwesende Leitungen</label><input id="leaderMinimum" type="number" min="0" value="1"></div><div><label for="keyLeaderMinimum">Mindestanzahl anwesender Schlüssel-Leitungen</label><input id="keyLeaderMinimum" type="number" min="0" value="1"></div><div><button id="saveLeaderMinimums" class="button primary">Leiterregeln speichern</button></div></div></div>
+        <div class="subpanel"><h3>Neue Plan-Gruppe</h3><p class="muted">Plan-Gruppen zuerst hier anlegen. Danach können Abteilungen und Mitarbeiter zuverlässig zugeordnet werden.</p><div class="toolbar"><div><label for="standalonePlanGroupName">Name der Plan-Gruppe</label><input id="standalonePlanGroupName" placeholder="z. B. Bedienung"></div><div><label for="standalonePlanGroupMax">Max. Urlauber gesamt</label><input id="standalonePlanGroupMax" type="number" min="0" value="2"></div><div><button id="createPlanGroup" class="button primary">Plan-Gruppe anlegen</button></div></div></div>
         <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><select id="newDepartmentGroup"><option value="">Keine Plan-Gruppe</option></select></div><div><label for="newPlanGroupName">Neue Plan-Gruppe (optional)</label><input id="newPlanGroupName" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Maximal gleichzeitig abwesende Urlauber</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
         <div class="table-wrapper"><table id="departmentTable"></table></div>
       </div>
@@ -174,6 +175,8 @@
         <div class="actions"><button id="saveUser" class="button primary">Benutzer speichern</button><button id="cancelUserEdit" class="button light hidden">Bearbeiten abbrechen</button></div>
       </div>
       <div class="panel"><div class="table-wrapper"><table id="userTable"></table></div></div>
+      <div class="panel"><h2>Was dürfen die Benutzerrollen?</h2><div class="table-wrapper"><table class="role-legend"><thead><tr><th>Rolle</th><th>Darf sehen</th><th>Darf bearbeiten</th><th>Nicht erlaubt</th></tr></thead><tbody><tr><td><strong>Administrator</strong></td><td>Alle Abteilungen, Leiterplan, Benutzer und Protokoll</td><td>Alles: Mitarbeiter, Abteilungen, Plan-Gruppen, Urlaube, Benutzer und Einstellungen</td><td>–</td></tr><tr><td><strong>Marktleitung</strong></td><td>Gesamter Markt und Leiterplan</td><td>Urlaube eintragen, genehmigen, ablehnen und verschieben; Stammdaten ansehen</td><td>Keine Benutzer- oder Systemeinstellungen</td></tr><tr><td><strong>Abteilungsleitung</strong></td><td>Eigene Abteilung bzw. zugeordnete Plan-Gruppe</td><td>Urlaub der eigenen Mitarbeiter planen, genehmigen, ablehnen und verschieben</td><td>Keine fremden Abteilungen, Benutzer oder Systemeinstellungen</td></tr><tr><td><strong>Stellvertretung</strong></td><td>Eigene zugeordnete Abteilung</td><td>Plan ansehen und Urlaubsanträge vorbereiten</td><td>Keine Benutzerverwaltung; Freigaben nur soweit vom Betrieb vorgesehen</td></tr></tbody></table></div><p class="muted">Hinweis: In der GitHub-Pages-Testversion werden die Rechte nur in der Oberfläche simuliert. Für technisch sichere Rechte ist später das Server-Backend erforderlich.</p></div>
+
       <div class="panel"><h2>Eigene PIN ändern</h2><div class="toolbar"><div><label for="oldPin">Bisherige PIN</label><input id="oldPin" type="password" inputmode="numeric"></div><div><label for="newPin">Neue PIN</label><input id="newPin" type="password" inputmode="numeric"></div><div><button id="changePin" class="button primary">PIN ändern</button></div></div><div id="pinStatus" class="status"></div></div>
     </section>
 
@@ -224,6 +227,6 @@
     </section>
   </main>
 </div>
-<script src="data.js?v=1.9"></script><script src="app.js?v=1.9"></script>
+<script src="data.js?v=1.9"></script><script src="app.js?v=2.0"></script>
 </body>
 </html>
