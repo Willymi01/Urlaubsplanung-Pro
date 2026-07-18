@@ -135,3 +135,15 @@ body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
  .sync-lamp{order:-1}
  #departmentVacationSummary{font-size:.85rem}
 }
+
+
+/* Version 5.2: Sonntage und Feiertage unabhängig vom Abwesenheitsstatus */
+.calendar th .v52-weekday{display:block;font-size:.68rem;line-height:1.1;margin-top:3px;color:#d9dfdc;font-weight:700}
+.calendar th.v52-sunday-column{background:#444a47!important;color:#fff!important;border-left:2px solid #9aa19d!important;border-right:2px solid #9aa19d!important}
+.calendar th.v52-sunday-column .v52-weekday{color:#fff}
+.calendar td.v52-sunday-column{background:#464b49!important;color:#fff!important;border-left:2px solid #838a86!important;border-right:2px solid #838a86!important}
+.calendar td.v52-sunday-column.vacation,.calendar td.v52-sunday-column.pending-cell,.calendar td.v52-sunday-column.planned-cell,.calendar td.v52-sunday-column.moved-cell,.calendar td.v52-sunday-column.critical{background:#66705f!important;box-shadow:inset 0 0 0 3px #9da5a0!important;color:#fff!important}
+.calendar th.v52-holiday-column{background:linear-gradient(180deg,#d9b313,#7d6208)!important;color:#fff!important;border-left:3px solid #ffe169!important;border-right:3px solid #ffe169!important;box-shadow:inset 0 -3px 0 #ffe169!important}
+.calendar th.v52-holiday-column .v52-weekday{color:#fff8cb}
+.calendar td.v52-holiday-column{background:#665515!important;color:#fff6bd!important;border-left:3px solid #f5cf38!important;border-right:3px solid #f5cf38!important;box-shadow:inset 0 0 0 1px #d7b527!important}
+.calendar td.v52-holiday-column.vacation,.calendar td.v52-holiday-column.pending-cell,.calendar td.v52-holiday-column.planned-cell,.calendar td.v52-holiday-column.moved-cell,.calendar td.v52-holiday-column.critical{background:#9a842b!important;color:#fff!important;box-shadow:inset 0 0 0 3px #ffe169!important}

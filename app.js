@@ -343,14 +343,23 @@ function normalizeEndpoint(value){return String(value||'').trim().replace(/\/+$/
 function supabaseHeaders(){return{'Content-Type':'application/json','apikey':syncConfig.token,'Authorization':'Bearer '+syncConfig.token}}
 function setSyncMessage(text,ok=null){if(!$('syncMessage'))return;$('syncMessage').textContent=text;$('syncMessage').classList.toggle('warning-danger',ok===false)}
 function renderSync(){
- if(!$('syncEndpoint'))return;
- $('syncEndpoint').value=syncConfig.endpoint;$('syncToken').value=syncConfig.token;if($('syncAccessCode'))$('syncAccessCode').value=syncConfig.accessCode;$('syncAuto').checked=syncConfig.auto;
- $('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);$('syncPendingCount').textContent=syncConfig.pending;$('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
- const online=syncConfig.status==='online',configured=!!(syncConfig.endpoint&&syncConfig.token&&syncConfig.accessCode);$('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Lokal';const b=$('syncConnectionBadge');b.textContent=online?'Supabase verbunden':configured?'Supabase eingerichtet':'Lokalbetrieb';b.className='badge '+(online?'sync-online':configured?'pending':'planned');
+ const online=syncConfig.status==='online',configured=!!(syncConfig.endpoint&&syncConfig.token&&syncConfig.accessCode);
+ const endpointEl=$('syncEndpoint'),tokenEl=$('syncToken'),codeEl=$('syncAccessCode'),autoEl=$('syncAuto');
+ if(endpointEl){
+  endpointEl.value=syncConfig.endpoint;
+  if(tokenEl)tokenEl.value=syncConfig.token;
+  if(codeEl)codeEl.value=syncConfig.accessCode;
+  if(autoEl)autoEl.checked=syncConfig.auto!==false;
+  if($('syncDeviceShort'))$('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);
+  if($('syncPendingCount'))$('syncPendingCount').textContent=syncConfig.pending;
+  if($('syncLastTime'))$('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
+  if($('syncStatusText'))$('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Nicht eingerichtet';
+  const b=$('syncConnectionBadge');if(b){b.textContent=online?'Supabase verbunden':configured?'Supabase eingerichtet':'Supabase nicht eingerichtet';b.className='badge '+(online?'sync-online':configured?'pending':'planned')}
+ }
  const lamp=$('globalSyncLamp'),lampText=$('globalSyncLampText');
  if(lamp&&lampText){
   const pending=Number(syncConfig.pending||0);
-  let mode='local',text='Lokal';
+  let mode='local',text=configured?'Verbindung wird geprüft':'Supabase nicht eingerichtet';
   if(!navigator.onLine){mode='offline';text='Offline – lokal';}
   else if(window.__urlaubAutoSyncBusy===true){mode='syncing';text='Synchronisiere …';}
   else if(syncConfig.status==='conflict'){mode='warning';text='Konflikt';}
@@ -975,7 +984,7 @@ setTimeout(()=>renderCalendar(),0);
 
 
 /* Version 4.6: automatische Supabase-Synchronisierung mit sicherem App-Start */
-const APP_VERSION='5.1.0';
+const APP_VERSION='5.2.0';
 let autoSyncTimer=null;
 let autoPushTimer=null;
 let autoSyncBusy=false;
@@ -983,7 +992,19 @@ let autoSyncLastCheck=0;
 let initialCloudLoadDone=false;
 let automaticSyncStarted=false;
 
+function recoverCloudConfigFromForm(){
+ const endpoint=normalizeEndpoint($('syncEndpoint')?.value||'');
+ const token=String($('syncToken')?.value||'').trim();
+ const accessCode=String($('syncAccessCode')?.value||'').trim();
+ let changed=false;
+ if(!syncConfig.endpoint&&endpoint){syncConfig.endpoint=endpoint;changed=true}
+ if(!syncConfig.token&&token){syncConfig.token=token;changed=true}
+ if(!syncConfig.accessCode&&accessCode){syncConfig.accessCode=accessCode;changed=true}
+ if(changed){syncConfig.auto=true;syncConfig.status='unknown';saveSyncConfig()}
+ return changed;
+}
 function cloudConfigured(){
+ recoverCloudConfigFromForm();
  return Boolean(syncConfig.endpoint && syncConfig.token && syncConfig.accessCode);
 }
 
@@ -1139,19 +1160,63 @@ document.addEventListener('visibilitychange',()=>{
 
 /* Start both for normal browser pages and already-installed PWA windows. */
 function bootAutomaticSync(){
+ recoverCloudConfigFromForm();
  renderSync();
- if(automaticSyncStarted&&autoSyncTimer)return;
- startAutomaticSync();
+ if(!cloudConfigured())return;
+ if(!automaticSyncStarted||!autoSyncTimer)startAutomaticSync();
 }
-if(document.readyState==='complete'){
- setTimeout(bootAutomaticSync,0);
-}else{
- window.addEventListener('load',bootAutomaticSync,{once:true});
-}
-[250,1200,3000,7000].forEach(delay=>setTimeout(bootAutomaticSync,delay));
+if(document.readyState==='complete')setTimeout(bootAutomaticSync,0);
+else window.addEventListener('load',bootAutomaticSync,{once:true});
+[250,1000,2500,5000,9000].forEach(delay=>setTimeout(bootAutomaticSync,delay));
+setInterval(()=>{
+ bootAutomaticSync();
+ if(cloudConfigured()&&!autoSyncBusy&&Date.now()-autoSyncLastCheck>12000)automaticPull({startup:!initialCloudLoadDone});
+},5000);
 
 /* Version 4.6: PDF-Fix, eindeutige Grenzwerte und wiederhergestelltes AutoSync */
 
 /* Version 5.0: Abteilungs-Dashboard, farbiger PDF-Export und globale Statuslampe */
 
 /* Version 5.1: AutoSync-Startfehler durch Statuslampen-TDZ behoben */
+
+
+/* Version 5.2: robuste Kalenderdekoration und AutoSync-Wächter */
+function decorateCalendarSpecialDaysV52(){
+ const table=$('calendarTable'),monthInput=$('monthFilter');
+ if(!table||!monthInput?.value)return;
+ const [year,month]=monthInput.value.split('-').map(Number);
+ const weekdays=['So','Mo','Di','Mi','Do','Fr','Sa'];
+ const headers=[...table.querySelectorAll('thead tr:first-child th')].slice(1);
+ headers.forEach((th,index)=>{
+  const date=new Date(year,month-1,index+1),sunday=date.getDay()===0,holiday=holidayName(date);
+  th.classList.toggle('v52-sunday-column',sunday);
+  th.classList.toggle('v52-holiday-column',Boolean(holiday));
+  th.dataset.weekday=weekdays[date.getDay()];
+  let wd=th.querySelector('.v52-weekday');
+  if(!wd){wd=document.createElement('span');wd.className='v52-weekday';th.appendChild(wd)}
+  wd.textContent=weekdays[date.getDay()];
+  th.title=holiday?`${holiday} · gesetzlicher Feiertag in Berlin`:date.toLocaleDateString('de-DE',{weekday:'long'});
+ });
+ [...table.querySelectorAll('tbody tr')].forEach(row=>{
+  if(row.classList.contains('department-separator'))return;
+  [...row.querySelectorAll('td')].slice(1).forEach((cell,index)=>{
+   const date=new Date(year,month-1,index+1),sunday=date.getDay()===0,holiday=holidayName(date);
+   cell.classList.toggle('v52-sunday-column',sunday);
+   cell.classList.toggle('v52-holiday-column',Boolean(holiday));
+   if(!cell.title||!cell.textContent.trim())cell.title=holiday||date.toLocaleDateString('de-DE',{weekday:'long'});
+  });
+ });
+}
+const renderCalendarV52Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV52Base();
+ decorateCalendarSpecialDaysV52();
+ requestAnimationFrame(decorateCalendarSpecialDaysV52);
+ setTimeout(decorateCalendarSpecialDaysV52,50);
+};
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
+if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()};
+const calendarObserverV52=new MutationObserver(()=>requestAnimationFrame(decorateCalendarSpecialDaysV52));
+if($('calendarTable'))calendarObserverV52.observe($('calendarTable'),{childList:true,subtree:true});
+window.addEventListener('online',bootAutomaticSync);
+setTimeout(()=>{decorateCalendarSpecialDaysV52();bootAutomaticSync()},100);

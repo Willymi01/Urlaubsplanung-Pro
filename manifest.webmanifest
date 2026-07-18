@@ -1,13 +1,13 @@
 {
-  "name": "EDEKA Urlaubsplaner Berlin 5.1",
+  "name": "EDEKA Urlaubsplaner Berlin 5.2",
   "short_name": "Urlaubsplaner",
   "id": "./",
-  "start_url": "./?v=5.1.0",
+  "start_url": "./?v=5.2.0",
   "scope": "./",
   "display": "standalone",
   "background_color": "#101418",
   "theme_color": "#f5c400",
-  "description": "Urlaubsplaner mit repariertem Supabase-AutoSync, Abteilungs-Dashboard, Statuslampe und farbigem PDF",
+  "description": "Urlaubsplaner mit stabilem Supabase-AutoSync und klar markierten Sonntagen und Berliner Feiertagen",
   "icons": [
     {
       "src": "icons/icon-192.png",

@@ -1,0 +1,16 @@
+URLAUBSPLANER 5.2 – STABILITÄTSUPDATE
+
+Behoben:
+- AutoSync erhält einen dauerhaften Wächter und startet nach App-Start, Login, Fokus und Online-Rückkehr.
+- Die Statuslampe zeigt nicht mehr irreführend „Lokal“, wenn Supabase eingerichtet ist.
+- Sonntage werden als vollständige dunkelgraue Spalten hervorgehoben.
+- Berliner Feiertage werden als goldene Spalten mit klarer Umrandung hervorgehoben.
+- Markierungen bleiben auch erhalten, wenn Urlaub oder eine andere Abwesenheit in der Zelle steht.
+- Dashboard, farbiger PDF-Export und Grenzwertlogik bleiben erhalten.
+
+Installation:
+1. Alle Dateien aus diesem Paket in GitHub hochladen und vorhandene ersetzen.
+2. GitHub Pages vollständig veröffentlichen lassen.
+3. Browser mit Strg+F5 neu laden.
+4. Installierte App vollständig schließen und erneut öffnen.
+5. Supabase-Zugangsdaten bleiben im Browser gespeichert. Falls „Supabase nicht eingerichtet“ erscheint, die Datenzentrale einmal öffnen, Zugangsdaten prüfen und „Einstellungen speichern“ drücken.
