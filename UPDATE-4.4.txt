@@ -1,0 +1,12 @@
+URLAUBSPLANER 4.4 – AUTOMATIK-FIX
+
+1. Alle Dateien dieses Pakets ins GitHub-Repository hochladen und vorhandene Dateien ersetzen.
+2. Warten, bis GitHub Pages veröffentlicht hat.
+3. Die Seite einmal mit Strg+F5 neu laden.
+4. In der Datenzentrale müssen Projekt-URL, Publishable Key und Zugriffscode gespeichert sein.
+
+Die Automatik ist danach bei vollständigen Zugangsdaten immer aktiv:
+- automatisches Laden beim Start
+- Prüfung alle 8 Sekunden
+- Prüfung beim Zurückkehren zur App
+- automatisches Speichern nach Änderungen

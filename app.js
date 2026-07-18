@@ -226,7 +226,7 @@ const WORKSPACE_ID='edeka-urlaubsplaner';
 let syncConfig=loadSyncConfig();
 let syncTimer=null;
 function loadSyncConfig(){
- try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',accessCode:c.accessCode||'',auto:c.auto===true,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local',revision:Number(c.revision||0)}}catch{return{endpoint:'',token:'',accessCode:'',auto:false,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local',revision:0}}
+ try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',accessCode:c.accessCode||'',auto:c.auto!==false,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local',revision:Number(c.revision||0)}}catch{return{endpoint:'',token:'',accessCode:'',auto:true,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local',revision:0}}
 }
 function createDeviceId(){return 'GERAET-'+Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).toUpperCase()}
 function saveSyncConfig(){localStorage.setItem(SYNC_STORE,JSON.stringify(syncConfig))}
@@ -768,41 +768,78 @@ if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('
 setTimeout(()=>renderCalendar(),0);
 
 
-/* Version 4.3: zuverlässige automatische Supabase-Synchronisierung */
-const APP_VERSION='4.3.0';
-let autoSyncInterval=null;
+/* Version 4.4: automatische Supabase-Synchronisierung – Startfix */
+const APP_VERSION='4.4.0';
+let autoSyncTimer=null;
+let autoPushTimer=null;
 let autoSyncBusy=false;
 let autoSyncLastCheck=0;
-let autoSyncStarted=false;
-const autoSyncChannel=('BroadcastChannel' in window)
- ? new BroadcastChannel('urlaubsplaner-supabase-v43')
- : null;
+let initialCloudLoadDone=false;
 
-function cloudReady(){
+function cloudConfigured(){
  return Boolean(syncConfig.endpoint && syncConfig.token && syncConfig.accessCode);
 }
 
-function persistStateWithoutPending(){
- state=window.UrlaubsplanerStorage?.save(state)||state;
- localStorage.setItem(STORE,JSON.stringify(state));
+function enableAutomaticSync(){
+ if(cloudConfigured() && syncConfig.auto!==false){
+  syncConfig.auto=true;
+  saveSyncConfig();
+ }
 }
 
-async function readRemoteState(){
- return rpc('get_app_state',{
-  p_workspace_id:WORKSPACE_ID,
-  p_access_code:syncConfig.accessCode
- });
-}
-
-async function backgroundPush(){
- if(autoSyncBusy || !syncConfig.auto || !cloudReady() || !navigator.onLine)return false;
+async function automaticPull({force=false,startup=false}={}){
+ if(autoSyncBusy || !cloudConfigured() || !navigator.onLine)return false;
+ if(!startup && !force && Number(syncConfig.pending||0)>0){
+  return automaticPush();
+ }
  autoSyncBusy=true;
+ autoSyncLastCheck=Date.now();
  try{
-  setSyncMessage('Änderungen werden automatisch gespeichert …',true);
-  await rpc('initialize_workspace',{
+  setSyncMessage(startup?'Supabase-Daten werden beim Start geladen …':'Neue Supabase-Daten werden geprüft …',true);
+  const remote=await rpc('get_app_state',{
    p_workspace_id:WORKSPACE_ID,
    p_access_code:syncConfig.accessCode
   });
+  if(!remote?.payload){
+   syncConfig.status='online';
+   saveSyncConfig();renderSync();
+   setSyncMessage('Supabase ist verbunden, enthält aber noch keinen Datenstand.',false);
+   return false;
+  }
+  const remoteRevision=Number(remote.revision||0);
+  const localRevision=Number(syncConfig.revision||0);
+  if(startup || force || remoteRevision>localRevision){
+   state=normalize(remote.payload);
+   syncConfig.pending=0;
+   syncConfig.revision=remoteRevision;
+   syncConfig.lastSync=remote.updated_at||new Date().toISOString();
+   syncConfig.status='online';
+   saveSyncConfig();
+   state=window.UrlaubsplanerStorage?.save(state)||state;
+   localStorage.setItem(STORE,JSON.stringify(state));
+   fillLogin();renderAll();
+   setSyncMessage('Supabase-Daten wurden automatisch geladen.',true);
+  }else{
+   syncConfig.status='online';saveSyncConfig();renderSync();
+   setSyncMessage('Daten sind aktuell.',true);
+  }
+  initialCloudLoadDone=true;
+  return true;
+ }catch(e){
+  syncConfig.status='offline';saveSyncConfig();renderSync();
+  setSyncMessage('Automatisches Laden fehlgeschlagen: '+String(e?.message||e),false);
+  return false;
+ }finally{
+  autoSyncBusy=false;
+ }
+}
+
+async function automaticPush(){
+ if(autoSyncBusy || !cloudConfigured() || !navigator.onLine)return false;
+ autoSyncBusy=true;
+ try{
+  setSyncMessage('Änderungen werden automatisch gespeichert …',true);
+  await rpc('initialize_workspace',{p_workspace_id:WORKSPACE_ID,p_access_code:syncConfig.accessCode});
   const info=await rpc('save_app_state',{
    p_workspace_id:WORKSPACE_ID,
    p_access_code:syncConfig.accessCode,
@@ -814,124 +851,64 @@ async function backgroundPush(){
   syncConfig.revision=Number(info?.revision||0);
   syncConfig.lastSync=info?.updated_at||new Date().toISOString();
   syncConfig.status='online';
-  saveSyncConfig();
-  persistStateWithoutPending();
-  renderSync();
-  setSyncMessage('Automatisch gespeichert.',true);
-  autoSyncChannel?.postMessage({
-   type:'remote-change',
-   revision:syncConfig.revision,
-   deviceId:syncConfig.deviceId
-  });
+  saveSyncConfig();renderSync();
+  setSyncMessage('Automatisch in Supabase gespeichert.',true);
   return true;
  }catch(e){
-  const message=String(e?.message||e);
-  if(message.includes('REVISION_CONFLICT')){
-   syncConfig.status='conflict';
-   saveSyncConfig();
-   renderSync();
-   setSyncMessage('Anderer PC war schneller – aktueller Stand wird geladen …',false);
+  const msg=String(e?.message||e);
+  if(msg.includes('REVISION_CONFLICT')){
    autoSyncBusy=false;
-   return backgroundPull(true);
+   return automaticPull({force:true});
   }
-  syncConfig.status='offline';
-  saveSyncConfig();
-  renderSync();
-  setSyncMessage('Automatisches Speichern wartet auf Verbindung: '+message,false);
+  syncConfig.status='offline';saveSyncConfig();renderSync();
+  setSyncMessage('Automatisches Speichern fehlgeschlagen: '+msg,false);
   return false;
  }finally{
   autoSyncBusy=false;
  }
 }
 
-async function backgroundPull(force=false){
- if(autoSyncBusy || !syncConfig.auto || !cloudReady() || !navigator.onLine)return false;
- if(!force && Number(syncConfig.pending||0)>0)return backgroundPush();
- autoSyncBusy=true;
- autoSyncLastCheck=Date.now();
- try{
-  const remote=await readRemoteState();
-  if(!remote?.payload)return false;
-  const remoteRevision=Number(remote.revision||0);
-  const localRevision=Number(syncConfig.revision||0);
-  if(force || remoteRevision>localRevision){
-   state=normalize(remote.payload);
-   syncConfig.pending=0;
-   syncConfig.revision=remoteRevision;
-   syncConfig.lastSync=remote.updated_at||new Date().toISOString();
-   syncConfig.status='online';
-   saveSyncConfig();
-   persistStateWithoutPending();
-   fillLogin();
-   renderAll();
-   setSyncMessage('Aktueller Stand automatisch geladen.',true);
-   return true;
-  }
-  syncConfig.status='online';
-  saveSyncConfig();
-  renderSync();
-  return true;
- }catch(e){
-  syncConfig.status='offline';
-  saveSyncConfig();
-  renderSync();
-  setSyncMessage('Automatisches Laden wartet auf Verbindung: '+String(e?.message||e),false);
-  return false;
- }finally{
-  autoSyncBusy=false;
- }
+function startAutomaticSync(){
+ clearInterval(autoSyncTimer);
+ if(!cloudConfigured())return;
+ syncConfig.auto=true;
+ saveSyncConfig();
+ if($('syncAuto'))$('syncAuto').checked=true;
+ setTimeout(()=>automaticPull({startup:true}),300);
+ autoSyncTimer=setInterval(()=>automaticPull(),8000);
 }
 
-function startAutomaticSupabase(){
- clearInterval(autoSyncInterval);
- autoSyncInterval=null;
- if(!syncConfig.auto || !cloudReady())return;
- autoSyncStarted=true;
- setTimeout(()=>backgroundPull(false),400);
- autoSyncInterval=setInterval(()=>backgroundPull(false),10000);
-}
-
-const originalSaveSyncSettingsV43=saveSyncSettings;
+const saveSyncSettingsBaseV44=saveSyncSettings;
 saveSyncSettings=function(){
- originalSaveSyncSettingsV43();
- if(syncConfig.auto && cloudReady()){
-  startAutomaticSupabase();
-  setSyncMessage('Automatik aktiv: Änderungen werden gespeichert und neue Daten geladen.',true);
-  setTimeout(()=>backgroundPull(false),200);
+ saveSyncSettingsBaseV44();
+ if(cloudConfigured()){
+  syncConfig.auto=true;
+  saveSyncConfig();renderSync();
+  startAutomaticSync();
  }else{
-  clearInterval(autoSyncInterval);
-  autoSyncInterval=null;
+  clearInterval(autoSyncTimer);
  }
 };
 
-const originalScheduleAutoSyncV43=scheduleAutoSync;
 scheduleAutoSync=function(){
- if(!syncConfig.auto || !cloudReady())return;
- clearTimeout(syncTimer);
- syncTimer=setTimeout(()=>backgroundPush(),700);
+ if(!cloudConfigured())return;
+ syncConfig.auto=true;
+ saveSyncConfig();
+ clearTimeout(autoPushTimer);
+ autoPushTimer=setTimeout(()=>automaticPush(),650);
 };
 
-window.addEventListener('online',()=>backgroundPull(false));
+window.addEventListener('online',()=>automaticPull({startup:!initialCloudLoadDone}));
 window.addEventListener('focus',()=>{
- if(Date.now()-autoSyncLastCheck>3000)backgroundPull(false);
+ if(Date.now()-autoSyncLastCheck>2000)automaticPull();
 });
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState==='visible'&&Date.now()-autoSyncLastCheck>3000){
-  backgroundPull(false);
- }
-});
-autoSyncChannel?.addEventListener('message',event=>{
- const msg=event.data||{};
- if(msg.deviceId===syncConfig.deviceId)return;
- if(msg.type==='remote-change' &&
-    Number(msg.revision||0)>Number(syncConfig.revision||0) &&
-    Number(syncConfig.pending||0)===0){
-  backgroundPull(false);
- }
+ if(document.visibilityState==='visible'&&Date.now()-autoSyncLastCheck>2000)automaticPull();
 });
 
-/* Automatik nach vollständigem Laden aller Erweiterungen starten. */
-setTimeout(()=>{
+/* Erst starten, nachdem init() und alle späteren Erweiterungen fertig sind. */
+window.addEventListener('load',()=>{
+ enableAutomaticSync();
  renderSync();
- startAutomaticSupabase();
-},600);
+ startAutomaticSync();
+});

@@ -1,12 +1,12 @@
-const CACHE='urlaubsplaner-v4.3.0-static';
+const CACHE='urlaubsplaner-v4.4.0-static';
 const OFFLINE='./index.html';
 const ASSETS=[
  './',
  './index.html',
- './app.js?v=4.3.0',
- './style.css?v=4.3.0',
- './data/default-data.js?v=4.3.0',
- './core/storage.js?v=4.3.0',
+ './app.js?v=4.4.0',
+ './style.css?v=4.4.0',
+ './data/default-data.js?v=4.4.0',
+ './core/storage.js?v=4.4.0',
  './manifest.webmanifest',
  './icons/icon-192.png',
  './icons/icon-512.png'
