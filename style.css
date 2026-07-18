@@ -64,3 +64,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 1.5 */
 .badge.rejected{background:#73313b;color:#fff}.permission-col{min-width:260px;white-space:normal}.permission-name{font-weight:700}#rolePermissionLegend th,#rolePermissionLegend td{text-align:center}#rolePermissionLegend th:first-child,#rolePermissionLegend td:first-child{text-align:left}
+
+/* Version 2.0 */
+.storage-info{margin:14px 0;padding:14px;border:1px solid #59615d;border-radius:10px;background:#292e2b;color:#f4f4f4}.storage-info code{color:#ffd500}.storage-info small{color:#c7cfca}

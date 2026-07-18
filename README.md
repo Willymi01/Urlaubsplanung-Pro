@@ -1,49 +1,34 @@
-# Urlaubsplaner v1.2
+# Urlaubsplaner Berlin – Version 2.0
 
-Neu in v1.2:
+## Wichtigste Änderung: Updates ohne Datenverlust
 
-- Abteilungen werden über die maximale Zahl gleichzeitig abwesender Urlauber gesteuert.
-- Leiterplan mit maximal gleichzeitig abwesenden Leitungen.
-- Rote Markierung nur noch an Tagen, an denen das eingestellte Maximum tatsächlich überschritten wird.
-- Samstag ist ein normaler Arbeitstag.
-- Sonntag wird deutlich dunkler hervorgehoben.
-- Feiertagsnamen erscheinen in der Kalenderüberschrift, im Hinweisbereich und beim Überfahren einer Zelle.
-- Hinweise auf Feiertage bis zu zwei Tage vor Urlaubsbeginn oder nach Urlaubsende erscheinen in der Urlaubsliste.
-- Plan-Gruppen und eigene Maximalwerte je Unterabteilung bleiben erhalten.
+Die Anwendung verwendet ab Version 2.0 dauerhaft den Browser-Speicher:
 
-Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzungen werden bei der ersten Übernahme in passende Maximalwerte umgerechnet.
+`urlaubsplaner.data`
 
-## Version 1.5.2
-- Feiertagshinweis je Mitarbeiter erst ab mehr als zwei zugeordneten Feiertagen im Kalenderjahr.
-- Feiertage im Urlaub sowie bis zu zwei Tage davor oder danach werden gezählt.
-- Direkter PDF-Download des Monatsplans.
-- Testzugang-Hinweis auf der Anmeldung entfernt.
-- Plan-Gruppen sind im Monatsplan auswählbar und besitzen ein eigenes Gesamtmaximum für gleichzeitig abwesende Urlauber.
+Dieser Schlüssel bleibt bei künftigen Versionen gleich. Beim Austausch von `index.html`, `app.js`, `style.css` oder anderen Programmdateien werden daher folgende Daten nicht überschrieben:
 
+- Mitarbeiter
+- Benutzer und Rollen
+- Abteilungen
+- Plan-Gruppen und Gruppen-Maxima
+- Urlaube und andere Abwesenheiten
+- Verschiebungen
+- Einstellungen
+- Änderungsprotokoll
 
-## Neu in Version 1.5.2
+Beim ersten Start migriert Version 2.0 automatisch die umfangreichsten gefundenen Daten aus älteren Speicherständen.
 
-- Sonntage und Berliner Feiertage werden bei Erholungsurlaub nicht als Urlaubstage abgezogen.
-- Samstage zählen weiterhin als normale Urlaubstage.
-- Genehmigen und Ablehnen dürfen nur Administrator und Marktleitung.
-- Abteilungsleitungen dürfen Urlaub der eigenen Abteilung verschieben.
-- Marktleitung und Administrator dürfen Urlaub aller Abteilungen verschieben.
-- Ablehnungsgrund wird gespeichert und im Änderungsprotokoll dokumentiert.
-- Benutzerübersicht zeigt die konkreten Berechtigungen jeder Rolle.
-- Zusätzliche Rollen- und Berechtigungslegende in der Benutzerverwaltung.
+## Wichtige Einschränkung von GitHub Pages
 
+GitHub Pages kann lokale JSON-Dateien nicht aus dem Browser heraus verändern. Die Arbeitsdaten liegen deshalb weiterhin im Browser. Sie bleiben erhalten, wenn:
 
-## Korrekturen in Version 1.5.2
+- dieselbe GitHub-Pages-Adresse verwendet wird,
+- derselbe Browser und dasselbe Browserprofil verwendet werden,
+- Browserdaten nicht gelöscht werden.
 
-- Sonntage und Berliner Feiertage werden direkt nach dem Wechsel der Abteilung neu dargestellt.
-- Der Abteilungswechsel verwendet immer die aktuelle Kalenderlogik.
-- Administrator und Marktleitung sehen den Button **Ablehnen** nun auch bei bereits genehmigten Urlauben.
-- Beim Zurücknehmen einer Genehmigung wird ein Grund abgefragt und im Änderungsprotokoll gespeichert.
-- Abteilungsleitung darf weiterhin nur Urlaub der eigenen Abteilung verschieben; Genehmigen und Ablehnen bleiben Admin und Marktleitung vorbehalten.
+Für einen anderen PC oder Browser bitte vorher unter **Datensicherung** eine JSON-Sicherung exportieren und dort wieder importieren.
 
+## Installation
 
-## Korrektur in Version 1.5.2
-
-- Sonntage und Berliner Feiertage werden nach jedem Abteilungswechsel sofort neu markiert.
-- Feiertagsnamen und Tooltip werden ebenfalls sofort aktualisiert.
-- Der Monatswechsel verwendet dieselbe zentrale Aktualisierungslogik.
+Den Inhalt des Ordners direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Programmdateien überschreiben. Nicht die Browserdaten löschen.

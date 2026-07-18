@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.5.2 · GitHub Pages</p>
+    <p class="subtitle">Version 2.0 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.5.2</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 2.0</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -223,11 +223,11 @@
     </section>
 
     <section id="page-settings" class="page hidden">
-      <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
+      <div class="panel"><h2>Datensicherung & Updates</h2><p>Deine Arbeitsdaten liegen update-sicher unter einem festen Speicherschlüssel im Browser. Neue Programmdateien überschreiben Mitarbeiter, Urlaube, Abteilungen und Plan-Gruppen nicht.</p><div class="storage-info"><strong>Speicher:</strong> <code>urlaubsplaner.data</code><br><span id="storageInfo">Wird geladen …</span></div><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
       <div class="panel"><h2>Hinweise</h2><p>Version 0.9 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>
-<script src="data.js"></script><script src="app.js"></script>
+<script src="core/storage.js"></script><script src="data/default-data.js"></script><script src="app.js"></script>
 </body>
 </html>
