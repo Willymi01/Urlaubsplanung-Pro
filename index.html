@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.9.2</title>
+  <title>Urlaubsplaner Berlin · v0.9.3</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.9.2 · GitHub Pages</p>
+    <p class="subtitle">Version 0.9.3 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.2</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.3</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -47,15 +47,16 @@
         <article class="metric"><span>Mitarbeiter</span><strong id="employeeCount">0</strong></article>
         <article class="metric"><span>Leiter</span><strong id="leaderCount">0</strong></article>
         <article class="metric"><span>Geplante Urlaubstage</span><strong id="plannedDays">0</strong></article>
+        <article class="metric date-metric"><span>Heute</span><strong id="dashboardDate">–</strong><small id="dashboardWeekday"></small></article>
       </div>
       <div class="panel"><div class="panel-heading"><h2>Aktuelle Hinweise</h2><span id="todayLabel" class="badge"></span></div><div id="warnings"></div></div>
-      <div class="panel"><h2>Nächste Abwesenheiten</h2><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlauber der nächsten 4 Wochen</h2><p class="muted">Laufende und kommende Urlaube bis einschließlich 28 Tage ab heute.</p></div></div><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
     </section>
 
     <section id="page-calendar" class="page hidden">
       <div class="panel">
         <div class="panel-heading"><div><h2>Urlaub planen</h2><p class="muted">Hier kannst du Urlaub eintragen und bestehende Einträge direkt verschieben.</p></div><div class="actions"><button id="exportCsv" class="button light">CSV für Excel</button><button id="showVacationForm" class="button primary">+ Urlaub eintragen</button></div></div>
-        <div class="toolbar"><div><label for="departmentFilter">Abteilung</label><select id="departmentFilter"></select></div><div><label for="monthFilter">Monat</label><input id="monthFilter" type="month"></div></div>
+        <div class="toolbar"><div><label for="departmentFilter">Abteilung</label><select id="departmentFilter"></select></div><div><label for="monthFilter">Monat</label><div class="month-stepper"><button id="previousMonth" class="button light month-arrow" type="button" aria-label="Vorheriger Monat">‹</button><input id="monthFilter" type="month"><button id="nextMonth" class="button light month-arrow" type="button" aria-label="Nächster Monat">›</button></div></div></div>
         <div id="vacationForm" class="subpanel hidden"><h3 id="vacationFormTitle">Neuen Urlaub eintragen</h3><input id="editingVacationId" type="hidden">
           <div class="form-grid">
             <div><label for="vacationEmployee">Mitarbeiter</label><select id="vacationEmployee"></select></div>
