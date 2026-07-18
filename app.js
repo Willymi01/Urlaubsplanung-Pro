@@ -451,6 +451,10 @@ renderDepartments=function(){
 window.editDepartmentMaximum=i=>{const d=state.departments[i],current=Number(state.departmentMaxAway?.[d]??1),value=prompt(`Maximal gleichzeitig abwesende Urlauber für „${d}“:`,current);if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0)return alert('Bitte eine gültige Zahl ab 0 eingeben.');state.departmentMaxAway[d]=Math.floor(n);saveState('Maximale Urlauber geändert',`${d}: ${n}`);renderAll()};
 addDepartment=function(){const name=$('newDepartment').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');if(state.departments.includes(name))return alert('Diese Abteilung existiert bereits.');state.departments.push(name);state.departmentSettings[name]=0;state.departmentMaxAway[name]=Math.max(0,Number($('newDepartmentMin').value||1));state.departmentGroups[name]=$('newDepartmentGroup').value.trim();$('newDepartment').value='';$('newDepartmentGroup').value='';saveState('Abteilung angelegt',name);renderAll()};
 saveLeaderMinimums=function(){state.leaderSettings.maxAway=Math.max(0,Math.floor(Number($('leaderMinimum').value||0)));state.leaderSettings.keyMinimum=Math.max(0,Math.floor(Number($('keyLeaderMinimum').value||0)));saveState('Leiterregeln geändert',`max. ${state.leaderSettings.maxAway} abwesend, mindestens ${state.leaderSettings.keyMinimum} Schlüssel-Leiter anwesend`);renderAll()};
+
+// v1.5.1: Der Handler ruft immer die aktuellste Kalenderfunktion auf.
+// Dadurch werden Sonntage und Feiertage sofort nach einem Abteilungswechsel neu markiert.
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
 setTimeout(()=>{renderAll()},0);
 
 /* Version 1.3: Jahres-Feiertagsregel, Plan-Gruppen-Maximum und direkter PDF-Export */
@@ -604,8 +608,8 @@ window.approveVacation=function(id){
 window.rejectVacation=function(id){
  if(!canApproveOrReject())return alert('Nur Administratoren und Marktleitung dürfen Urlaub ablehnen.');
  const v=state.vacations.find(x=>x.id===Number(id));if(!v)return;
- const reason=prompt('Grund für die Ablehnung:','')||'Kein Grund angegeben';
- v.status='Abgelehnt';v.rejectionReason=reason;saveState('Urlaub abgelehnt',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)} · ${reason}`);renderAll();
+ const reason=prompt(v.status==='Genehmigt'?'Grund für das Zurücknehmen der Genehmigung:':'Grund für die Ablehnung:','');if(reason===null)return;const finalReason=reason.trim()||'Kein Grund angegeben';
+ v.status='Abgelehnt';v.rejectionReason=finalReason;saveState('Urlaub abgelehnt',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)} · ${finalReason}`);renderAll();
 };
 const editVacationV15Base=window.editVacation;
 window.editVacation=function(id){const v=state.vacations.find(x=>x.id===Number(id));if(!canMoveVacation(v))return alert('Urlaub verschieben dürfen nur Administrator, Marktleitung und die zuständige Abteilungsleitung.');editVacationV15Base(id)};
@@ -613,8 +617,12 @@ const deleteVacationV15Base=window.deleteVacation;
 window.deleteVacation=function(id){const v=state.vacations.find(x=>x.id===Number(id));if(!canDeleteVacation(v))return alert('Diesen Urlaub darfst du nicht löschen.');deleteVacationV15Base(id)};
 renderVacationList=function(choice){
  const deps=selectedDepartments(choice),ids=(choice==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));
- $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.status==='Abgelehnt'?`Abgelehnt: ${v.rejectionReason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–')));const actions=[];if(canMoveVacation(v))actions.push(`<button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button>`);if(v.status==='Beantragt'&&canApproveOrReject()){actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`)}if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`}).join('')+'</tbody>';
+ $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.status==='Abgelehnt'?`Abgelehnt: ${v.rejectionReason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–')));const actions=[];if(canMoveVacation(v))actions.push(`<button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button>`);if(v.status==='Beantragt'&&canApproveOrReject())actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);if((v.status==='Beantragt'||v.status==='Genehmigt')&&canApproveOrReject())actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`);if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`}).join('')+'</tbody>';
 };
 const statusBadgeV15Base=statusBadge;
 statusBadge=function(s){if(s==='Abgelehnt')return '<span class="badge rejected">Abgelehnt</span>';return statusBadgeV15Base(s)};
+
+// v1.5.1: Der Handler ruft immer die aktuellste Kalenderfunktion auf.
+// Dadurch werden Sonntage und Feiertage sofort nach einem Abteilungswechsel neu markiert.
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
 setTimeout(()=>{renderAll()},0);

@@ -13,7 +13,7 @@ Neu in v1.2:
 
 Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzungen werden bei der ersten Übernahme in passende Maximalwerte umgerechnet.
 
-## Version 1.5
+## Version 1.5.1
 - Feiertagshinweis je Mitarbeiter erst ab mehr als zwei zugeordneten Feiertagen im Kalenderjahr.
 - Feiertage im Urlaub sowie bis zu zwei Tage davor oder danach werden gezählt.
 - Direkter PDF-Download des Monatsplans.
@@ -21,7 +21,7 @@ Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzung
 - Plan-Gruppen sind im Monatsplan auswählbar und besitzen ein eigenes Gesamtmaximum für gleichzeitig abwesende Urlauber.
 
 
-## Neu in Version 1.5
+## Neu in Version 1.5.1
 
 - Sonntage und Berliner Feiertage werden bei Erholungsurlaub nicht als Urlaubstage abgezogen.
 - Samstage zählen weiterhin als normale Urlaubstage.
@@ -31,3 +31,12 @@ Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzung
 - Ablehnungsgrund wird gespeichert und im Änderungsprotokoll dokumentiert.
 - Benutzerübersicht zeigt die konkreten Berechtigungen jeder Rolle.
 - Zusätzliche Rollen- und Berechtigungslegende in der Benutzerverwaltung.
+
+
+## Korrekturen in Version 1.5.1
+
+- Sonntage und Berliner Feiertage werden direkt nach dem Wechsel der Abteilung neu dargestellt.
+- Der Abteilungswechsel verwendet immer die aktuelle Kalenderlogik.
+- Administrator und Marktleitung sehen den Button **Ablehnen** nun auch bei bereits genehmigten Urlauben.
+- Beim Zurücknehmen einer Genehmigung wird ein Grund abgefragt und im Änderungsprotokoll gespeichert.
+- Abteilungsleitung darf weiterhin nur Urlaub der eigenen Abteilung verschieben; Genehmigen und Ablehnen bleiben Admin und Marktleitung vorbehalten.
