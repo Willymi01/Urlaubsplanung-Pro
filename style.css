@@ -61,27 +61,3 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 1.2 */
 .calendar th small{display:block;max-width:64px;overflow:hidden;text-overflow:ellipsis;font-size:.58rem;line-height:1.05;color:#ffe16a;margin-top:3px}.calendar .sunday,.calendar .sunday-header{background:#363a38!important;color:#fff;border-left:2px solid #737a76;border-right:2px solid #737a76}.calendar .holiday-header{background:#6b5b13!important;color:#fff}.calendar td.critical-day{box-shadow:inset 0 -4px 0 #d94850;background:#34292b}.calendar td.critical.vacation-entry{background:#c63c45!important;color:#fff}.holiday-list{margin-top:10px;padding:10px 12px;border:1px solid #8c7a28;border-radius:10px;background:#332f1e;color:#f5e5a0}.holiday-hint{color:#ffe16a;font-weight:700}.calendar td:not(.sunday):not(.holiday):not(.vacation):not(.pending-cell):not(.planned-cell):not(.moved-cell):not(.critical):not(.critical-day){background:#242726}.calendar .weekend{background:#242726;color:inherit}
-
-/* Version 1.4 */
-.empty-plan{padding:24px!important;text-align:center!important;background:#2b2f2d!important;color:#f2f3f2!important}.empty-plan small{display:block;margin-top:6px;white-space:normal;color:#b9bfbc}.calendar th small{white-space:normal;max-width:72px}.department-separator td{position:relative}.department-separator td::before{content:"Planbereich";display:inline-block;margin-right:8px;padding:2px 6px;border:1px solid #ffd500;border-radius:4px;color:#ffd500;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em}
-
-/* Version 1.7 */
-#employeeDepartment option[value^="__employee_group__:"]{font-weight:700;color:#ffd500}
-
-/* Version 1.8 */
-.assignment-inactive{background:rgba(255,255,255,.025)!important;color:transparent!important}
-.department-transfer-note{display:inline-block;margin-left:.45rem;padding:.12rem .42rem;border:1px solid rgba(255,213,0,.45);border-radius:999px;color:#ffd500;font-size:.76rem;font-weight:600}
-#employeePlanGroupDisplay[readonly]{background:#2a2f2d;color:#ffd500;border-color:#59605d;font-weight:700}
-.transfer-history{margin-top:.25rem;color:#c6ccca;font-size:.8rem}
-
-/* Version 1.9 */
-#employeePlanGroup{border-color:#ffd500}.assignment-inactive{background:#171a18!important;opacity:.35}.department-transfer-note{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#555;color:#fff;font-size:11px}.transfer-history{margin-top:4px;color:#b8c0bc;font-size:12px;max-width:420px;white-space:normal}.header-right{flex-wrap:wrap}
-
-/* Version 2.0 */
-.badge.rejected{background:#8d303b;color:#fff}.rejected-cell{background:#d64b55!important;color:#fff!important;font-weight:800;box-shadow:inset 0 0 0 2px #ff8a91}.rejected-row{background:rgba(214,75,85,.12)}.button.reject{background:#b83b47;color:#fff;margin-right:6px}.role-legend td{vertical-align:top;white-space:normal}.role-legend th:first-child{min-width:170px}
-
-/* Version 2.3 */
-.inline-create{display:grid;grid-template-columns:minmax(160px,1fr) 90px auto;gap:8px;align-items:end}.rejected-cell{background:#b43a45!important;color:#fff!important;font-weight:800}.rejected-row{background:rgba(180,58,69,.14)}.button.reject{background:#b43a45;color:#fff}.button.reject:hover{filter:brightness(1.08)}@media(max-width:760px){.inline-create{grid-template-columns:1fr}}
-
-/* Version 2.4 */
-.calendar th small{display:block;font-size:.68rem;color:var(--yellow,#ffd500);margin-top:2px}.sunday-cell{background:#414644!important}.department-divider td{background:#353a38!important;border-top:3px solid #ffd500!important;color:#ffd500;text-transform:uppercase;letter-spacing:.04em}.empty-state{text-align:center;padding:28px!important;color:#c5cbc8}.rejected-cell{background:#c9404b!important;color:#fff!important;font-weight:800}.rejected-row{background:rgba(201,64,75,.12)}
