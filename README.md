@@ -24,21 +24,31 @@ Alle Dateien aus dem Hauptordner direkt in das Repository kopieren. Der Ordner `
 Die PIN-Anmeldung im GitHub-Pages-Modus ist weiterhin nur eine Demonstration. Erst mit einem produktiven Backend können Anmeldung, Rechte und Daten zentral und sicher umgesetzt werden.
 
 
-## Neu in v0.9.3
+## Neu in v1.0
 - Verschobene Urlaube werden im Monats- und Leiterplan rosa mit ↔ dargestellt.
 - Der frühere Reiter „Verschiebungen“ wurde aus der Navigation entfernt; die Informationen bleiben im Plan und Änderungsprotokoll erhalten.
 - Neue Abwesenheitsart „Geplanter Freier Tag“ mit Kürzel G.
 
 
-## Version 0.9.3
+## Version 1.0
 - Kreidetafel-/graues Marktdesign mit gelben Akzenten
 - Leiterplan als Auswahl „Leiterplan (alle Abteilungen)“ im Monatsplan
 - separate Leiterplan-Lasche entfernt
 - verschobener Urlaub dauerhaft rosa markiert und mit ↔ gekennzeichnet
 
 
-## Neu in Version 0.9.3
+## Neu in Version 1.0
 - Monatswechsel im Monatsplan mit Pfeiltasten
 - deutlich sichtbares Kalender-Symbol
 - aktuelles Datum und Wochentag im Dashboard
 - Urlauber der nächsten vier Wochen mit Name, KW, Abteilung, Zeitraum und Status
+
+
+## Neu in Version 1.0
+
+- Direkter, formatierter Excel-Export (.xlsx) des Monatsplans
+- Farben, Legende, Berliner Feiertage, Wochenenden und Verschiebungsmarkierungen werden übernommen
+- Leiterplan kann ebenfalls als Excel-Datei exportiert werden
+- Querformat, Druckbereich sowie eingefrorene Kopfzeile und Namensspalte
+- CSV-Export bleibt zusätzlich verfügbar
+- Für die Excel-Erstellung wird ExcelJS 4.4.0 über jsDelivr geladen; beim Export ist daher eine Internetverbindung erforderlich.

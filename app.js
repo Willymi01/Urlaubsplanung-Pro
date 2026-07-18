@@ -36,7 +36,7 @@ function bind(){
  $('navigation').onclick=e=>{const p=e.target.dataset.page;if(!p)return;document.querySelectorAll('#navigation button').forEach(b=>b.classList.toggle('active',b===e.target));document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$('page-'+p).classList.remove('hidden');renderAll()};
  $('departmentFilter').onchange=renderCalendar;$('yearDepartmentFilter').onchange=renderYear;$('yearFilter').onchange=renderYear;$('yearStatusFilter').onchange=renderYear;$('printYearPlan').onclick=()=>window.print();$('exportYearCsv').onclick=exportYearCsv;$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar();};$('previousMonth').onclick=()=>changeCalendarMonth(-1);$('nextMonth').onclick=()=>changeCalendarMonth(1);$('leaderMonthFilter').onchange=renderLeaders;$('weekDate').onchange=renderWeek;$('showVacationForm').onclick=openNewVacation;$('cancelVacation').onclick=closeVacationForm;$('saveVacation').onclick=saveVacation;
  $('addEmployee').onclick=saveEmployee;$('cancelEmployeeEdit').onclick=clearEmployeeForm;$('addMove').onclick=addMove;$('addDepartment').onclick=addDepartment;
- $('resetData').onclick=resetData;$('backupExport').onclick=exportBackup;$('backupImport').onchange=importBackup;$('exportCsv').onclick=exportCsv;
+ $('resetData').onclick=resetData;$('backupExport').onclick=exportBackup;$('backupImport').onchange=importBackup;$('exportCsv').onclick=exportCsv;$('exportExcel').onclick=exportMonthExcel;
 }
 function login(){const u=state.users.find(x=>x.name===$('loginName').value&&x.pin===$('loginPin').value);if(!u){$('loginError').textContent='Name oder PIN ist nicht korrekt.';return}currentUser=u;$('loginError').textContent='';$('loggedInUser').textContent=`${u.name} · ${u.role==='admin'?'Admin':'Leitung'}`;$('loginPage').classList.add('hidden');$('application').classList.remove('hidden');renderAll()}
 function renderAll(){fillSelects();renderDashboard();renderEmployees();renderCalendar();renderYear();renderWeek();renderLeaders();renderHistory();renderDepartments()}
@@ -114,6 +114,43 @@ ${assigned.length} Mitarbeiter werden nach „${target}“ verschoben.`:''}`))re
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function exportBackup(){download(`Urlaubsplaner-Sicherung-${iso(new Date())}.json`,JSON.stringify(state,null,2),'application/json');$('backupStatus').textContent='Sicherung wurde erstellt.'}
 function importBackup(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{state=normalize(JSON.parse(r.result));saveState();fillLogin();renderAll();$('backupStatus').textContent='Sicherung erfolgreich importiert.'}catch{$('backupStatus').textContent='Ungültige Sicherungsdatei.'}};r.readAsText(file)}
+
+async function exportMonthExcel(){
+ if(typeof ExcelJS==='undefined')return alert('Die Excel-Komponente konnte nicht geladen werden. Bitte prüfe die Internetverbindung und lade die Seite neu.');
+ const dep=$('departmentFilter').value||state.departments[0],leaderMode=dep==='__leaders__';
+ const [year,month]=$('monthFilter').value.split('-').map(Number),days=new Date(year,month,0).getDate();
+ const employees=leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>e.department===dep);
+ const monthNames=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+ const workbook=new ExcelJS.Workbook();workbook.creator='Urlaubsplaner Berlin';workbook.created=new Date();
+ const sheet=workbook.addWorksheet('Monatsplan',{views:[{state:'frozen',xSplit:1,ySplit:5}]});
+ const lastCol=days+1,lastLetter=excelColumnName(lastCol);
+ sheet.mergeCells(`A1:${lastLetter}1`);sheet.getCell('A1').value=`Urlaubsplan – ${leaderMode?'Leiterplan (alle Abteilungen)':dep}`;
+ sheet.getCell('A1').font={bold:true,size:18,color:{argb:'FFFFFFFF'}};sheet.getCell('A1').alignment={horizontal:'left',vertical:'middle'};sheet.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF252A28'}};sheet.getRow(1).height=30;
+ sheet.mergeCells(`A2:${lastLetter}2`);sheet.getCell('A2').value=`${monthNames[month-1]} ${year} · Erstellt am ${new Date().toLocaleDateString('de-DE')}`;sheet.getCell('A2').font={italic:true,color:{argb:'FFD9D9D9'}};sheet.getCell('A2').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF252A28'}};
+ sheet.mergeCells(`A3:${lastLetter}3`);sheet.getCell('A3').value=leaderMode?'Alle Abteilungsleitungen und hinterlegte Vertretungen':`Mindestbesetzung: ${Number(state.departmentSettings?.[dep]??2)} Mitarbeitende`;sheet.getCell('A3').font={bold:true,color:{argb:'FF222222'}};sheet.getCell('A3').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFD500'}};
+ const header=sheet.getRow(5);header.getCell(1).value='Mitarbeiter';
+ for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),cell=header.getCell(d+1);cell.value=d;cell.note=[date.toLocaleDateString('de-DE',{weekday:'long'}),holidayName(date)].filter(Boolean).join(' · ')}
+ header.font={bold:true,color:{argb:'FFFFFFFF'}};header.alignment={horizontal:'center',vertical:'middle'};header.height=28;header.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF3A403D'}};c.border=excelBorder()});
+ employees.forEach((e,index)=>{const row=sheet.getRow(6+index);row.getCell(1).value=leaderMode?`${e.name}\n${e.department} · Vertretung: ${e.substitute||'Keine'}`:e.name;row.getCell(1).alignment={wrapText:true,vertical:'middle'};row.height=leaderMode?34:24;row.getCell(1).border=excelBorder();
+  for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),cell=row.getCell(d+1),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let fill='FFFFFFFF';
+   if([0,6].includes(date.getDay()))fill='FFD6D8D7';if(holidayName(date))fill='FFFFD966';
+   if(v){cell.value=absenceCode(v);cell.note=vacationTitle(v,date,leaderMode?e.department:'');cell.font={bold:true,color:{argb:'FF111111'}};fill=moveForVacation(v)?'FFF49ABC':v.status==='Beantragt'?'FFFFD966':v.status==='Geplant'?'FFD9D9D9':v.type==='Krankheit'?'FF9DC3E6':v.type==='Fortbildung'?'FFC9A0DC':v.type==='Geplanter Freier Tag'?'FFD9D9D9':'FFA9D18E'}
+   if(!leaderMode&&countDepartmentAbsence(dep,date)>employees.length-Number(state.departmentSettings?.[dep]??2)&&!v)fill='FFF4CCCC';
+   cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};cell.alignment={horizontal:'center',vertical:'middle'};cell.border=excelBorder();
+  }
+ });
+ sheet.getColumn(1).width=leaderMode?34:25;for(let c=2;c<=lastCol;c++)sheet.getColumn(c).width=4.2;
+ const legendRow=7+employees.length;sheet.mergeCells(legendRow,1,legendRow,lastCol);const legend=sheet.getCell(legendRow,1);legend.value='Legende: U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · ↔ = verschoben';legend.font={italic:true,color:{argb:'FF333333'}};legend.alignment={wrapText:true};legend.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F2F2'}};legend.border=excelBorder();sheet.getRow(legendRow).height=30;
+ const colors=[['Genehmigt','A9D18E'],['Beantragt','FFD966'],['Verschoben','F49ABC'],['Krankheit','9DC3E6'],['Fortbildung','C9A0DC'],['Geplanter freier Tag','D9D9D9'],['Kritische Besetzung','F4CCCC']];
+ colors.forEach((x,i)=>{const row=sheet.getRow(legendRow+1+i);row.getCell(1).value=x[0];row.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x[1]}};row.getCell(1).border=excelBorder();row.getCell(2).value=x[0]});
+ sheet.autoFilter={from:{row:5,column:1},to:{row:5,column:lastCol}};
+ sheet.pageSetup={orientation:'landscape',paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.25,right:.25,top:.5,bottom:.5,header:.2,footer:.2},printTitlesRow:'1:5',printArea:`A1:${lastLetter}${legendRow+colors.length}`};sheet.headerFooter.oddFooter='&LUrlaubsplaner Berlin&CSeite &P von &N&R&D';
+ try{const buffer=await workbook.xlsx.writeBuffer(),blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Monatsplan-${safeFileName(leaderMode?'Leiterplan':dep)}-${year}-${String(month).padStart(2,'0')}.xlsx`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)}catch(err){console.error(err);alert('Die Excel-Datei konnte nicht erstellt werden.')}
+}
+function excelColumnName(n){let s='';while(n){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)}return s}
+function excelBorder(){return{top:{style:'thin',color:{argb:'FF999999'}},left:{style:'thin',color:{argb:'FF999999'}},bottom:{style:'thin',color:{argb:'FF999999'}},right:{style:'thin',color:{argb:'FF999999'}}}}
+function safeFileName(s){return String(s||'Plan').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'-')}
+
 function exportCsv(){const dep=$('departmentFilter').value,ids=state.employees.filter(e=>e.department===dep).map(e=>e.id),rows=[['Mitarbeiter','Abteilung','Von','Bis','Urlaubstage','Umfang','Art','Status','Notiz']];state.vacations.filter(v=>ids.includes(v.employeeId)).forEach(v=>rows.push([emp(v.employeeId)?.name,dep,v.from,v.to,vacationDays(v),v.scope==='full'?'Ganzer Tag':'Halber Tag',v.type,v.status,v.note]));const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\r\n');download(`Urlaubsplan-${dep}.csv`,csv,'text/csv;charset=utf-8')}
 function resetData(){if(!confirm('Alle lokalen Änderungen löschen und Testdaten wiederherstellen?'))return;state=normalize(window.DEFAULT_DATA);OLD_STORES.forEach(k=>localStorage.removeItem(k));saveState();fillLogin();clearEmployeeForm();renderAll();$('backupStatus').textContent='Testdaten wurden wiederhergestellt.'}
 

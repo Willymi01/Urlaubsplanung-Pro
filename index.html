@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.9.3</title>
+  <title>Urlaubsplaner Berlin · v1.0</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.9.3 · GitHub Pages</p>
+    <p class="subtitle">Version 1.0 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.3</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.0</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -55,7 +55,7 @@
 
     <section id="page-calendar" class="page hidden">
       <div class="panel">
-        <div class="panel-heading"><div><h2>Urlaub planen</h2><p class="muted">Hier kannst du Urlaub eintragen und bestehende Einträge direkt verschieben.</p></div><div class="actions"><button id="exportCsv" class="button light">CSV für Excel</button><button id="showVacationForm" class="button primary">+ Urlaub eintragen</button></div></div>
+        <div class="panel-heading"><div><h2>Urlaub planen</h2><p class="muted">Hier kannst du Urlaub eintragen und bestehende Einträge direkt verschieben.</p></div><div class="actions"><button id="exportExcel" class="button primary">Excel (.xlsx)</button><button id="exportCsv" class="button light">CSV</button><button id="showVacationForm" class="button primary">+ Urlaub eintragen</button></div></div>
         <div class="toolbar"><div><label for="departmentFilter">Abteilung</label><select id="departmentFilter"></select></div><div><label for="monthFilter">Monat</label><div class="month-stepper"><button id="previousMonth" class="button light month-arrow" type="button" aria-label="Vorheriger Monat">‹</button><input id="monthFilter" type="month"><button id="nextMonth" class="button light month-arrow" type="button" aria-label="Nächster Monat">›</button></div></div></div>
         <div id="vacationForm" class="subpanel hidden"><h3 id="vacationFormTitle">Neuen Urlaub eintragen</h3><input id="editingVacationId" type="hidden">
           <div class="form-grid">
@@ -221,6 +221,6 @@
     </section>
   </main>
 </div>
-<script src="data.js"></script><script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script><script src="data.js"></script><script src="app.js"></script>
 </body>
 </html>
