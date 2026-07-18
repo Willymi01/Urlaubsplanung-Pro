@@ -13,9 +13,19 @@ Neu in v1.2:
 
 Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzungen werden bei der ersten Übernahme in passende Maximalwerte umgerechnet.
 
-## Version 1.3
+## Version 1.4
 - Feiertagshinweis je Mitarbeiter erst ab mehr als zwei zugeordneten Feiertagen im Kalenderjahr.
 - Feiertage im Urlaub sowie bis zu zwei Tage davor oder danach werden gezählt.
 - Direkter PDF-Download des Monatsplans.
 - Testzugang-Hinweis auf der Anmeldung entfernt.
 - Plan-Gruppen sind im Monatsplan auswählbar und besitzen ein eigenes Gesamtmaximum für gleichzeitig abwesende Urlauber.
+
+
+## Korrekturen in Version 1.4
+
+- Plan-Gruppen lösen zugeordnete Abteilungen tolerant gegenüber Leerzeichen und Groß-/Kleinschreibung auf.
+- Mitarbeiter aller Unterabteilungen werden im gemeinsamen Monatsplan angezeigt und nach Abteilung getrennt.
+- Warnungen basieren ausschließlich auf maximal gleichzeitig abwesenden Urlaubern.
+- Keine fehlerhafte 0-von-0- oder Mindestbesetzungswarnung mehr.
+- PDF-Export direkt aus den Planungsdaten mit Namen, Tageszahlen, Farben, Kürzeln und Abteilungsblöcken.
+- PDF-Folgeseiten bei vielen Mitarbeitern.
