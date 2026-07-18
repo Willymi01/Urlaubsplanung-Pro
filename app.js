@@ -352,7 +352,7 @@ function renderSync(){
   const pending=Number(syncConfig.pending||0);
   let mode='local',text='Lokal';
   if(!navigator.onLine){mode='offline';text='Offline – lokal';}
-  else if(autoSyncBusy){mode='syncing';text='Synchronisiere …';}
+  else if(window.__urlaubAutoSyncBusy===true){mode='syncing';text='Synchronisiere …';}
   else if(syncConfig.status==='conflict'){mode='warning';text='Konflikt';}
   else if(online&&pending===0){mode='online';text='Online – aktuell';}
   else if(online&&pending>0){mode='warning';text=`${pending} Änderung${pending===1?'':'en'} offen`;}
@@ -975,7 +975,7 @@ setTimeout(()=>renderCalendar(),0);
 
 
 /* Version 4.6: automatische Supabase-Synchronisierung mit sicherem App-Start */
-const APP_VERSION='4.6.0';
+const APP_VERSION='5.1.0';
 let autoSyncTimer=null;
 let autoPushTimer=null;
 let autoSyncBusy=false;
@@ -992,6 +992,8 @@ async function automaticPull({force=false,startup=false}={}){
  if(!startup && !force && Number(syncConfig.pending||0)>0)return automaticPush();
 
  autoSyncBusy=true;
+ window.__urlaubAutoSyncBusy=true;
+ renderSync();
  autoSyncLastCheck=Date.now();
  try{
   setSyncMessage(startup?'Supabase-Daten werden beim Start geladen …':'Neue Supabase-Daten werden geprüft …',true);
@@ -1041,12 +1043,16 @@ async function automaticPull({force=false,startup=false}={}){
   return false;
  }finally{
   autoSyncBusy=false;
+  window.__urlaubAutoSyncBusy=false;
+  renderSync();
  }
 }
 
 async function automaticPush(){
  if(autoSyncBusy || !cloudConfigured() || !navigator.onLine)return false;
  autoSyncBusy=true;
+ window.__urlaubAutoSyncBusy=true;
+ renderSync();
  try{
   setSyncMessage('Änderungen werden automatisch gespeichert …',true);
   await rpc('initialize_workspace',{
@@ -1072,6 +1078,8 @@ async function automaticPush(){
   const msg=String(e?.message||e);
   if(msg.includes('REVISION_CONFLICT')){
    autoSyncBusy=false;
+   window.__urlaubAutoSyncBusy=false;
+   renderSync();
    return automaticPull({force:true});
   }
   syncConfig.status='offline';
@@ -1081,6 +1089,8 @@ async function automaticPush(){
   return false;
  }finally{
   autoSyncBusy=false;
+  window.__urlaubAutoSyncBusy=false;
+  renderSync();
  }
 }
 
@@ -1129,8 +1139,8 @@ document.addEventListener('visibilitychange',()=>{
 
 /* Start both for normal browser pages and already-installed PWA windows. */
 function bootAutomaticSync(){
- if(automaticSyncStarted)return;
  renderSync();
+ if(automaticSyncStarted&&autoSyncTimer)return;
  startAutomaticSync();
 }
 if(document.readyState==='complete'){
@@ -1138,8 +1148,10 @@ if(document.readyState==='complete'){
 }else{
  window.addEventListener('load',bootAutomaticSync,{once:true});
 }
-setTimeout(bootAutomaticSync,1200);
+[250,1200,3000,7000].forEach(delay=>setTimeout(bootAutomaticSync,delay));
 
 /* Version 4.6: PDF-Fix, eindeutige Grenzwerte und wiederhergestelltes AutoSync */
 
 /* Version 5.0: Abteilungs-Dashboard, farbiger PDF-Export und globale Statuslampe */
+
+/* Version 5.1: AutoSync-Startfehler durch Statuslampen-TDZ behoben */

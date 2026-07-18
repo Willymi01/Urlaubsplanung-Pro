@@ -1,0 +1,22 @@
+URLAUBSPLANER 5.1 – AUTOSYNC-FIX
+
+Ursache:
+Die neue Statuslampe hat beim ersten Rendern auf eine JavaScript-Variable
+zugegriffen, bevor diese initialisiert war. Dadurch wurde das Skript an
+dieser Stelle abgebrochen und der automatische Supabase-Start nicht mehr
+ausgeführt.
+
+Behoben:
+- Statuslampe nutzt jetzt einen früh verfügbaren, sicheren Statuswert.
+- AutoSync startet wieder automatisch.
+- Mehrere Startversuche nach 0,25 / 1,2 / 3 / 7 Sekunden.
+- Prüfung weiterhin alle 8 Sekunden.
+- Prüfung bei Fokuswechsel und Wiederherstellung der Verbindung.
+- Dashboard und farbiger PDF-Export aus Version 5.0 bleiben erhalten.
+
+Installation:
+1. Alle Dateien hochladen und vorhandene Dateien ersetzen.
+2. GitHub Pages vollständig veröffentlichen lassen.
+3. Browser mit Strg+F5 aktualisieren.
+4. Installierte App vollständig schließen und erneut öffnen.
+5. Oben muss nach kurzer Zeit „Online – aktuell“ erscheinen.
