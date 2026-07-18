@@ -1,65 +1,21 @@
-# Urlaubsplaner Berlin – Version 2.3
+# Urlaubsplaner Berlin – Version 2.4
 
-GitHub-Pages-kompatible statische Web-App.
+GitHub-Pages-kompatible Testversion.
 
-## Neu in Version 2.3
+## Änderungen in Version 2.4
 
-- separate Auswahl von Plan-Gruppe und konkreter Abteilung in der Mitarbeiterverwaltung
-- eine Plan-Gruppe filtert die auswählbaren Abteilungen
-- Mitarbeitende bleiben immer einer konkreten Abteilung zugeordnet
-- Plan-Gruppe wird zusätzlich gespeichert und im Monatsplan berücksichtigt
-- gruppierte Einzelabteilungen werden im Monatsplan nicht zusätzlich angezeigt
-- datierte Abteilungs- und Plan-Gruppenwechsel innerhalb eines Jahres
-- Plan-Gruppenansicht berücksichtigt alte und neue Zuordnungen stabil
-- installierbare Progressive Web App für Desktop und Android
-- Offline-Cache für die statischen App-Dateien
+- Plan-Gruppen wurden neu und ausschließlich über Mitarbeiterzuordnungen aufgebaut.
+- Plan-Gruppen werden nur noch in der Mitarbeiterverwaltung angelegt und ausgewählt.
+- Die Abteilungsverwaltung enthält keine Plan-Gruppen-Funktionen mehr.
+- Gruppenansicht zeigt die zugeordneten Mitarbeiter getrennt nach konkreter Abteilung.
+- Urlaubsschaltflächen wurden mit einem einzigen robusten Ereignis-Listener neu angebunden.
+- Verschieben/Bearbeiten, Genehmigen, Ablehnen und Löschen funktionieren wieder.
+- Nur Administrator und Marktleitung dürfen genehmigen oder ablehnen.
+- Urlaubstage zählen Montag bis Samstag; Sonntage und Berliner Feiertage werden nicht abgezogen.
+- An Sonntagen und Feiertagen erscheint im Monatsplan kein Urlaubskürzel.
+- Abgelehnte Urlaube bleiben rot und müssen verschoben werden.
+- Bestehende Daten werden aus den bisherigen lokalen Speichern übernommen.
 
-## Installation auf dem Desktop
+## Installation
 
-Nach Veröffentlichung über GitHub Pages erscheint in Chrome oder Edge die Schaltfläche **App installieren** beziehungsweise ein Installationssymbol in der Adresszeile.
-
-## Aktualisierung
-
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben. Anschließend einmal `Strg + F5` verwenden.
-
-
-## Neu in Version 2.3
-
-- Kritischer Datenfehler behoben: Plan-Gruppen, Gruppenzuordnungen und weitere Einstellungen werden beim Neuladen nicht mehr aus dem LocalStorage entfernt.
-- Plan-Gruppen können unabhängig von einer Abteilung angelegt werden.
-- Plan-Gruppen erscheinen zuverlässig in der Mitarbeiter- und Abteilungsverwaltung.
-- Plan-Gruppen können gelöscht werden, sobald keine Abteilung mehr zugeordnet ist.
-- Urlaube können im Monatsplan genehmigt oder abgelehnt werden.
-- Abgelehnte Urlaube werden rot dargestellt und mit „Muss verschoben werden“ gekennzeichnet.
-- Benutzerseite enthält eine Legende der Rollen und Berechtigungen.
-- GitHub Pages und installierbare PWA bleiben unterstützt.
-
-
-## Korrekturen in Version 2.3
-
-- Plan-Gruppen werden zusätzlich in einem separaten lokalen Sicherungsspeicher gehalten und bleiben nach dem Anlegen sichtbar.
-- Der Plan-Gruppen-Button wurde neu gebunden und bestätigt eine erfolgreiche Speicherung.
-- Nur Administrator und Marktleitung dürfen Urlaub genehmigen oder ablehnen.
-- Der Ablehnen-Button erscheint bei beantragten beziehungsweise genehmigten Urlauben für berechtigte Rollen.
-- „Verschieben/Bearbeiten“ öffnet das Urlaubsformular wieder zuverlässig und setzt Mitarbeiter, Zeitraum, Status und Abwesenheitsart.
-- Browser- und Service-Worker-Cache wurden auf Version 2.3 erhöht.
-
-
-## Neu in Version 2.3
-
-- Plan-Gruppen werden in einem eigenen dauerhaften Speicher gesichert und nach jedem Start wiederhergestellt.
-- Der Button „Plan-Gruppe anlegen“ wurde neu angebunden und aktualisiert die Auswahllisten sofort.
-- Benutzer und Änderungsprotokoll sind für Administrator und Marktleitung sichtbar.
-- Die Marktleitung besitzt auf der Benutzerseite Lesezugriff; Benutzer ändern kann weiterhin nur der Administrator.
-- Cache-Version für GitHub Pages und installierte Desktop-App wurde erhöht.
-
-
-## Neu in Version 2.3
-
-- Plan-Gruppen werden ausschließlich in der Mitarbeiterverwaltung angelegt und zugeordnet.
-- Abteilungsverwaltung enthält keine Plan-Gruppen-Auswahl mehr.
-- Monatsplan zeigt Plan-Gruppen anhand der direkten Mitarbeiterzuordnung.
-- Genehmigen und Ablehnen ist nur für Administrator und Marktleitung möglich.
-- Verschieben, Genehmigen, Ablehnen und Löschen verwenden robuste Event-Handler statt Inline-Aufrufe.
-- Abgelehnte Urlaube werden rot markiert.
-- Rechtelegende für Abteilungsleitung wurde korrigiert.
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Dateien überschreiben. Anschließend die Seite mit Strg + F5 neu laden. Bei installierter Desktop-App die App vollständig schließen und erneut öffnen.
