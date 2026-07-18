@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.8</title>
-  <link rel="stylesheet" href="style.css?v=1.6">
+  <title>Urlaubsplaner Berlin · v1.9</title>
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><link rel="stylesheet" href="style.css?v=1.9">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.8 · GitHub Pages</p>
+    <p class="subtitle">Version 1.9 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,8 +23,8 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.8</small></div>
-    <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.9</small></div>
+    <div class="header-right"><span id="loggedInUser"></span><button id="installAppButton" class="button light hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
     <button class="active" data-page="dashboard">Dashboard</button>
@@ -129,7 +129,7 @@
         <div class="form-grid">
           <div><label for="employeeName">Name</label><input id="employeeName" placeholder="Vor- und Nachname"></div>
           <div><label for="employeeDepartment">Abteilung</label><select id="employeeDepartment"></select></div>
-          <div><label for="employeePlanGroupDisplay">Plan-Gruppe (automatisch)</label><input id="employeePlanGroupDisplay" type="text" value="Keine Plan-Gruppe" readonly></div>
+          <div><label for="employeePlanGroup">Plan-Gruppe</label><select id="employeePlanGroup"><option value="">Keine Plan-Gruppe</option></select><small class="muted">Bei Auswahl einer Plan-Gruppe werden nur deren Abteilungen angeboten.</small></div>
           <div><label for="employeeTransferDate">Abteilungswechsel gültig ab</label><input id="employeeTransferDate" type="date"><small class="muted">Nur ausfüllen, wenn ein bestehender Mitarbeiter die Abteilung wechselt.</small></div>
           <div><label for="employeeHours">Wochenstunden</label><input id="employeeHours" type="number" min="1" max="60" value="37"></div>
           <div><label for="employeeVacationDays">Jahresurlaub</label><input id="employeeVacationDays" type="number" min="0" max="60" value="36"></div>
@@ -224,6 +224,6 @@
     </section>
   </main>
 </div>
-<script src="data.js?v=1.6"></script><script src="app.js?v=1.6"></script>
+<script src="data.js?v=1.9"></script><script src="app.js?v=1.9"></script>
 </body>
 </html>

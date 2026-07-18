@@ -1,19 +1,23 @@
-# Urlaubsplaner Berlin – Version 1.8
+# Urlaubsplaner Berlin – Version 1.9
 
-Statische, GitHub-Pages-kompatible Web-App.
+GitHub-Pages-kompatible statische Web-App.
 
-## Neu in Version 1.8
+## Neu in Version 1.9
 
-- Mitarbeiter werden wieder ausschließlich einer konkreten Abteilung zugeordnet.
-- Die zugehörige Plan-Gruppe wird in der Mitarbeiterverwaltung automatisch und schreibgeschützt angezeigt.
-- Gruppierte Einzelabteilungen werden im Monatsplan nicht separat angeboten; dort erscheint nur die Plan-Gruppe.
-- Datierte Abteilungswechsel sind möglich: Beim Bearbeiten eine neue Abteilung und „gültig ab“ auswählen.
-- Alte und neue Abteilungszuordnung werden als Verlauf gespeichert.
-- Im Monatsplan wird der Mitarbeiter vor dem Wechsel in der alten und ab dem Wechsel in der neuen Abteilung geführt.
-- Plan-Gruppen berücksichtigen datierte Abteilungswechsel automatisch.
-- Mitarbeiter mit Abteilungswechsel werden in der Liste und im Plan gekennzeichnet.
-- Bestehende Daten aus Version 1.7 werden automatisch migriert.
+- separate Auswahl von Plan-Gruppe und konkreter Abteilung in der Mitarbeiterverwaltung
+- eine Plan-Gruppe filtert die auswählbaren Abteilungen
+- Mitarbeitende bleiben immer einer konkreten Abteilung zugeordnet
+- Plan-Gruppe wird zusätzlich gespeichert und im Monatsplan berücksichtigt
+- gruppierte Einzelabteilungen werden im Monatsplan nicht zusätzlich angezeigt
+- datierte Abteilungs- und Plan-Gruppenwechsel innerhalb eines Jahres
+- Plan-Gruppenansicht berücksichtigt alte und neue Zuordnungen stabil
+- installierbare Progressive Web App für Desktop und Android
+- Offline-Cache für die statischen App-Dateien
 
-## Installation
+## Installation auf dem Desktop
 
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Dateien überschreiben. Anschließend GitHub Pages neu laden und einmal Strg + F5 drücken.
+Nach Veröffentlichung über GitHub Pages erscheint in Chrome oder Edge die Schaltfläche **App installieren** beziehungsweise ein Installationssymbol in der Adresszeile.
+
+## Aktualisierung
+
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben. Anschließend einmal `Strg + F5` verwenden.

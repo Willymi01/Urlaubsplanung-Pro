@@ -73,3 +73,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 .department-transfer-note{display:inline-block;margin-left:.45rem;padding:.12rem .42rem;border:1px solid rgba(255,213,0,.45);border-radius:999px;color:#ffd500;font-size:.76rem;font-weight:600}
 #employeePlanGroupDisplay[readonly]{background:#2a2f2d;color:#ffd500;border-color:#59605d;font-weight:700}
 .transfer-history{margin-top:.25rem;color:#c6ccca;font-size:.8rem}
+
+/* Version 1.9 */
+#employeePlanGroup{border-color:#ffd500}.assignment-inactive{background:#171a18!important;opacity:.35}.department-transfer-note{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#555;color:#fff;font-size:11px}.transfer-history{margin-top:4px;color:#b8c0bc;font-size:12px;max-width:420px;white-space:normal}.header-right{flex-wrap:wrap}
