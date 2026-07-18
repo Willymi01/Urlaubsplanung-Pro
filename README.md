@@ -45,20 +45,3 @@ Der Publishable Key darf in einer Browser-App verwendet werden; der Secret-/Serv
 ## Updates
 
 Bei späteren GitHub-Updates nur Programmdateien ersetzen. Der Supabase-Datenstand bleibt erhalten. Vor größeren Änderungen zusätzlich über „Datensicherung“ eine JSON-Sicherung exportieren.
-
-
-## Version 4.2 – automatische Supabase-Synchronisierung
-
-Nach dem Aktivieren von **„Automatisch speichern und Änderungen anderer PCs laden“**:
-
-- wird jede lokale Änderung nach etwa 1,2 Sekunden zu Supabase gespeichert,
-- wird beim Start der App automatisch der neuere Online-Datenstand geladen,
-- prüft die App alle 15 Sekunden auf Änderungen anderer PCs,
-- prüft sie zusätzlich beim Wechsel zurück in die App und nach Wiederherstellung
-  der Internetverbindung,
-- werden vorhandene lokale, noch nicht hochgeladene Änderungen niemals
-  automatisch durch Onlinedaten überschrieben.
-
-Auf jedem PC müssen Projekt-URL, Publishable Key, Zugriffscode und die
-Automatik einmal gespeichert werden. Diese Zugangsdaten bleiben im jeweiligen
-Browserprofil gespeichert.

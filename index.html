@@ -8,14 +8,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4.3.0">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 4.1 · GitHub Pages + Supabase</p>
+    <p class="subtitle">Version 4.3 · GitHub Pages + Supabase</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -26,7 +26,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 4.1 · Supabase</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 4.3 · Supabase</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="installAppButton" class="button primary hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -44,7 +44,7 @@
 
   <main>
     <section id="page-dashboard" class="page">
-      <div class="notice">Die Daten werden auf diesem Gerät gespeichert. Über „Datensicherung“ kannst du eine Sicherungsdatei exportieren und später wieder importieren.</div>
+      <div class="notice">Die Daten werden lokal gesichert und bei aktivierter Automatik mit Supabase synchronisiert.</div>
       <div class="metrics">
         <article class="metric"><span>Abteilungen</span><strong id="departmentCount">0</strong></article>
         <article class="metric"><span>Mitarbeiter</span><strong id="employeeCount">0</strong></article>
@@ -228,11 +228,24 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung & Updates</h2><p>Deine Arbeitsdaten liegen update-sicher unter einem festen Speicherschlüssel im Browser. Neue Programmdateien überschreiben Mitarbeiter, Urlaube, Abteilungen und Plan-Gruppen nicht.</p><div class="storage-info"><strong>Speicher:</strong> <code>urlaubsplaner.data</code><br><span id="storageInfo">Wird geladen …</span></div><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 4.1 ist als installierbare PWA vorbereitet. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 4.3 ist als installierbare PWA vorbereitet. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
     </section>
   </main>
 </div>
-<script src="core/storage.js"></script><script src="data/default-data.js"></script><script src="app.js"></script>
-<script>if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));</script>
+<script src="core/storage.js?v=4.3.0"></script><script src="data/default-data.js?v=4.3.0"></script><script src="app.js?v=4.3.0"></script>
+<script>
+if ('serviceWorker' in navigator) {
+ window.addEventListener('load', async () => {
+  const registration = await navigator.serviceWorker.register('./service-worker.js?v=4.3.0');
+  await registration.update();
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+   if(refreshing)return;
+   refreshing=true;
+   location.reload();
+  });
+ });
+}
+</script>
 </body>
 </html>

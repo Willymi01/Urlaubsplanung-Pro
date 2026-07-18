@@ -1,0 +1,18 @@
+URLAUBSPLANER 4.3 – UPDATE
+
+1. Alle Dateien und Ordner aus diesem Paket in das GitHub-Repository hochladen.
+2. Vorhandene Dateien ersetzen.
+3. Warten, bis GitHub Pages fertig veröffentlicht hat.
+4. Die Seite einmal im Browser öffnen und Strg+F5 drücken.
+5. Falls weiterhin 4.1 angezeigt wird:
+   Edge/Chrome > Website-Einstellungen > Daten löschen,
+   danach GitHub-Seite neu öffnen. Supabase-Daten bleiben erhalten.
+6. Datenzentrale öffnen:
+   - Supabase-Zugangsdaten müssen vorhanden sein.
+   - „Automatisch speichern und Änderungen anderer PCs laden“ aktivieren.
+   - „Einstellungen speichern“ drücken.
+
+Danach:
+- Speichern nach ca. 0,7 Sekunden
+- Prüfung auf neue Daten alle 10 Sekunden
+- Prüfung beim App-Start, Fokuswechsel und Wiederherstellung der Verbindung

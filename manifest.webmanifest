@@ -1,13 +1,13 @@
 {
-  "name": "EDEKA Urlaubsplaner Berlin",
+  "name": "EDEKA Urlaubsplaner Berlin 4.3",
   "short_name": "Urlaubsplaner",
   "id": "./",
-  "start_url": "./",
+  "start_url": "./?v=4.3.0",
   "scope": "./",
   "display": "standalone",
   "background_color": "#101418",
   "theme_color": "#f5c400",
-  "description": "Gemeinsamer Urlaubsplaner mit Supabase-Synchronisierung",
+  "description": "Installierbarer Urlaubsplaner mit automatischer Supabase-Synchronisierung",
   "icons": [
     {
       "src": "icons/icon-192.png",
