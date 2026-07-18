@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.9.1</title>
+  <title>Urlaubsplaner Berlin · v0.9.2</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.9.1 · GitHub Pages</p>
+    <p class="subtitle">Version 0.9.2 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.1</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.2</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -31,7 +31,6 @@
     <button data-page="calendar">Monatsplan</button>
     <button data-page="year">Jahresplan</button>
     <button data-page="week">Wochenübersicht</button>
-    <button data-page="leaders">Leiterplan</button>
     <button data-page="employees">Mitarbeiter</button>
     <button data-page="departments">Abteilungen</button>
     <button data-page="users" data-admin-only="true">Benutzer</button>
@@ -105,7 +104,7 @@
       <div class="panel"><div class="panel-heading"><h2>Wochenübersicht</h2><div><label for="weekDate">Woche mit Datum</label><input id="weekDate" type="date"></div></div><div id="weekSummary"></div><div class="table-wrapper"><table id="weekTable"></table></div></div>
     </section>
 
-    <section id="page-leaders" class="page hidden">
+    <section id="page-leaders" class="page hidden legacy-leader-page" aria-hidden="true">
       <div class="panel">
         <div class="panel-heading">
           <div><h2>Leiterplan · Monatsübersicht</h2><p class="muted">Alle Abteilungsleitungen in einer gemeinsamen Kalenderansicht. Überschneidungen werden pro Tag hervorgehoben.</p></div>

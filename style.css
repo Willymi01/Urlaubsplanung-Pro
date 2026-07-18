@@ -30,3 +30,21 @@ main{width:min(1550px,100%);margin:auto;padding:20px}.notice{margin-bottom:18px;
 /* v0.9.1: Verschobene Urlaube */
 .moved-cell{background:#f7c7dc!important;color:#7a1948!important;font-weight:700;box-shadow:inset 0 0 0 1px #dc8bb0}
 .leader-calendar td.moved-cell{background:#f7c7dc!important;color:#7a1948!important}
+
+
+/* v0.9.2: EDEKA-inspiriertes Kreidetafel-Design */
+:root{--green:#f7d117;--green-dark:#151817;--green-light:#393c3b;--bg:#151817;--panel:#242726;--border:#505553;--text:#f2f3f2;--muted:#b9bfbc;--warning:#3a3521;--danger:#43282e;--critical:#b5333b;--vac:#9fc47e;--weekend:#484b4a;--holiday:#e8c42a;--shadow:none}
+body{background-color:#171a19;background-image:radial-gradient(circle at 15% 20%,rgba(255,255,255,.035),transparent 28%),radial-gradient(circle at 80% 5%,rgba(255,255,255,.025),transparent 24%),repeating-linear-gradient(7deg,rgba(255,255,255,.012) 0 1px,transparent 1px 5px);color:var(--text)}
+.login-page{background:linear-gradient(rgba(15,17,16,.82),rgba(15,17,16,.94)),repeating-linear-gradient(8deg,#202322 0 2px,#1c1f1e 2px 7px)}
+.login-card,.metric,.panel{background:rgba(35,38,37,.96);border-color:#555b58;color:var(--text)}
+.brand-mark{background:#0050a4;border:6px solid #f7d117;color:#f7d117;border-radius:2px}
+header{background:#171918;border-bottom:1px solid #505553}.brand{font-family:"Trebuchet MS",Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase}.brand::before{content:"E";display:inline-grid;place-items:center;width:34px;height:34px;margin-right:10px;background:#0050a4;border:4px solid #f7d117;color:#f7d117;font-weight:900;vertical-align:middle}
+nav{background:#242726;border-color:#505553}nav button{color:#f0f1f0}nav button:hover{background:#343837}nav button.active{background:#3b3f3d;color:#f7d117;border-left:4px solid #f7d117;border-radius:2px;font-weight:800}
+input,select{background:#242726;color:#f2f3f2;border-color:#626865}.button.light{background:#383c3a;color:#fff}.primary{background:#f7d117;color:#171918;font-weight:800}.primary:hover{background:#ffe34c}.danger{background:#66323b;color:#fff}
+.notice,.warning,.subpanel,.test-data,.status{background:#2c302e;border-color:#696f6c;color:#e8eae9}.notice{border-left-color:#f7d117}.warning{background:#3b3623}.warning-danger{background:#482c32;border-color:#b65a68}
+table{background:#242726;color:#f2f3f2}th{background:#303432;color:#fff}th,td{border-color:#535957}.calendar .employee-name,.year-table td:first-child{background:#272a29}.year-table thead th:first-child{background:#303432}
+.vacation{background:#9fc47e;color:#101610}.pending-cell{background:#f0c83d;color:#171918}.planned-cell{background:#b6b8b7;color:#171918}.weekend{background:#484b4a;color:#d7d9d8}.holiday{background:#e6c328;color:#181918}.critical{background:#c63c45;color:#fff}
+.moved-cell,.leader-calendar td.moved-cell{background:#ea82ab!important;color:#241018!important;box-shadow:inset 0 0 0 1px #ffb2cf!important}
+.badge{background:#444947;color:#f2f3f2}.badge.approved,.leader-badge{background:#315e48;color:#dff5e8}.badge.pending{background:#6b5b23;color:#fff1a4}.badge.planned{background:#515654;color:#fff}
+.month-card{background:#2b2f2d}.positive{color:#acd18f}.negative{color:#ff8793}code{background:#3b3f3d}.legacy-leader-page{display:none!important}
+@media(min-width:1000px){#application{display:grid;grid-template-columns:240px 1fr;grid-template-rows:auto 1fr;min-height:100vh}#application>header{grid-column:1/3}#application>nav{grid-column:1;grid-row:2;position:sticky;top:0;height:calc(100vh - 63px);align-content:start;flex-direction:column;padding:18px 10px;border-right:1px solid #505553;border-bottom:0}#application>nav button{text-align:left;padding:13px 16px}#application>main{grid-column:2;grid-row:2;width:100%;padding:22px 26px}}
