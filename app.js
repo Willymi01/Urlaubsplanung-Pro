@@ -452,3 +452,91 @@ window.editDepartmentMaximum=i=>{const d=state.departments[i],current=Number(sta
 addDepartment=function(){const name=$('newDepartment').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');if(state.departments.includes(name))return alert('Diese Abteilung existiert bereits.');state.departments.push(name);state.departmentSettings[name]=0;state.departmentMaxAway[name]=Math.max(0,Number($('newDepartmentMin').value||1));state.departmentGroups[name]=$('newDepartmentGroup').value.trim();$('newDepartment').value='';$('newDepartmentGroup').value='';saveState('Abteilung angelegt',name);renderAll()};
 saveLeaderMinimums=function(){state.leaderSettings.maxAway=Math.max(0,Math.floor(Number($('leaderMinimum').value||0)));state.leaderSettings.keyMinimum=Math.max(0,Math.floor(Number($('keyLeaderMinimum').value||0)));saveState('Leiterregeln geändert',`max. ${state.leaderSettings.maxAway} abwesend, mindestens ${state.leaderSettings.keyMinimum} Schlüssel-Leiter anwesend`);renderAll()};
 setTimeout(()=>{renderAll()},0);
+
+/* Version 1.3: Jahres-Feiertagsregel, Plan-Gruppen-Maximum und direkter PDF-Export */
+const normalizeV13Base=normalize;
+normalize=function(raw){
+ const n=normalizeV13Base(raw),d=raw&&typeof raw==='object'?raw:{};
+ n.planGroupMaxAway={...(d.planGroupMaxAway||{})};
+ planGroupsFromState(n).forEach(g=>{if(n.planGroupMaxAway[g]==null)n.planGroupMaxAway[g]=Math.max(1,...n.departments.filter(dep=>(n.departmentGroups?.[dep]||'').trim()===g).map(dep=>Number(n.departmentMaxAway?.[dep]??1)))});
+ return n;
+};
+function planGroupsFromState(s){return [...new Set(s.departments.map(d=>(s.departmentGroups?.[d]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'))}
+planGroups=function(){return planGroupsFromState(state)};
+selectedDepartments=function(value){if(value==='__leaders__')return [];if(String(value).startsWith('__group__:')){const g=value.slice(10);return state.departments.filter(d=>(state.departmentGroups?.[d]||'').trim()===g)}return [value]};
+state=normalize(state);localStorage.setItem(STORE,JSON.stringify(state));
+
+function holidaysLinkedToVacation(v){
+ if(!v||v.type!=='Urlaub')return [];
+ const start=localDate(v.from),end=localDate(v.to),map=new Map();
+ const scanStart=new Date(start);scanStart.setDate(scanStart.getDate()-2);
+ const scanEnd=new Date(end);scanEnd.setDate(scanEnd.getDate()+2);
+ for(let d=new Date(scanStart);d<=scanEnd;d.setDate(d.getDate()+1)){
+  const name=holidayName(d);if(name)map.set(iso(d),`${name} (${d.toLocaleDateString('de-DE')})`);
+ }
+ return [...map.entries()].map(([date,label])=>({date,label}));
+}
+function annualEmployeeHolidayInfo(employeeId,year){
+ const map=new Map();
+ state.vacations.filter(v=>v.employeeId===employeeId&&v.type==='Urlaub'&&localDate(v.from).getFullYear()===year).forEach(v=>holidaysLinkedToVacation(v).forEach(h=>map.set(h.date,h.label)));
+ return {count:map.size,labels:[...map.values()]};
+}
+nearbyHolidayWarnings=function(v){
+ if(!v||v.type!=='Urlaub')return [];
+ const annual=annualEmployeeHolidayInfo(v.employeeId,localDate(v.from).getFullYear());
+ if(annual.count<=2)return [];
+ return holidaysLinkedToVacation(v).map(h=>`${h.label} liegt im Urlaub oder höchstens 2 Tage davor/danach`);
+};
+
+const fillSelectsV13Base=fillSelects;
+fillSelects=function(){
+ fillSelectsV13Base();
+ const cur=$('departmentFilter').value,ycur=$('yearDepartmentFilter').value,groups=planGroups();
+ const groupOpts=groups.map(g=>`<option value="${esc(groupOptionValue(g))}">Plan-Gruppe: ${esc(g)}</option>`).join('');
+ const depOpts=state.departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+ $('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOpts+depOpts;
+ const valid=['__leaders__',...groups.map(groupOptionValue),...state.departments];$('departmentFilter').value=valid.includes(cur)?cur:(groups.length?groupOptionValue(groups[0]):state.departments[0]||'');
+ $('yearDepartmentFilter').innerHTML=groupOpts+depOpts;$('yearDepartmentFilter').value=[...groups.map(groupOptionValue),...state.departments].includes(ycur)?ycur:(groups.length?groupOptionValue(groups[0]):state.departments[0]||'');
+};
+
+const renderDepartmentsV13Base=renderDepartments;
+renderDepartments=function(){
+ renderDepartmentsV13Base();
+ const groups=planGroups(),host=$('departmentTable')?.closest('.table-wrapper')||$('departmentTable')?.parentElement;
+ let box=$('planGroupSettings');if(!box&&host){box=document.createElement('div');box.id='planGroupSettings';box.className='subpanel';host.parentElement.insertBefore(box,host)}
+ if(box)box.innerHTML=`<h3>Plan-Gruppen</h3><p class="muted">Das Gruppenmaximum gilt zusätzlich zu den einzelnen Abteilungsgrenzen.</p><div class="table-wrapper"><table><thead><tr><th>Plan-Gruppe</th><th>Abteilungen</th><th>Max. Urlauber gesamt</th><th>Aktion</th></tr></thead><tbody>${groups.map(g=>`<tr><td><strong>${esc(g)}</strong></td><td>${esc(state.departments.filter(d=>(state.departmentGroups?.[d]||'').trim()===g).join(', '))}</td><td>${Number(state.planGroupMaxAway?.[g]??1)}</td><td><button class="button tiny" onclick="editPlanGroupMaximum('${esc(g).replace(/'/g,"&#39;")}')">Maximum ändern</button></td></tr>`).join('')||'<tr><td colspan="4" class="muted">Noch keine Plan-Gruppe angelegt.</td></tr>'}</tbody></table></div>`;
+};
+window.editPlanGroupMaximum=g=>{const current=Number(state.planGroupMaxAway?.[g]??1),value=prompt(`Maximal gleichzeitig abwesende Urlauber in der gesamten Plan-Gruppe „${g}“:`,current);if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0)return alert('Bitte eine gültige Zahl ab 0 eingeben.');state.planGroupMaxAway[g]=Math.floor(n);saveState('Plan-Gruppen-Maximum geändert',`${g}: ${n}`);renderAll()};
+
+function groupAwayCount(group,date){const deps=state.departments.filter(d=>(state.departmentGroups?.[d]||'').trim()===group);return state.employees.filter(e=>deps.includes(e.department)).filter(e=>vacsFor(e.id).some(v=>activeAbsence(v)&&inRange(date,v.from,v.to))).length}
+const renderCalendarV13Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV13Base();
+ const choice=$('departmentFilter').value,parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],days=new Date(year,month,0).getDate();
+ if(String(choice).startsWith('__group__:')){
+  const g=choice.slice(10),maxAllowed=Number(state.planGroupMaxAway?.[g]??1);let bad=0,peak=0;
+  for(let d=1;d<=days;d++){const n=groupAwayCount(g,new Date(year,month-1,d));peak=Math.max(peak,n);if(n>maxAllowed)bad++}
+  const existing=$('calendarWarning').innerHTML;
+  $('calendarWarning').innerHTML=`${bad?`<div class="warning warning-danger"><strong>Plan-Gruppe ${esc(g)}:</strong> An ${bad} Tag(en) sind mehr als ${maxAllowed} Urlauber gleichzeitig abwesend (Spitze ${peak}).</div>`:`<div class="notice"><strong>Plan-Gruppe ${esc(g)}:</strong> Maximal ${peak} gleichzeitig abwesend; erlaubt sind ${maxAllowed}.</div>`}${existing}`;
+ }
+};
+
+function pdfEscape(s){return String(s??'').replace(/[\\()]/g,'\\$&').replace(/[äÄ]/g,m=>m==='ä'?'ae':'Ae').replace(/[öÖ]/g,m=>m==='ö'?'oe':'Oe').replace(/[üÜ]/g,m=>m==='ü'?'ue':'Ue').replace(/ß/g,'ss').replace(/[↔🔑]/g,'')}
+function exportMonthPdf(){
+ try{
+  const choice=$('departmentFilter').value||state.departments[0],leaderMode=choice==='__leaders__',deps=selectedDepartments(choice),parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],days=new Date(year,month,0).getDate();
+  const emps=(leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).sort((a,b)=>a.department.localeCompare(b.department,'de')||a.name.localeCompare(b.name,'de'));
+  const title=leaderMode?'Leiterplan':String(choice).startsWith('__group__:')?`Plan-Gruppe ${choice.slice(10)}`:choice;
+  const W=842,H=595,left=28,top=545,nameW=145,cellW=(W-left-18-nameW)/days,rowH=18;let pages=[],content=[],y=top;
+  const txt=(x,y,size,text)=>content.push(`BT /F1 ${size} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfEscape(text)}) Tj ET`);
+  const rect=(x,y,w,h,gray=0.92)=>content.push(`${gray} g ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f 0 G ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`);
+  const header=()=>{txt(left,H-25,15,`Urlaubsplan - ${title} - ${String(month).padStart(2,'0')}/${year}`);y=top;rect(left,y-rowH,nameW,rowH,.85);txt(left+3,y-13,8,'Mitarbeiter');for(let d=1;d<=days;d++){rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,.9);txt(left+nameW+(d-1)*cellW+1,y-13,6,String(d))}y-=rowH};
+  const finish=()=>{pages.push(content.join('\n'));content=[]};header();let lastDep='';
+  for(const e of emps){if(y<45){finish();header()}if(deps.length>1&&e.department!==lastDep){rect(left,y-rowH,W-left-18,rowH,.78);txt(left+3,y-13,8,`${e.department} - max. ${state.departmentMaxAway?.[e.department]??1}`);y-=rowH;lastDep=e.department}rect(left,y-rowH,nameW,rowH,.97);txt(left+3,y-13,7,leaderMode?`${e.name} (${e.department})`:e.name);for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let shade=date.getDay()===0?.72:holidayName(date)?.82:.98;if(v)shade=moveForVacation(v)?.75:v.status==='Beantragt'?.86:.9;rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,shade);if(v)txt(left+nameW+(d-1)*cellW+1,y-13,6,absenceCode(v))}y-=rowH}
+  txt(left,22,7,'U=Urlaub  K=Krankheit  F=Fortbildung  G=Geplanter freier Tag  rosa=verschoben');finish();
+  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';const pageIds=[],contentIds=[];let id=3;for(let i=0;i<pages.length;i++){pageIds.push(id++);contentIds.push(id++)}const fontId=id++;objects[2]=`<< /Type /Pages /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] /Count ${pages.length} >>`;objects[fontId]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';for(let i=0;i<pages.length;i++){objects[pageIds[i]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentIds[i]} 0 R >>`;objects[contentIds[i]]=`<< /Length ${pages[i].length} >>\nstream\n${pages[i]}\nendstream`}
+  let pdf='%PDF-1.4\n',offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`}const xref=pdf.length;pdf+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const blob=new Blob([pdf],{type:'application/pdf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Monatsplan-${safeFileName(title)}-${year}-${String(month).padStart(2,'0')}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+ }catch(err){console.error(err);alert('PDF-Export fehlgeschlagen: '+(err?.message||err))}
+}
+setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;renderAll()},0);
