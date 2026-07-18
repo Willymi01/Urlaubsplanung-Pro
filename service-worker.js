@@ -1,4 +1,4 @@
-const CACHE='urlaubsplaner-v2.4';
+const CACHE='urlaubsplaner-v2.5';
 const ASSETS=['./','./index.html','./style.css?v=2.4','./data.js?v=2.4','./app.js?v=2.4','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

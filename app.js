@@ -1974,3 +1974,142 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
 
  readGroupsV24();refreshGroupSelectorsV24();renderAll();
 })();
+
+
+/* Version 2.5: Plan-Gruppen entfernt, stabile Aktionen, Sonntage/Feiertage frei, Seiten repariert */
+(()=>{
+ const V25='2.5';
+ const normV25=value=>String(value||'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+ const canDecideV25=()=>['admin','management'].includes(currentUser?.role);
+ const canPlanV25=()=>['admin','management','leader','deputy'].includes(currentUser?.role);
+ const isFreeDayV25=date=>date.getDay()===0||Boolean(holidayName(date));
+
+ function removePlanGroupsV25(){
+  state.planGroups=[];state.planGroupMaxAway={};state.departmentGroups={};
+  state.employees=(state.employees||[]).map(employee=>({...employee,planGroupId:''}));
+  try{
+   for(const key of Object.keys(localStorage))if(/PlanGroups|planGroup/i.test(key))localStorage.removeItem(key);
+   localStorage.setItem(STORE,JSON.stringify(state));
+  }catch{}
+ }
+ removePlanGroupsV25();
+
+ // Montag bis Samstag zählen; Sonntage und Berliner Feiertage zählen nicht.
+ workingDays=function(from,to){
+  let count=0;
+  for(let date=localDate(from),end=localDate(to);date<=end;date.setDate(date.getDate()+1))if(!isFreeDayV25(date))count++;
+  return count;
+ };
+ vacationDays=function(vacation){const days=workingDays(vacation.from,vacation.to);return vacation.scope==='full'?days:days*.5};
+
+ function employeesForChoiceV25(choice){
+  if(choice==='__leaders__')return state.employees.filter(employee=>employee.leader);
+  return state.employees.filter(employee=>normV25(employee.department)===normV25(choice));
+ }
+ function vacationVisibleV25(employee,date){
+  if(isFreeDayV25(date))return null;
+  return vacsFor(employee.id).find(vacation=>inRange(date,vacation.from,vacation.to))||null;
+ }
+ function awayCountV25(choice,date){
+  if(isFreeDayV25(date))return 0;
+  return employeesForChoiceV25(choice).filter(employee=>{const vacation=vacationVisibleV25(employee,date);return vacation&&vacation.status!=='Abgelehnt'}).length;
+ }
+ function cellClassV25(vacation,date,critical){
+  if(holidayName(date))return 'holiday';
+  if(date.getDay()===0)return 'sunday-cell';
+  if(!vacation)return critical?'critical':'';
+  if(vacation.status==='Abgelehnt')return 'rejected-cell';
+  if(moveForVacation(vacation))return 'moved-cell';
+  if(vacation.status==='Beantragt')return 'pending-cell';
+  if(vacation.status==='Geplant')return 'planned-cell';
+  return critical?'critical':'vacation';
+ }
+ function headerV25(year,month,days){
+  let html='<thead><tr><th class="employee-name">Mitarbeiter</th>';
+  for(let day=1;day<=days;day++){
+   const date=new Date(year,month-1,day),holiday=holidayName(date),weekday=date.toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');
+   html+=`<th class="${date.getDay()===0?'sunday-cell':''} ${holiday?'holiday':''}" title="${esc(holiday||'')}"><strong>${day}</strong><small>${holiday?esc(holiday):weekday}</small></th>`;
+  }
+  return html+'</tr></thead><tbody>';
+ }
+
+ fillSelects=function(){
+  const current=$('departmentFilter')?.value,currentYear=$('yearDepartmentFilter')?.value;
+  const options=state.departments.map(department=>`<option value="${esc(department)}">${esc(department)}</option>`).join('');
+  if($('departmentFilter')){$('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+options;$('departmentFilter').value=current==='__leaders__'||state.departments.includes(current)?current:(state.departments[0]||'__leaders__')}
+  if($('yearDepartmentFilter')){$('yearDepartmentFilter').innerHTML=options;$('yearDepartmentFilter').value=state.departments.includes(currentYear)?currentYear:(state.departments[0]||'')}
+  if($('employeeDepartment')){$('employeeDepartment').innerHTML=options}
+  if($('employeePlanGroup')){$('employeePlanGroup').innerHTML='<option value="">Keine Plan-Gruppe</option>';$('employeePlanGroup').value=''}
+  if($('employeeSubstitute')){$('employeeSubstitute').innerHTML='<option value="">Keine</option>'+state.employees.map(employee=>`<option>${esc(employee.name)}</option>`).join('')}
+  if($('moveEmployee')){$('moveEmployee').innerHTML=state.employees.map(employee=>`<option value="${employee.id}">${esc(employee.name)}</option>`).join('')}
+  if($('userDepartment')){$('userDepartment').innerHTML='<option value="">Alle / keine feste Abteilung</option>'+options}
+ };
+
+ renderCalendar=function(){
+  const choice=$('departmentFilter').value||'__leaders__',[year,month]=$('monthFilter').value.split('-').map(Number),days=new Date(year,month,0).getDate(),leaderMode=choice==='__leaders__';
+  const employees=employeesForChoiceV25(choice).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  $('vacationEmployee').innerHTML=employees.map(employee=>`<option value="${employee.id}">${esc(employee.name)}</option>`).join('');
+  let html=headerV25(year,month,days);
+  for(const employee of employees){
+   html+=`<tr><td class="employee-name"><strong>${esc(employee.name)}</strong>${leaderMode?`<br><small>${esc(employee.department)} · Vertretung: ${esc(employee.substitute||'Keine')}</small>`:employee.leader?' <span class="badge leader-badge">Leiter</span>':''}</td>`;
+   for(let day=1;day<=days;day++){
+    const date=new Date(year,month-1,day),vacation=vacationVisibleV25(employee,date),away=awayCountV25(choice,date),limit=leaderMode?Number(state.leaderMaxAway??state.leaderMinimum??1):Number(state.departmentMaxAway?.[choice]??1),critical=away>limit;
+    html+=`<td class="${cellClassV25(vacation,date,critical)}" title="${esc(vacation?vacationTitle(vacation,date,holidayName(date)):(holidayName(date)||''))}">${vacation?absenceCode(vacation):''}</td>`;
+   }
+   html+='</tr>';
+  }
+  if(!employees.length)html+=`<tr><td colspan="${days+1}" class="empty-state"><strong>Keine Mitarbeiter gefunden.</strong></td></tr>`;
+  $('calendarTable').innerHTML=html+'</tbody>';
+  let peak=0;for(let day=1;day<=days;day++)peak=Math.max(peak,awayCountV25(choice,new Date(year,month-1,day)));
+  const limit=leaderMode?Number(state.leaderMaxAway??state.leaderMinimum??1):Number(state.departmentMaxAway?.[choice]??1);
+  $('calendarWarning').innerHTML=peak>limit?`<div class="warning warning-danger"><strong>Urlauber-Limit überschritten:</strong> Bis zu ${peak} gleichzeitig abwesend, erlaubt sind ${limit}.</div>`:`<div class="notice"><strong>${leaderMode?'Leiterplan':esc(choice)}:</strong> Maximal ${peak} gleichzeitig im Urlaub; erlaubt sind ${limit}.</div>`;
+  renderVacationList(choice);
+ };
+
+ function rowsV25(choice){const ids=new Set(employeesForChoiceV25(choice).map(employee=>Number(employee.id)));return state.vacations.filter(vacation=>ids.has(Number(vacation.employeeId))).sort((a,b)=>localDate(a.from)-localDate(b.from))}
+ renderVacationList=function(choice){
+  const rows=rowsV25(choice);
+  $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(vacation=>{const move=moveForVacation(vacation),hint=move?`↔ Verschoben von ${move.oldPeriod}; ${move.reason||'ohne Grundangabe'}`:(vacation.note||'–');return `<tr class="${vacation.status==='Abgelehnt'?'rejected-row':''}"><td>${esc(emp(vacation.employeeId)?.name||'')}</td><td>${period(vacation.from,vacation.to)}</td><td>${vacationDays(vacation)}</td><td>${vacation.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(vacation.type)}</td><td>${statusBadge(vacation.status)}</td><td>${esc(hint)}</td><td>${canPlanV25()?`<button type="button" class="button tiny" data-v25-action="edit" data-v25-id="${vacation.id}">Verschieben/Bearbeiten</button>`:''} ${canDecideV25()&&vacation.status!=='Genehmigt'?`<button type="button" class="button tiny primary" data-v25-action="approve" data-v25-id="${vacation.id}">Genehmigen</button>`:''} ${canDecideV25()&&vacation.status!=='Abgelehnt'?`<button type="button" class="button tiny reject" data-v25-action="reject" data-v25-id="${vacation.id}">Ablehnen</button>`:''} ${canPlanV25()?`<button type="button" class="button tiny danger" data-v25-action="delete" data-v25-id="${vacation.id}">Löschen</button>`:''}</td></tr>`}).join('')+'</tbody>';
+ };
+
+ function editV25(id){
+  const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return alert('Der Urlaubseintrag wurde nicht gefunden.');
+  const employee=emp(vacation.employeeId);if(employee&&$('departmentFilter'))$('departmentFilter').value=employee.department;renderCalendar();
+  $('editingVacationId').value=vacation.id;$('vacationEmployee').value=String(vacation.employeeId);$('vacationFrom').value=vacation.from;$('vacationTo').value=vacation.to;$('vacationType').value=vacation.type;$('vacationScope').value=vacation.scope||'full';$('vacationStatus').value=vacation.status;$('vacationNote').value=vacation.note||'';$('vacationFormTitle').textContent='Urlaub bearbeiten oder verschieben';$('vacationForm').classList.remove('hidden');$('vacationForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+ function approveV25(id){if(!canDecideV25())return alert('Nur Administrator und Marktleitung dürfen Urlaube genehmigen.');const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return;vacation.status='Genehmigt';vacation.note=String(vacation.note||'').replace(/^Muss verschoben werden:?\s*/i,'');saveState('Urlaub genehmigt',`${emp(vacation.employeeId)?.name||''} · ${period(vacation.from,vacation.to)}`);renderAll()}
+ function rejectV25(id){if(!canDecideV25())return alert('Nur Administrator und Marktleitung dürfen Urlaube ablehnen.');const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return;const reason=prompt('Grund für die Ablehnung / erforderliche Verschiebung:','Überschneidung oder Urlauber-Limit');if(reason===null)return;vacation.status='Abgelehnt';vacation.note=`Muss verschoben werden${reason.trim()?': '+reason.trim():''}`;saveState('Urlaub abgelehnt',`${emp(vacation.employeeId)?.name||''} · ${period(vacation.from,vacation.to)}`);renderAll()}
+ function deleteV25(id){const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return;if(!confirm(`Urlaub von ${emp(vacation.employeeId)?.name||'Mitarbeiter'} (${period(vacation.from,vacation.to)}) wirklich löschen?`))return;state.vacations=state.vacations.filter(item=>Number(item.id)!==Number(id));saveState('Urlaub gelöscht',`${emp(vacation.employeeId)?.name||''} · ${period(vacation.from,vacation.to)}`);renderAll()}
+
+ document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-v25-action]');if(!button)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  const id=Number(button.dataset.v25Id),action=button.dataset.v25Action;
+  ({edit:editV25,approve:approveV25,reject:rejectV25,delete:deleteV25}[action])?.(id);
+ },true);
+
+ // Abteilungsseite ohne Plan-Gruppen-Spalten und -Schaltflächen.
+ renderDepartments=function(){
+  if(!$('departmentTable'))return;
+  $('leaderMinimum').value=state.leaderMaxAway??state.leaderMinimum??1;if($('keyLeaderMinimum'))$('keyLeaderMinimum').value=state.keyLeaderMinimum??1;
+  $('departmentTable').innerHTML='<thead><tr><th>Abteilung</th><th>Max. Urlauber</th><th>Mitarbeiter</th><th>Leiter</th><th>Aktion</th></tr></thead><tbody>'+state.departments.map((department,index)=>{const employees=state.employees.filter(employee=>normV25(employee.department)===normV25(department));return `<tr><td>${esc(department)}</td><td>${Number(state.departmentMaxAway?.[department]??1)}</td><td>${employees.length}</td><td>${esc(employees.filter(employee=>employee.leader).map(employee=>employee.name+(employee.keyLeader?' 🔑':'')).join(', ')||'–')}</td><td><button type="button" class="button tiny" onclick="renameDepartment(${index})">Umbenennen</button> <button type="button" class="button tiny" onclick="editDepartmentMaximum(${index})">Max. Urlauber</button> <button type="button" class="button tiny danger" onclick="deleteDepartment(${index})">Löschen</button></td></tr>`}).join('')+'</tbody>';
+  document.querySelectorAll('#page-departments [id*="planGroup"],#page-departments [id*="PlanGroup"],#page-departments .plan-group-panel,#planGroupSettings').forEach(element=>element.remove());
+  document.querySelectorAll('#page-departments button').forEach(button=>{if(/Plan-Gruppe/i.test(button.textContent))button.remove()});
+ };
+
+ // Benutzer, Protokoll und Datensicherung immer sichtbar rendern, sofern die Rolle Zugriff hat.
+ function repairPagesV25(){
+  if($('page-users')){$('page-users').style.display='';renderUsers()}
+  if($('page-audit')){$('page-audit').style.display='';renderAudit()}
+  if($('page-settings'))$('page-settings').style.display='';
+  const roleLegend=document.querySelector('.role-legend');if(roleLegend)roleLegend.innerHTML='<thead><tr><th>Rolle</th><th>Darf sehen</th><th>Darf bearbeiten</th><th>Nicht erlaubt</th></tr></thead><tbody><tr><td><strong>Administrator</strong></td><td>Alle Bereiche</td><td>Mitarbeiter, Abteilungen, Urlaube, Benutzer und Einstellungen</td><td>–</td></tr><tr><td><strong>Marktleitung</strong></td><td>Gesamter Markt und Leiterplan</td><td>Urlaube eintragen, genehmigen, ablehnen und verschieben; Stammdaten ansehen</td><td>Keine Benutzer- oder Systemeinstellungen</td></tr><tr><td><strong>Abteilungsleitung</strong></td><td>Eigene Abteilung</td><td>Urlaub eintragen und zur Entscheidung vorbereiten</td><td>Keine Genehmigung oder Ablehnung; keine Benutzer- oder Systemeinstellungen</td></tr><tr><td><strong>Stellvertretung</strong></td><td>Eigene Abteilung</td><td>Plan ansehen und Urlaubsanträge vorbereiten</td><td>Keine Genehmigung, Ablehnung oder Benutzerverwaltung</td></tr></tbody>';
+ }
+
+ const originalRenderAllV25=renderAll;
+ renderAll=function(){removePlanGroupsV25();originalRenderAllV25();fillSelects();renderEmployees();renderDepartments();renderCalendar();repairPagesV25()};
+
+ // Navigation nach dem Seitenwechsel erneut rendern.
+ document.addEventListener('click',event=>{const navButton=event.target.closest('#navigation [data-page]');if(!navButton)return;setTimeout(()=>{const page=navButton.dataset.page;if(page==='calendar')renderCalendar();else if(page==='users')renderUsers();else if(page==='audit')renderAudit();else if(page==='departments')renderDepartments();repairPagesV25()},0)},false);
+
+ removePlanGroupsV25();fillSelects();renderAll();
+})();
