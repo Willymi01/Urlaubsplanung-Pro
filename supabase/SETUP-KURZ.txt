@@ -1,0 +1,4 @@
+1. schema.sql im Supabase SQL Editor ausführen
+2. GitHub Pages veröffentlichen
+3. In der App URL + Publishable Key + gemeinsamen Zugriffscode eintragen
+4. Auf dem bisherigen Hauptrechner zuerst lokale Daten zu Supabase senden

@@ -220,60 +220,48 @@ function exportAuditCsv(){const rows=[['Zeitpunkt','Benutzer','Aktion','Details'
 const originalBind=bind;bind=function(){originalBind();bindV08()};
 
 
-/* Version 0.9: optionale Server-Synchronisierung */
-const SYNC_STORE='vacationPlannerSyncV09';
+/* Version 4.1: Supabase-Synchronisierung */
+const SYNC_STORE='urlaubsplaner.supabase.config';
+const WORKSPACE_ID='edeka-urlaubsplaner';
 let syncConfig=loadSyncConfig();
 let syncTimer=null;
 function loadSyncConfig(){
- try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',auto:c.auto===true,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local'}}catch{return{endpoint:'',token:'',auto:false,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local'}}
+ try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',accessCode:c.accessCode||'',auto:c.auto===true,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local',revision:Number(c.revision||0)}}catch{return{endpoint:'',token:'',accessCode:'',auto:false,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local',revision:0}}
 }
 function createDeviceId(){return 'GERAET-'+Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).toUpperCase()}
 function saveSyncConfig(){localStorage.setItem(SYNC_STORE,JSON.stringify(syncConfig))}
 function normalizeEndpoint(value){return String(value||'').trim().replace(/\/+$/,'')}
-function syncHeaders(){const h={'Content-Type':'application/json'};if(syncConfig.token)h.Authorization='Bearer '+syncConfig.token;return h}
+function supabaseHeaders(){return{'Content-Type':'application/json','apikey':syncConfig.token,'Authorization':'Bearer '+syncConfig.token}}
 function setSyncMessage(text,ok=null){if(!$('syncMessage'))return;$('syncMessage').textContent=text;$('syncMessage').classList.toggle('warning-danger',ok===false)}
 function renderSync(){
  if(!$('syncEndpoint'))return;
- $('syncEndpoint').value=syncConfig.endpoint;$('syncToken').value=syncConfig.token;$('syncAuto').checked=syncConfig.auto;
- $('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);
- $('syncPendingCount').textContent=syncConfig.pending;
- $('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
- const online=syncConfig.status==='online',configured=!!syncConfig.endpoint;
- $('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Lokal';
- const b=$('syncConnectionBadge');b.textContent=online?'Server verbunden':configured?'Server eingerichtet':'Lokalbetrieb';b.className='badge '+(online?'sync-online':configured?'pending':'planned');
+ $('syncEndpoint').value=syncConfig.endpoint;$('syncToken').value=syncConfig.token;if($('syncAccessCode'))$('syncAccessCode').value=syncConfig.accessCode;$('syncAuto').checked=syncConfig.auto;
+ $('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);$('syncPendingCount').textContent=syncConfig.pending;$('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
+ const online=syncConfig.status==='online',configured=!!(syncConfig.endpoint&&syncConfig.token&&syncConfig.accessCode);$('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Lokal';const b=$('syncConnectionBadge');b.textContent=online?'Supabase verbunden':configured?'Supabase eingerichtet':'Lokalbetrieb';b.className='badge '+(online?'sync-online':configured?'pending':'planned');
 }
-function bindV09(){
- $('saveSyncSettings')?.addEventListener('click',saveSyncSettings);
- $('testSyncConnection')?.addEventListener('click',testSyncConnection);
- $('pushSync')?.addEventListener('click',pushSync);
- $('pullSync')?.addEventListener('click',pullSync);
-}
-function saveSyncSettings(){syncConfig.endpoint=normalizeEndpoint($('syncEndpoint').value);syncConfig.token=$('syncToken').value.trim();syncConfig.auto=$('syncAuto').checked;syncConfig.status=syncConfig.endpoint?'unknown':'local';saveSyncConfig();renderSync();setSyncMessage(syncConfig.endpoint?'Synchronisierungseinstellungen gespeichert.':'Lokaler Betrieb gespeichert.',true)}
-async function testSyncConnection(){
- saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Bitte zuerst eine Backend-Adresse eintragen.',false);
- setSyncMessage('Verbindung wird geprüft …');
- try{const r=await fetch(syncConfig.endpoint+'/health',{headers:syncHeaders()});if(!r.ok)throw new Error('HTTP '+r.status);const info=await r.json();syncConfig.status='online';saveSyncConfig();renderSync();setSyncMessage('Verbindung erfolgreich: '+(info.name||'Urlaubsplaner-Backend')+'.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Verbindung fehlgeschlagen: '+e.message,false)}
-}
-async function pushSync(){
- saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Kein Backend eingerichtet.',false);
- setSyncMessage('Daten werden übertragen …');
- try{const payload={schemaVersion:9,deviceId:syncConfig.deviceId,updatedAt:new Date().toISOString(),state};const r=await fetch(syncConfig.endpoint+'/api/state',{method:'PUT',headers:syncHeaders(),body:JSON.stringify(payload)});if(!r.ok)throw new Error('HTTP '+r.status);const info=await r.json();syncConfig.pending=0;syncConfig.lastSync=info.updatedAt||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten zum Server gesendet');localStorage.setItem(STORE,JSON.stringify(state));renderAll();setSyncMessage('Daten wurden erfolgreich zum Server gesendet.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Senden fehlgeschlagen: '+e.message,false)}
-}
-async function pullSync(){
- saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Kein Backend eingerichtet.',false);
- if(syncConfig.pending>0&&!confirm(`${syncConfig.pending} lokale Änderung(en) wurden noch nicht gesendet. Serverdaten trotzdem laden und lokal überschreiben?`))return;
- setSyncMessage('Serverdaten werden geladen …');
- try{const r=await fetch(syncConfig.endpoint+'/api/state',{headers:syncHeaders()});if(r.status===404)return setSyncMessage('Auf dem Server liegt noch kein Datenstand. Bitte zuerst „Daten zum Server senden“ verwenden.',false);if(!r.ok)throw new Error('HTTP '+r.status);const payload=await r.json();if(!payload.state)throw new Error('Ungültige Serverantwort');state=normalize(payload.state);syncConfig.pending=0;syncConfig.lastSync=payload.updatedAt||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten vom Server geladen');localStorage.setItem(STORE,JSON.stringify(state));fillLogin();renderAll();setSyncMessage('Serverdaten wurden erfolgreich geladen.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Laden fehlgeschlagen: '+e.message,false)}
-}
-function scheduleAutoSync(){if(!syncConfig.auto||!syncConfig.endpoint)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushSync(),1200)}
-const saveStateV08=saveState;
-saveState=function(action='Daten geändert',details=''){
- syncConfig.pending+=1;saveSyncConfig();saveStateV08(action,details);renderSync();scheduleAutoSync();
-};
-const renderAllV08=renderAll;
-renderAll=function(){renderAllV08();renderSync()};
-const bindV08Complete=bind;
-bind=function(){bindV08Complete();bindV09()};
+function bindV09(){$('saveSyncSettings')?.addEventListener('click',saveSyncSettings);$('testSyncConnection')?.addEventListener('click',testSyncConnection);$('pushSync')?.addEventListener('click',()=>pushSync(true));$('pullSync')?.addEventListener('click',()=>pullSync(true));}
+function saveSyncSettings(){syncConfig.endpoint=normalizeEndpoint($('syncEndpoint').value);syncConfig.token=$('syncToken').value.trim();syncConfig.accessCode=($('syncAccessCode')?.value||'').trim();syncConfig.auto=$('syncAuto').checked;syncConfig.status=syncConfig.endpoint?'unknown':'local';saveSyncConfig();renderSync();setSyncMessage(syncConfig.endpoint?'Supabase-Einstellungen gespeichert.':'Lokaler Betrieb gespeichert.',true)}
+async function rpc(name,args){const r=await fetch(`${syncConfig.endpoint}/rest/v1/rpc/${name}`,{method:'POST',headers:supabaseHeaders(),body:JSON.stringify(args),cache:'no-store'});let data=null;try{data=await r.json()}catch{}if(!r.ok)throw new Error(data?.message||data?.error||`HTTP ${r.status}`);return data}
+function validateCloudConfig(){if(!syncConfig.endpoint||!syncConfig.token||!syncConfig.accessCode){setSyncMessage('Bitte Projekt-URL, Publishable Key und Zugriffscode eintragen.',false);return false}if(syncConfig.accessCode.length<8){setSyncMessage('Der gemeinsame Zugriffscode muss mindestens 8 Zeichen lang sein.',false);return false}return true}
+async function testSyncConnection(){saveSyncSettings();if(!validateCloudConfig())return;setSyncMessage('Verbindung wird geprüft …');try{const info=await rpc('initialize_workspace',{p_workspace_id:WORKSPACE_ID,p_access_code:syncConfig.accessCode});syncConfig.status='online';syncConfig.revision=Number(info?.revision||syncConfig.revision||0);saveSyncConfig();renderSync();setSyncMessage('Supabase-Verbindung erfolgreich.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Verbindung fehlgeschlagen: '+e.message,false)}}
+async function pushSync(manual=false){
+ saveSyncSettings();if(!validateCloudConfig())return false;
+ if(manual&&!confirm(`Vollständigen Datenstand zu Supabase senden?\n\n${state.employees.length} Mitarbeiter\n${state.vacations.length} Abwesenheiten\nPlan-Gruppen und alle Grenzwerte werden mitgespeichert.`))return false;
+ setSyncMessage('Daten werden zu Supabase übertragen …');
+ try{await rpc('initialize_workspace',{p_workspace_id:WORKSPACE_ID,p_access_code:syncConfig.accessCode});const info=await rpc('save_app_state',{p_workspace_id:WORKSPACE_ID,p_access_code:syncConfig.accessCode,p_base_revision:Number(syncConfig.revision||0),p_device_id:syncConfig.deviceId,p_payload:state});syncConfig.pending=0;syncConfig.revision=Number(info?.revision||0);syncConfig.lastSync=info?.updated_at||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten zu Supabase gesendet');localStorage.setItem(STORE,JSON.stringify(state));renderAll();setSyncMessage('Daten wurden vollständig in Supabase gespeichert.',true);return true}catch(e){syncConfig.status=e.message.includes('REVISION_CONFLICT')?'conflict':'offline';saveSyncConfig();renderSync();setSyncMessage(e.message.includes('REVISION_CONFLICT')?'Speicherkonflikt: Ein anderer PC hat inzwischen gespeichert. Bitte zuerst Daten aus Supabase laden.':'Senden fehlgeschlagen: '+e.message,false);return false}}
+async function pullSync(manual=false){
+ saveSyncSettings();if(!validateCloudConfig())return false;if(syncConfig.pending>0&&manual&&!confirm(`${syncConfig.pending} lokale Änderung(en) sind noch nicht synchronisiert. Supabase-Daten trotzdem laden und lokal überschreiben?`))return false;setSyncMessage('Daten werden aus Supabase geladen …');
+ try{const payload=await rpc('get_app_state',{p_workspace_id:WORKSPACE_ID,p_access_code:syncConfig.accessCode});if(!payload?.payload){setSyncMessage('In Supabase liegt noch kein Datenstand. Bitte zuerst lokale Daten senden.',false);return false}state=normalize(payload.payload);syncConfig.pending=0;syncConfig.revision=Number(payload.revision||0);syncConfig.lastSync=payload.updated_at||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten aus Supabase geladen');localStorage.setItem(STORE,JSON.stringify(state));fillLogin();renderAll();setSyncMessage('Aktueller Supabase-Datenstand wurde geladen.',true);return true}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Laden fehlgeschlagen: '+e.message,false);return false}}
+function scheduleAutoSync(){if(!syncConfig.auto||!syncConfig.endpoint)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushSync(false),900)}
+const saveStateV08=saveState;saveState=function(action='Daten geändert',details=''){syncConfig.pending+=1;saveSyncConfig();saveStateV08(action,details);renderSync();scheduleAutoSync();};
+const renderAllV08=renderAll;renderAll=function(){renderAllV08();renderSync()};
+const bindV08Complete=bind;bind=function(){bindV08Complete();bindV09()};
+
+/* Installierbare PWA */
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;const b=$('installAppButton');if(b)b.classList.remove('hidden')});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;const b=$('installAppButton');if(b)b.classList.add('hidden')});
+window.addEventListener('DOMContentLoaded',()=>{$('installAppButton')?.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;$('installAppButton')?.classList.add('hidden')})});
 
 init();
 

@@ -1,44 +1,47 @@
-# Urlaubsplaner Berlin – Version 2.1
+# Urlaubsplaner v4.1 – Supabase + installierbare PWA
 
-## Wichtigste Änderung: Updates ohne Datenverlust
+## Was enthalten ist
 
-Die Anwendung verwendet ab Version 2.1 dauerhaft den Browser-Speicher:
+- vollständige bisherige Urlaubsplaner-Oberfläche
+- installierbare PWA für Edge und Chrome
+- GitHub Pages kompatibel, auch als Projektseite
+- lokales Speichern nach jeder Änderung
+- automatische Supabase-Synchronisierung
+- Revisionsschutz gegen gegenseitiges Überschreiben
+- serverseitige Sicherung der letzten 50 Datenstände
+- vollständige Speicherung von Mitarbeitern, Urlauben, Plan-Gruppen, Gruppen-Maxima, Abteilungsgrenzen, Leiter-Maximum, Schlüssel-Leiter-Regel, Benutzern und Änderungsprotokoll
 
-`urlaubsplaner.data`
+## 1. Supabase vorbereiten
 
-Dieser Schlüssel bleibt bei künftigen Versionen gleich. Beim Austausch von `index.html`, `app.js`, `style.css` oder anderen Programmdateien werden daher folgende Daten nicht überschrieben:
+1. Ein Supabase-Projekt öffnen.
+2. Im SQL Editor den gesamten Inhalt von `supabase/schema.sql` ausführen.
+3. Unter Project Settings / API die Projekt-URL und den Publishable Key kopieren. Bei älteren Projekten kann stattdessen der `anon` Key verwendet werden.
+4. Niemals einen Secret- oder Service-Role-Key in die App eintragen.
 
-- Mitarbeiter
-- Benutzer und Rollen
-- Abteilungen
-- Plan-Gruppen und Gruppen-Maxima
-- Urlaube und andere Abwesenheiten
-- Verschiebungen
-- Einstellungen
-- Änderungsprotokoll
+## 2. GitHub Pages veröffentlichen
 
-Beim ersten Start migriert Version 2.1 automatisch die umfangreichsten gefundenen Daten aus älteren Speicherständen.
+Alle Dateien aus diesem Ordner in das GitHub-Repository hochladen. In GitHub unter Settings → Pages die Veröffentlichung aus dem Hauptbranch aktivieren und HTTPS verwenden.
 
-## Wichtige Einschränkung von GitHub Pages
+## 3. Ersten Datenstand übertragen
 
-GitHub Pages kann lokale JSON-Dateien nicht aus dem Browser heraus verändern. Die Arbeitsdaten liegen deshalb weiterhin im Browser. Sie bleiben erhalten, wenn:
+Auf dem Rechner/Browser, in dem die bisherigen echten Daten vorhanden sind:
 
-- dieselbe GitHub-Pages-Adresse verwendet wird,
-- derselbe Browser und dasselbe Browserprofil verwendet werden,
-- Browserdaten nicht gelöscht werden.
+1. Neue GitHub-Pages-Version öffnen.
+2. Prüfen, ob Mitarbeiter, Urlaube, Plan-Gruppen und Grenzwerte sichtbar sind.
+3. Als Administrator die Datenzentrale öffnen.
+4. Supabase-Projekt-URL, Publishable Key und einen gemeinsamen Zugriffscode mit mindestens 8 Zeichen eintragen.
+5. Verbindung testen.
+6. „Lokale Daten zu Supabase senden“ anklicken.
+7. Erst danach auf anderen PCs „Daten aus Supabase laden“ verwenden.
 
-Für einen anderen PC oder Browser bitte vorher unter **Datensicherung** eine JSON-Sicherung exportieren und dort wieder importieren.
+## 4. Als App installieren
 
-## Installation
+In Edge oder Chrome erscheint in der Adressleiste die Installationsschaltfläche. Alternativ steht nach unterstützter Erkennung oben in der App „App installieren“.
 
-Den Inhalt des Ordners direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Programmdateien überschreiben. Nicht die Browserdaten löschen.
+## Sicherheit
 
+Der Publishable Key darf in einer Browser-App verwendet werden; der Secret-/Service-Role-Key darf niemals veröffentlicht werden. Der zusätzliche Zugriffscode wird in Supabase nur als bcrypt-Hash gespeichert. Die GitHub-Dateien enthalten keine Beschäftigtendaten.
 
-## Neu in Version 2.1
+## Updates
 
-- Feiertage werden als eigene gold-/ockerfarbene Spalten dargestellt.
-- Feiertagsspalten besitzen stärkere Rahmen links und rechts.
-- In der Kopfzeile erscheint ein Stern sowie der vollständige Feiertagsname.
-- Urlaub bleibt grün, beantragt gelb und verschoben rosa; der Feiertag wird nur über Rahmen und Spaltenhintergrund markiert.
-- Feiertage im Monat erscheinen zusätzlich als gut lesbare Chips oberhalb des Kalenders.
-- Feiertage zählen weiterhin nicht als Urlaubstage.
+Bei späteren GitHub-Updates nur Programmdateien ersetzen. Der Supabase-Datenstand bleibt erhalten. Vor größeren Änderungen zusätzlich über „Datensicherung“ eine JSON-Sicherung exportieren.
