@@ -1,0 +1,17 @@
+URLAUBSPLANER 4.6
+
+Behoben:
+- Supabase wird beim Start wieder automatisch geladen.
+- Prüfung auf Änderungen alle 8 Sekunden sowie bei Fokus/Online-Rückkehr.
+- Automatisches Speichern nach Änderungen bleibt aktiv.
+- Dashboard zeigt Abwesenheitswarnungen nur bei echter Überschreitung.
+- Maximum 3 bedeutet: Warnung ab 4.
+- Maximum 1 bedeutet: Warnung ab 2.
+- PDF-Korrektur aus Version 4.5 bleibt enthalten.
+
+Installation:
+1. Gesamten Inhalt in GitHub hochladen und vorhandene Dateien ersetzen.
+2. GitHub Pages vollständig veröffentlichen lassen.
+3. Browserseite mit Strg+F5 aktualisieren.
+4. Installierte App vollständig schließen und wieder öffnen.
+5. In der Datenzentrale müssen URL, Publishable Key und Zugriffscode vorhanden sein.

@@ -49,7 +49,51 @@ function bridgeWarnings(v){const result=[];for(let d=localDate(v.from),end=local
 function changeCalendarMonth(offset){const value=$('monthFilter').value||`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`,p=value.split('-').map(Number),d=new Date(p[0],p[1]-1+offset,1);$('monthFilter').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()}
 function isoWeek(date){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-yearStart)/86400000)+1)/7)}
 function weekLabel(from,to){const a=isoWeek(localDate(from)),b=isoWeek(localDate(to));return a===b?`KW ${a}`:`KW ${a}–${b}`}
-function renderDashboard(){const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),limit=new Date(today);limit.setDate(limit.getDate()+28);$('departmentCount').textContent=state.departments.length;$('employeeCount').textContent=state.employees.length;$('leaderCount').textContent=state.employees.filter(e=>e.leader).length;$('plannedDays').textContent=state.vacations.filter(v=>v.status==='Genehmigt'&&countsAgainstVacation(v)).reduce((s,v)=>s+vacationDays(v),0);const dateText=today.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});$('todayLabel').textContent=dateText;if($('dashboardDate'))$('dashboardDate').textContent=dateText;if($('dashboardWeekday'))$('dashboardWeekday').textContent=today.toLocaleDateString('de-DE',{weekday:'long'});const w=[];state.departments.forEach(dep=>{const m=maxOverlapForDepartment(dep);if(m>=2)w.push(`<div class="warning ${m>=3?'warning-danger':''}"><strong>${esc(dep)}:</strong> Bis zu ${m} Personen gleichzeitig abwesend.</div>`)});const l=leaderOverlapCount();if(l>=2)w.push(`<div class="warning warning-danger"><strong>Leiterplan:</strong> Bis zu ${l} Leiter gleichzeitig abwesend.</div>`);const pending=state.vacations.filter(v=>v.status==='Beantragt').length;if(pending)w.unshift(`<div class="warning"><strong>Freigaben:</strong> ${pending} Urlaubsantrag${pending===1?'':'träge'} wartet${pending===1?'':'en'} auf Entscheidung.</div>`);$('warnings').innerHTML=w.join('')||'<div class="warning"><strong>Alles in Ordnung:</strong> Keine kritischen Überschneidungen gefunden.</div>';const rows=state.vacations.filter(v=>v.type==='Urlaub'&&v.status!=='Geplant'&&localDate(v.to)>=today&&localDate(v.from)<=limit).sort((a,b)=>localDate(a.from)-localDate(b.from));$('upcomingTable').innerHTML='<thead><tr><th>Name</th><th>KW</th><th>Abteilung</th><th>Zeitraum</th><th>Status</th></tr></thead><tbody>'+rows.map(v=>{const e=emp(v.employeeId),shownFrom=localDate(v.from)<today?iso(today):v.from,shownTo=localDate(v.to)>limit?iso(limit):v.to;return `<tr><td><strong>${esc(e?.name)}</strong></td><td>${weekLabel(shownFrom,shownTo)}</td><td>${esc(e?.department)}</td><td>${period(v.from,v.to)}</td><td>${statusBadge(v.status)}</td></tr>`}).join('')+(rows.length?'':'<tr><td colspan="5" class="muted">In den nächsten vier Wochen ist kein Urlaub eingetragen.</td></tr>')+'</tbody>'}
+function renderDashboard(){
+ const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),limit=new Date(today);
+ limit.setDate(limit.getDate()+28);
+ $('departmentCount').textContent=state.departments.length;
+ $('employeeCount').textContent=state.employees.length;
+ $('leaderCount').textContent=state.employees.filter(e=>e.leader).length;
+ $('plannedDays').textContent=state.vacations.filter(v=>v.status==='Genehmigt'&&countsAgainstVacation(v)).reduce((s,v)=>s+vacationDays(v),0);
+ const dateText=today.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+ $('todayLabel').textContent=dateText;
+ if($('dashboardDate'))$('dashboardDate').textContent=dateText;
+ if($('dashboardWeekday'))$('dashboardWeekday').textContent=today.toLocaleDateString('de-DE',{weekday:'long'});
+
+ const w=[];
+ const pending=state.vacations.filter(v=>v.status==='Beantragt').length;
+ if(pending){
+  w.push(`<div class="warning"><strong>Freigaben:</strong> ${pending} Urlaubsantrag${pending===1?'':'träge'} wartet${pending===1?'':'en'} auf Entscheidung.</div>`);
+ }
+
+ state.departments.forEach(dep=>{
+  const peak=maxOverlapForDepartment(dep);
+  const allowed=Number(state.departmentMaxAway?.[dep]??1);
+  if(peak>allowed){
+   w.push(`<div class="warning warning-danger"><strong>${esc(dep)} – Grenze überschritten:</strong> Bis zu ${peak} Personen gleichzeitig abwesend. Zulässig sind ${allowed}; die Warnung beginnt bei ${allowed+1}.</div>`);
+  }
+ });
+
+ const leaderPeak=leaderOverlapCount();
+ const leaderAllowed=Number(state.leaderSettings?.maxAway??1);
+ if(leaderPeak>leaderAllowed){
+  w.push(`<div class="warning warning-danger"><strong>Leiterplan – Grenze überschritten:</strong> Bis zu ${leaderPeak} Leitungen gleichzeitig abwesend. Zulässig sind ${leaderAllowed}; die Warnung beginnt bei ${leaderAllowed+1}.</div>`);
+ }
+
+ $('warnings').innerHTML=w.join('')||'<div class="capacity-ok"><strong>Alles in Ordnung:</strong> Keine eingestellte Abwesenheitsgrenze ist überschritten.</div>';
+
+ const rows=state.vacations
+  .filter(v=>v.type==='Urlaub'&&v.status!=='Geplant'&&localDate(v.to)>=today&&localDate(v.from)<=limit)
+  .sort((a,b)=>localDate(a.from)-localDate(b.from));
+ $('upcomingTable').innerHTML='<thead><tr><th>Name</th><th>KW</th><th>Abteilung</th><th>Zeitraum</th><th>Status</th></tr></thead><tbody>'+
+  rows.map(v=>{
+   const e=emp(v.employeeId),shownFrom=localDate(v.from)<today?iso(today):v.from,shownTo=localDate(v.to)>limit?iso(limit):v.to;
+   return `<tr><td><strong>${esc(e?.name)}</strong></td><td>${weekLabel(shownFrom,shownTo)}</td><td>${esc(e?.department)}</td><td>${period(v.from,v.to)}</td><td>${statusBadge(v.status)}</td></tr>`;
+  }).join('')+
+  (rows.length?'':'<tr><td colspan="5" class="muted">In den nächsten vier Wochen ist kein Urlaub eingetragen.</td></tr>')+
+  '</tbody>';
+}
 function renderEmployees(){$('employeeListCount').textContent=`${state.employees.length} Mitarbeiter`;$('employeeTable').innerHTML='<thead><tr><th>Name</th><th>Abteilung</th><th>Stunden</th><th>Anspruch</th><th>Übertrag</th><th>Genehmigt</th><th>Rest</th><th>Leiter</th><th>Vertretung</th><th>Aktion</th></tr></thead><tbody>'+state.employees.map(e=>{const planned=vacsFor(e.id).filter(v=>v.status==='Genehmigt'&&countsAgainstVacation(v)).reduce((s,v)=>s+vacationDays(v),0),total=Number(e.vacationDays||0)+Number(e.carryover||0),rest=total-planned;return `<tr><td>${esc(e.name)}</td><td>${esc(e.department)}</td><td>${e.hours}</td><td>${e.vacationDays}</td><td>${e.carryover||0}</td><td>${planned}</td><td class="${rest<0?'negative':'positive'}">${rest}</td><td>${e.leader?'Ja':'Nein'}</td><td>${esc(e.substitute||'–')}</td><td><button class="button tiny" onclick="editEmployee(${e.id})">Bearbeiten</button> <button class="button tiny danger" onclick="deleteEmployee(${e.id})">Löschen</button></td></tr>`}).join('')+'</tbody>'}
 function saveEmployee(){const name=$('employeeName').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');const id=Number($('editingEmployeeId').value),obj={name,department:$('employeeDepartment').value,hours:Number($('employeeHours').value),vacationDays:Number($('employeeVacationDays').value),carryover:Number($('employeeCarryover').value||0),leader:$('employeeLeader').checked,substitute:$('employeeSubstitute').value};if(id){const e=emp(id);Object.assign(e,obj)}else state.employees.push({id:Date.now(),...obj});saveState();clearEmployeeForm();renderAll()}
 window.editEmployee=id=>{const e=emp(id);if(!e)return;$('editingEmployeeId').value=id;$('employeeName').value=e.name;$('employeeDepartment').value=e.department;$('employeeHours').value=e.hours;$('employeeVacationDays').value=e.vacationDays;$('employeeCarryover').value=e.carryover||0;$('employeeLeader').checked=e.leader;$('employeeSubstitute').value=e.substitute||'';$('addEmployee').textContent='Änderungen speichern';$('cancelEmployeeEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
@@ -226,7 +270,7 @@ const WORKSPACE_ID='edeka-urlaubsplaner';
 let syncConfig=loadSyncConfig();
 let syncTimer=null;
 function loadSyncConfig(){
- try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',accessCode:c.accessCode||'',auto:c.auto===true,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local',revision:Number(c.revision||0)}}catch{return{endpoint:'',token:'',accessCode:'',auto:false,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local',revision:0}}
+ try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',accessCode:c.accessCode||'',auto:c.auto!==false,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local',revision:Number(c.revision||0)}}catch{return{endpoint:'',token:'',accessCode:'',auto:true,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local',revision:0}}
 }
 function createDeviceId(){return 'GERAET-'+Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).toUpperCase()}
 function saveSyncConfig(){localStorage.setItem(SYNC_STORE,JSON.stringify(syncConfig))}
@@ -768,34 +812,78 @@ if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('
 setTimeout(()=>renderCalendar(),0);
 
 
-/* Version 4.3: zuverlässige automatische Supabase-Synchronisierung */
-const APP_VERSION='4.3.0';
-let autoSyncInterval=null;
+/* Version 4.6: automatische Supabase-Synchronisierung mit sicherem App-Start */
+const APP_VERSION='4.6.0';
+let autoSyncTimer=null;
+let autoPushTimer=null;
 let autoSyncBusy=false;
 let autoSyncLastCheck=0;
-let autoSyncStarted=false;
-const autoSyncChannel=('BroadcastChannel' in window)
- ? new BroadcastChannel('urlaubsplaner-supabase-v43')
- : null;
+let initialCloudLoadDone=false;
+let automaticSyncStarted=false;
 
-function cloudReady(){
+function cloudConfigured(){
  return Boolean(syncConfig.endpoint && syncConfig.token && syncConfig.accessCode);
 }
 
-function persistStateWithoutPending(){
- state=window.UrlaubsplanerStorage?.save(state)||state;
- localStorage.setItem(STORE,JSON.stringify(state));
+async function automaticPull({force=false,startup=false}={}){
+ if(autoSyncBusy || !cloudConfigured() || !navigator.onLine)return false;
+ if(!startup && !force && Number(syncConfig.pending||0)>0)return automaticPush();
+
+ autoSyncBusy=true;
+ autoSyncLastCheck=Date.now();
+ try{
+  setSyncMessage(startup?'Supabase-Daten werden beim Start geladen …':'Neue Supabase-Daten werden geprüft …',true);
+  const remote=await rpc('get_app_state',{
+   p_workspace_id:WORKSPACE_ID,
+   p_access_code:syncConfig.accessCode
+  });
+
+  if(!remote?.payload){
+   syncConfig.status='online';
+   syncConfig.lastSync=new Date().toISOString();
+   saveSyncConfig();
+   renderSync();
+   setSyncMessage('Supabase ist verbunden, enthält aber noch keinen Datenstand.',false);
+   initialCloudLoadDone=true;
+   return false;
+  }
+
+  const remoteRevision=Number(remote.revision||0);
+  const localRevision=Number(syncConfig.revision||0);
+  if(startup || force || remoteRevision>localRevision){
+   state=normalize(remote.payload);
+   syncConfig.pending=0;
+   syncConfig.revision=remoteRevision;
+   syncConfig.lastSync=remote.updated_at||new Date().toISOString();
+   syncConfig.status='online';
+   saveSyncConfig();
+   state=window.UrlaubsplanerStorage?.save(state)||state;
+   localStorage.setItem(STORE,JSON.stringify(state));
+   fillLogin();
+   renderAll();
+   setSyncMessage('Supabase-Daten wurden automatisch geladen.',true);
+  }else{
+   syncConfig.status='online';
+   syncConfig.lastSync=remote.updated_at||syncConfig.lastSync||new Date().toISOString();
+   saveSyncConfig();
+   renderSync();
+   setSyncMessage('Daten sind aktuell.',true);
+  }
+  initialCloudLoadDone=true;
+  return true;
+ }catch(e){
+  syncConfig.status='offline';
+  saveSyncConfig();
+  renderSync();
+  setSyncMessage('Automatisches Laden fehlgeschlagen: '+String(e?.message||e),false);
+  return false;
+ }finally{
+  autoSyncBusy=false;
+ }
 }
 
-async function readRemoteState(){
- return rpc('get_app_state',{
-  p_workspace_id:WORKSPACE_ID,
-  p_access_code:syncConfig.accessCode
- });
-}
-
-async function backgroundPush(){
- if(autoSyncBusy || !syncConfig.auto || !cloudReady() || !navigator.onLine)return false;
+async function automaticPush(){
+ if(autoSyncBusy || !cloudConfigured() || !navigator.onLine)return false;
  autoSyncBusy=true;
  try{
   setSyncMessage('Änderungen werden automatisch gespeichert …',true);
@@ -815,125 +903,79 @@ async function backgroundPush(){
   syncConfig.lastSync=info?.updated_at||new Date().toISOString();
   syncConfig.status='online';
   saveSyncConfig();
-  persistStateWithoutPending();
   renderSync();
-  setSyncMessage('Automatisch gespeichert.',true);
-  autoSyncChannel?.postMessage({
-   type:'remote-change',
-   revision:syncConfig.revision,
-   deviceId:syncConfig.deviceId
-  });
+  setSyncMessage('Automatisch in Supabase gespeichert.',true);
   return true;
  }catch(e){
-  const message=String(e?.message||e);
-  if(message.includes('REVISION_CONFLICT')){
-   syncConfig.status='conflict';
-   saveSyncConfig();
-   renderSync();
-   setSyncMessage('Anderer PC war schneller – aktueller Stand wird geladen …',false);
+  const msg=String(e?.message||e);
+  if(msg.includes('REVISION_CONFLICT')){
    autoSyncBusy=false;
-   return backgroundPull(true);
+   return automaticPull({force:true});
   }
   syncConfig.status='offline';
   saveSyncConfig();
   renderSync();
-  setSyncMessage('Automatisches Speichern wartet auf Verbindung: '+message,false);
+  setSyncMessage('Automatisches Speichern fehlgeschlagen: '+msg,false);
   return false;
  }finally{
   autoSyncBusy=false;
  }
 }
 
-async function backgroundPull(force=false){
- if(autoSyncBusy || !syncConfig.auto || !cloudReady() || !navigator.onLine)return false;
- if(!force && Number(syncConfig.pending||0)>0)return backgroundPush();
- autoSyncBusy=true;
- autoSyncLastCheck=Date.now();
- try{
-  const remote=await readRemoteState();
-  if(!remote?.payload)return false;
-  const remoteRevision=Number(remote.revision||0);
-  const localRevision=Number(syncConfig.revision||0);
-  if(force || remoteRevision>localRevision){
-   state=normalize(remote.payload);
-   syncConfig.pending=0;
-   syncConfig.revision=remoteRevision;
-   syncConfig.lastSync=remote.updated_at||new Date().toISOString();
-   syncConfig.status='online';
-   saveSyncConfig();
-   persistStateWithoutPending();
-   fillLogin();
-   renderAll();
-   setSyncMessage('Aktueller Stand automatisch geladen.',true);
-   return true;
-  }
-  syncConfig.status='online';
-  saveSyncConfig();
-  renderSync();
-  return true;
- }catch(e){
-  syncConfig.status='offline';
-  saveSyncConfig();
-  renderSync();
-  setSyncMessage('Automatisches Laden wartet auf Verbindung: '+String(e?.message||e),false);
-  return false;
- }finally{
-  autoSyncBusy=false;
- }
+function startAutomaticSync(){
+ clearInterval(autoSyncTimer);
+ if(!cloudConfigured())return;
+ automaticSyncStarted=true;
+ syncConfig.auto=true;
+ saveSyncConfig();
+ if($('syncAuto'))$('syncAuto').checked=true;
+ setTimeout(()=>automaticPull({startup:true}),250);
+ autoSyncTimer=setInterval(()=>automaticPull(),8000);
 }
 
-function startAutomaticSupabase(){
- clearInterval(autoSyncInterval);
- autoSyncInterval=null;
- if(!syncConfig.auto || !cloudReady())return;
- autoSyncStarted=true;
- setTimeout(()=>backgroundPull(false),400);
- autoSyncInterval=setInterval(()=>backgroundPull(false),10000);
-}
-
-const originalSaveSyncSettingsV43=saveSyncSettings;
+const saveSyncSettingsBaseV46=saveSyncSettings;
 saveSyncSettings=function(){
- originalSaveSyncSettingsV43();
- if(syncConfig.auto && cloudReady()){
-  startAutomaticSupabase();
-  setSyncMessage('Automatik aktiv: Änderungen werden gespeichert und neue Daten geladen.',true);
-  setTimeout(()=>backgroundPull(false),200);
+ saveSyncSettingsBaseV46();
+ if(cloudConfigured()){
+  syncConfig.auto=true;
+  saveSyncConfig();
+  renderSync();
+  startAutomaticSync();
  }else{
-  clearInterval(autoSyncInterval);
-  autoSyncInterval=null;
+  automaticSyncStarted=false;
+  clearInterval(autoSyncTimer);
  }
 };
 
-const originalScheduleAutoSyncV43=scheduleAutoSync;
 scheduleAutoSync=function(){
- if(!syncConfig.auto || !cloudReady())return;
- clearTimeout(syncTimer);
- syncTimer=setTimeout(()=>backgroundPush(),700);
+ if(!cloudConfigured())return;
+ syncConfig.auto=true;
+ saveSyncConfig();
+ clearTimeout(autoPushTimer);
+ autoPushTimer=setTimeout(()=>automaticPush(),650);
 };
 
-window.addEventListener('online',()=>backgroundPull(false));
+window.addEventListener('online',()=>automaticPull({startup:!initialCloudLoadDone}));
 window.addEventListener('focus',()=>{
- if(Date.now()-autoSyncLastCheck>3000)backgroundPull(false);
+ if(Date.now()-autoSyncLastCheck>2000)automaticPull({startup:!initialCloudLoadDone});
 });
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState==='visible'&&Date.now()-autoSyncLastCheck>3000){
-  backgroundPull(false);
- }
-});
-autoSyncChannel?.addEventListener('message',event=>{
- const msg=event.data||{};
- if(msg.deviceId===syncConfig.deviceId)return;
- if(msg.type==='remote-change' &&
-    Number(msg.revision||0)>Number(syncConfig.revision||0) &&
-    Number(syncConfig.pending||0)===0){
-  backgroundPull(false);
+ if(document.visibilityState==='visible'&&Date.now()-autoSyncLastCheck>2000){
+  automaticPull({startup:!initialCloudLoadDone});
  }
 });
 
-/* Automatik nach vollständigem Laden aller Erweiterungen starten. */
-setTimeout(()=>{
+/* Start both for normal browser pages and already-installed PWA windows. */
+function bootAutomaticSync(){
+ if(automaticSyncStarted)return;
  renderSync();
- startAutomaticSupabase();
-},600);
+ startAutomaticSync();
+}
+if(document.readyState==='complete'){
+ setTimeout(bootAutomaticSync,0);
+}else{
+ window.addEventListener('load',bootAutomaticSync,{once:true});
+}
+setTimeout(bootAutomaticSync,1200);
 
-/* Version 4.5: PDF-Textfarbe und eindeutige Grenzwertmeldungen */
+/* Version 4.6: PDF-Fix, eindeutige Grenzwerte und wiederhergestelltes AutoSync */

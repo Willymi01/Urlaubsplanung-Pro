@@ -8,14 +8,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=4.5.0">
+  <link rel="stylesheet" href="style.css?v=4.6.0">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 4.5 · GitHub Pages + Supabase</p>
+    <p class="subtitle">Version 4.6 · GitHub Pages + Supabase</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -26,7 +26,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 4.5 · Supabase</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 4.6 · Supabase</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="installAppButton" class="button primary hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -228,11 +228,11 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung & Updates</h2><p>Deine Arbeitsdaten liegen update-sicher unter einem festen Speicherschlüssel im Browser. Neue Programmdateien überschreiben Mitarbeiter, Urlaube, Abteilungen und Plan-Gruppen nicht.</p><div class="storage-info"><strong>Speicher:</strong> <code>urlaubsplaner.data</code><br><span id="storageInfo">Wird geladen …</span></div><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 4.5 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 4.6 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
     </section>
   </main>
 </div>
-<script src="core/storage.js?v=4.5.0"></script><script src="data/default-data.js?v=4.5.0"></script><script src="app.js?v=4.5.0"></script>
+<script src="core/storage.js?v=4.6.0"></script><script src="data/default-data.js?v=4.6.0"></script><script src="app.js?v=4.6.0"></script>
 <script>
 if ('serviceWorker' in navigator) {
  window.addEventListener('load', async () => {
