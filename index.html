@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.6</title>
+  <title>Urlaubsplaner Berlin · v0.7</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.6 · GitHub Pages</p>
+    <p class="subtitle">Version 0.7 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,12 +23,13 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.6</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.7</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
     <button class="active" data-page="dashboard">Dashboard</button>
     <button data-page="calendar">Monatsplan</button>
+    <button data-page="year">Jahresplan</button>
     <button data-page="week">Wochenübersicht</button>
     <button data-page="leaders">Leiterplan</button>
     <button data-page="employees">Mitarbeiter</button>
@@ -71,6 +72,31 @@
         <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · Grau = Wochenende · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
       <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Über „Verschieben“ werden der Zeitraum geändert und die Änderung automatisch in der Historie gespeichert.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
+    </section>
+
+
+    <section id="page-year" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading">
+          <div><h2>Jahresplan</h2><p class="muted">Kompakte Jahresübersicht je Abteilung mit Urlaubstagen pro Monat, Jahreskonto und Druckansicht.</p></div>
+          <div class="actions">
+            <button id="printYearPlan" class="button light">Drucken / PDF</button>
+            <button id="exportYearCsv" class="button primary">Jahresplan für Excel</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div><label for="yearDepartmentFilter">Abteilung</label><select id="yearDepartmentFilter"></select></div>
+          <div><label for="yearFilter">Jahr</label><input id="yearFilter" type="number" min="2020" max="2100"></div>
+          <div><label for="yearStatusFilter">Status</label><select id="yearStatusFilter"><option value="all">Alle Status</option><option>Genehmigt</option><option>Beantragt</option><option>Geplant</option></select></div>
+        </div>
+        <div id="yearSummary" class="metrics year-metrics"></div>
+        <div class="table-wrapper"><table id="yearTable" class="year-table"></table></div>
+        <p class="muted">Zahlen in den Monatsfeldern zeigen die angerechneten Urlaubstage. Andere Abwesenheitsarten werden als Kürzel angezeigt.</p>
+      </div>
+      <div class="panel">
+        <div class="panel-heading"><div><h2>Monatsauslastung</h2><p class="muted">Gesamte Urlaubstage und Anzahl betroffener Mitarbeiter je Monat.</p></div></div>
+        <div id="yearMonthCards" class="month-card-grid"></div>
+      </div>
     </section>
 
     <section id="page-week" class="page hidden">
@@ -130,7 +156,7 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 0.6 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 0.7 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>

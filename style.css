@@ -18,3 +18,8 @@ main{width:min(1550px,100%);margin:auto;padding:20px}.notice{margin-bottom:18px;
 
 /* Version 0.6 */
 .leader-calendar .employee-name{min-width:285px}.leader-calendar small{white-space:normal;line-height:1.35}.leader-calendar td.critical{background:var(--critical);color:#842029}.leader-calendar td.pending-cell{background:#fff3cd}.leader-calendar td.planned-cell{background:#e8edf2}
+
+/* Version 0.7 */
+.year-table th,.year-table td{text-align:center}.year-table th:first-child,.year-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:2}.year-table thead th:first-child{background:#edf2ef}.year-active{background:var(--vac);font-weight:700}.year-metrics{margin-top:10px}.month-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.month-card{display:flex;flex-direction:column;gap:5px;padding:14px;border:1px solid var(--border);border-radius:12px;background:#f8faf9}.month-card span{font-weight:700}.month-card small{color:var(--muted)}
+@media(max-width:900px){.month-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.month-card-grid{grid-template-columns:1fr}}
+@media print{body{background:#fff}header,nav,#page-year .toolbar,#page-year .actions,#page-year+.page{display:none!important}main{width:100%;padding:0}.page{display:none!important}#page-year{display:block!important}.panel{box-shadow:none;border:0;padding:0}.month-card-grid{grid-template-columns:repeat(4,1fr)}.year-table{font-size:10px}.year-table th,.year-table td{padding:4px}.year-metrics{grid-template-columns:repeat(4,1fr)}@page{size:landscape;margin:10mm}}

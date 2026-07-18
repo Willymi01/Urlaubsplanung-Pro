@@ -1,29 +1,20 @@
-# Urlaubsplaner Berlin – Version 0.4
+# Urlaubsplaner Berlin – Version 0.7
 
 Statische GitHub-Pages-Testversion.
 
-## Neu in 0.4
-- Mitarbeiter bearbeiten
-- Abteilungen hinzufügen, umbenennen und löschen
-- Urlaubsstatus Beantragt, Genehmigt oder Geplant
-- Anträge direkt genehmigen
-- Konfliktprüfung beim Speichern
-- Hinweise auf Brückentage
-- Datenübernahme aus Version 0.3
+## Neu in Version 0.7
+
+- Jahresplan je Abteilung mit allen zwölf Monaten
+- Jahreskonto pro Mitarbeiter: Anspruch, Übertrag, geplant und Rest
+- Filter nach Jahr und Freigabestatus
+- Monatsauslastung mit Urlaubstagen und Anzahl betroffener Mitarbeiter
+- Jahresplan als CSV für Excel exportieren
+- optimierte Druck- und PDF-Ansicht im Querformat
+- vorhandene Daten aus Version 0.6 werden automatisch übernommen
 
 ## Testzugang
+
 - Name: Admin
 - PIN: 1234
 
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden.
-
-
-## Neu in Version 0.6
-
-- Leiterplan als vollständige Monats- und Kalenderübersicht
-- gemeinsame Ansicht aller Abteilungsleitungen
-- farbliche Warnung an Tagen mit mehreren abwesenden Leitungen
-- Monatsfilter speziell für den Leiterplan
-- Anzeige von Abwesenheitsart, Status, Feiertagen und halben Tagen
-- separate Tabelle mit Vertretungen und nächster Abwesenheit
-- bestehende Daten aus Version 0.5 werden automatisch übernommen
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben.
