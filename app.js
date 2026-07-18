@@ -25,7 +25,7 @@ function moveForVacation(v){
  const current=compact(period(v.from,v.to)),fromDE=localDate(v.from).toLocaleDateString('de-DE'),toDE=localDate(v.to).toLocaleDateString('de-DE');
  return [...(state.moves||[])].reverse().find(m=>Number(m.vacationId)===Number(v.id)||(Number(m.employeeId)===Number(v.employeeId)&&(compact(m.newPeriod)===current||compact(m.newPeriod).includes(compact(fromDE))&&compact(m.newPeriod).includes(compact(toDE)))))||(v.moved?{oldPeriod:'Früherer Zeitraum',newPeriod:period(v.from,v.to),reason:v.note||'Verschoben'}:null)
 }
-function absenceCode(v){return ({Urlaub:'U',Sonderurlaub:'S',Fortbildung:'F',Unbezahlt:'N',Krankheit:'K','Geplanter Freier Tag':'G'}[v.type]||'A')+(v.scope!=='full'?'½':'')+(moveForVacation(v)?'↔':'')}
+function absenceCode(v){return ({Urlaub:'U',Sonderurlaub:'SU',Fortbildung:'S',Unbezahlt:'N',Krankheit:'K','Geplanter Freier Tag':'F'}[v.type]||'A')+(v.scope!=='full'?'½':'')+(moveForVacation(v)?'↔':'')}
 function vacationTitle(v,date,extra=''){const m=v?moveForVacation(v):null;return [extra,v?.type,v?.status,m?`Verschoben von ${m.oldPeriod} auf ${m.newPeriod}`:'',m?.reason?`Grund: ${m.reason}`:'',v?.note,holidayName(date)].filter(Boolean).join(' · ')}
 function statusBadge(s){const c=s==='Genehmigt'?'approved':s==='Beantragt'?'pending':'planned';return `<span class="badge ${c}">${esc(s)}</span>`}
 function init(){fillLogin();setDefaults();bind();renderAll()}
@@ -72,7 +72,7 @@ function renderYear(){
  const monthDays=(employeeId,m)=>vacsFor(employeeId).filter(valid).reduce((sum,v)=>{let start=localDate(v.from),end=localDate(v.to),a=new Date(year,m,1),b=new Date(year,m+1,0);if(end<a||start>b)return sum;const from=iso(start<a?a:start),to=iso(end>b?b:end);return sum+(countsAgainstVacation(v)?workingDays(from,to)*(v.scope==='full'?1:.5):0)},0);
  let totalDays=0,peopleWithAbsence=0;
  let h='<thead><tr><th>Mitarbeiter</th>'+months.map(x=>`<th>${x}</th>`).join('')+'<th>Anspruch</th><th>Übertrag</th><th>Geplant</th><th>Rest</th></tr></thead><tbody>';
- for(const e of list){let yearly=0,has=false;const cells=months.map((_,m)=>{const days=monthDays(e.id,m);yearly+=days;const types=[...new Set(vacsFor(e.id).filter(valid).filter(v=>{const a=new Date(year,m,1),b=new Date(year,m+1,0);return localDate(v.to)>=a&&localDate(v.from)<=b}).filter(v=>!countsAgainstVacation(v)).map(v=>({Sonderurlaub:'S',Fortbildung:'F',Krankheit:'K',Unbezahlt:'N','Geplanter Freier Tag':'G'}[v.type]||'A')))];if(days||types.length)has=true;return `<td class="${days?'year-active':''}">${days?days.toLocaleString('de-DE'):''}${types.length?` <small>${types.join('/')}</small>`:''}</td>`}).join('');
+ for(const e of list){let yearly=0,has=false;const cells=months.map((_,m)=>{const days=monthDays(e.id,m);yearly+=days;const types=[...new Set(vacsFor(e.id).filter(valid).filter(v=>{const a=new Date(year,m,1),b=new Date(year,m+1,0);return localDate(v.to)>=a&&localDate(v.from)<=b}).filter(v=>!countsAgainstVacation(v)).map(v=>({Sonderurlaub:'SU',Fortbildung:'S',Krankheit:'K',Unbezahlt:'N','Geplanter Freier Tag':'F'}[v.type]||'A')))];if(days||types.length)has=true;return `<td class="${days?'year-active':''}">${days?days.toLocaleString('de-DE'):''}${types.length?` <small>${types.join('/')}</small>`:''}</td>`}).join('');
  const entitlement=Number(e.vacationDays||0)+Number(e.carryover||0),rest=entitlement-yearly;totalDays+=yearly;if(has)peopleWithAbsence++;
  h+=`<tr><td><strong>${esc(e.name)}</strong>${e.leader?' <span class="badge leader-badge">Leiter</span>':''}</td>${cells}<td>${e.vacationDays||0}</td><td>${e.carryover||0}</td><td>${yearly.toLocaleString('de-DE')}</td><td class="${rest<0?'negative':'positive'}">${rest.toLocaleString('de-DE')}</td></tr>`;
  }
@@ -134,14 +134,14 @@ async function exportMonthExcel(){
  employees.forEach((e,index)=>{const row=sheet.getRow(6+index);row.getCell(1).value=leaderMode?`${e.name}\n${e.department} · Vertretung: ${e.substitute||'Keine'}`:e.name;row.getCell(1).alignment={wrapText:true,vertical:'middle'};row.height=leaderMode?34:24;row.getCell(1).border=excelBorder();
   for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),cell=row.getCell(d+1),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let fill='FFFFFFFF';
    if([0,6].includes(date.getDay()))fill='FFD6D8D7';if(holidayName(date))fill='FFFFD966';
-   if(v){cell.value=absenceCode(v);cell.note=vacationTitle(v,date,leaderMode?e.department:'');cell.font={bold:true,color:{argb:'FF111111'}};fill=moveForVacation(v)?'FFF49ABC':v.status==='Beantragt'?'FFFFD966':v.status==='Geplant'?'FFD9D9D9':v.type==='Krankheit'?'FF9DC3E6':v.type==='Fortbildung'?'FFC9A0DC':v.type==='Geplanter Freier Tag'?'FFD9D9D9':'FFA9D18E'}
+   if(v){cell.value=absenceCode(v);cell.note=vacationTitle(v,date,leaderMode?e.department:'');cell.font={bold:true,color:{argb:'FF111111'}};fill=moveForVacation(v)?'FFF49ABC':v.status==='Beantragt'?'FFFFD966':v.status==='Geplant'?'FFD9D9D9':v.type==='Krankheit'?'FF9DC3E6':(v.type==='Seminar'||v.type==='Fortbildung')?'FFC9A0DC':v.type==='Geplanter Freier Tag'?'FFD9D9D9':'FFA9D18E'}
    if(!leaderMode&&countDepartmentAbsence(dep,date)>employees.length-Number(state.departmentSettings?.[dep]??2)&&!v)fill='FFF4CCCC';
    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};cell.alignment={horizontal:'center',vertical:'middle'};cell.border=excelBorder();
   }
  });
  sheet.getColumn(1).width=leaderMode?34:25;for(let c=2;c<=lastCol;c++)sheet.getColumn(c).width=4.2;
  const legendRow=7+employees.length;sheet.mergeCells(legendRow,1,legendRow,lastCol);const legend=sheet.getCell(legendRow,1);legend.value='Legende: U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · ↔ = verschoben';legend.font={italic:true,color:{argb:'FF333333'}};legend.alignment={wrapText:true};legend.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F2F2'}};legend.border=excelBorder();sheet.getRow(legendRow).height=30;
- const colors=[['Genehmigt','A9D18E'],['Beantragt','FFD966'],['Verschoben','F49ABC'],['Krankheit','9DC3E6'],['Fortbildung','C9A0DC'],['Geplanter freier Tag','D9D9D9'],['Kritische Besetzung','F4CCCC']];
+ const colors=[['Genehmigt','A9D18E'],['Beantragt','FFD966'],['Verschoben','F49ABC'],['Krankheit','9DC3E6'],['Seminar','C9A0DC'],['Geplanter freier Tag','D9D9D9'],['Kritische Besetzung','F4CCCC']];
  colors.forEach((x,i)=>{const row=sheet.getRow(legendRow+1+i);row.getCell(1).value=x[0];row.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+x[1]}};row.getCell(1).border=excelBorder();row.getCell(2).value=x[0]});
  sheet.autoFilter={from:{row:5,column:1},to:{row:5,column:lastCol}};
  sheet.pageSetup={orientation:'landscape',paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.25,right:.25,top:.5,bottom:.5,header:.2,footer:.2},printTitlesRow:'1:5',printArea:`A1:${lastLetter}${legendRow+colors.length}`};sheet.headerFooter.oddFooter='&LUrlaubsplaner Berlin&CSeite &P von &N&R&D';
@@ -363,7 +363,7 @@ exportMonthExcel=async function(){
   let header=xlsxCell('A'+r,'Mitarbeiter / Abteilung',1);for(let d=1;d<=days;d++)header+=xlsxCell(excelColumnName(d+1)+r,d,1);rows.push(`<row r="${r}">${header}</row>`);r++;
   let lastDep='';
   for(const e of employees){if(groupMode&&e.department!==lastDep){rows.push(`<row r="${r}">${xlsxCell('A'+r,`${e.department} · Mindestbesetzung ${state.departmentSettings[e.department]??2}`,8)}</row>`);r++;lastDep=e.department}let cells=xlsxCell('A'+r,leaderMode?`${e.name} · ${e.department}${e.keyLeader?' · Schlüssel-Leitung':''}`:e.name,0);for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let st=[0,6].includes(date.getDay())?6:0;if(holidayName(date))st=7;if(v)st=moveForVacation(v)?4:v.status==='Beantragt'?3:v.type==='Krankheit'?5:v.status==='Geplant'?6:2;cells+=xlsxCell(excelColumnName(d+1)+r,v?absenceCode(v):'',st)}rows.push(`<row r="${r}">${cells}</row>`);r++}
-  rows.push(`<row r="${r}">${xlsxCell('A'+r,'Legende: U Urlaub · K Krankheit · F Fortbildung · G geplanter freier Tag · ↔ verschoben · 🔑 Schlüssel-Leitung',2)}</row>`);
+  rows.push(`<row r="${r}">${xlsxCell('A'+r,'Legende: U Urlaub · K Krankheit · S Seminar · F geplanter freier Tag · ↔ verschoben · 🔑 Schlüssel-Leitung',2)}</row>`);
   const last=excelColumnName(days+1),sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${last}${r}"/><sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="3" topLeftCell="B4" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="${days+1}" width="4.2" customWidth="1"/></cols><sheetData>${rows.join('')}</sheetData><mergeCells count="3"><mergeCell ref="A1:${last}1"/><mergeCell ref="A2:${last}2"/><mergeCell ref="A${r}:${last}${r}"/></mergeCells><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
   const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font><font><i/><color rgb="FF666666"/><sz val="10"/><name val="Calibri"/></font></fonts><fills count="10"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF303532"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFA9D18E"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFD966"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF49ABC"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF9DC3E6"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE699"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF5B605D"/></patternFill></fill></fills><borders count="2"><border/><border><left style="thin"><color rgb="FF999999"/></left><right style="thin"><color rgb="FF999999"/></right><top style="thin"><color rgb="FF999999"/></top><bottom style="thin"><color rgb="FF999999"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0"/><xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="6" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="7" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="8" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="1" fillId="9" borderId="1" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
   const files={'[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>','_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>','xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Monatsplan" sheetId="1" r:id="rId1"/></sheets></workbook>','xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>','xl/worksheets/sheet1.xml':sheet,'xl/styles.xml':styles};
@@ -533,7 +533,7 @@ function exportMonthPdf(){
   const header=()=>{txt(left,H-25,15,`Urlaubsplan - ${title} - ${String(month).padStart(2,'0')}/${year}`);y=top;rect(left,y-rowH,nameW,rowH,.85);txt(left+3,y-13,8,'Mitarbeiter');for(let d=1;d<=days;d++){rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,.9);txt(left+nameW+(d-1)*cellW+1,y-13,6,String(d))}y-=rowH};
   const finish=()=>{pages.push(content.join('\n'));content=[]};header();let lastDep='';
   for(const e of emps){if(y<45){finish();header()}if(deps.length>1&&e.department!==lastDep){rect(left,y-rowH,W-left-18,rowH,.78);txt(left+3,y-13,8,`${e.department} - max. ${state.departmentMaxAway?.[e.department]??1}`);y-=rowH;lastDep=e.department}rect(left,y-rowH,nameW,rowH,.97);txt(left+3,y-13,7,leaderMode?`${e.name} (${e.department})`:e.name);for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let shade=date.getDay()===0?.72:holidayName(date)?.82:.98;if(v)shade=moveForVacation(v)?.75:v.status==='Beantragt'?.86:.9;rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,shade);if(v)txt(left+nameW+(d-1)*cellW+1,y-13,6,absenceCode(v))}y-=rowH}
-  txt(left,22,7,'U=Urlaub  K=Krankheit  F=Fortbildung  G=Geplanter freier Tag  rosa=verschoben');finish();
+  txt(left,22,7,'U=Urlaub  K=Krankheit  S=Seminar  F=Geplanter freier Tag  rosa=verschoben');finish();
   const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';const pageIds=[],contentIds=[];let id=3;for(let i=0;i<pages.length;i++){pageIds.push(id++);contentIds.push(id++)}const fontId=id++;objects[2]=`<< /Type /Pages /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] /Count ${pages.length} >>`;objects[fontId]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';for(let i=0;i<pages.length;i++){objects[pageIds[i]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentIds[i]} 0 R >>`;objects[contentIds[i]]=`<< /Length ${pages[i].length} >>\nstream\n${pages[i]}\nendstream`}
   let pdf='%PDF-1.4\n',offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`}const xref=pdf.length;pdf+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
   const blob=new Blob([pdf],{type:'application/pdf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Monatsplan-${safeFileName(title)}-${year}-${String(month).padStart(2,'0')}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
@@ -619,7 +619,7 @@ function exportMonthPdf(){
   const rect=(x,y,w,h,fill='#ffffff')=>{setFill(fill);setStroke('#666666');ops.push(`${x.toFixed(2)} ${y.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re B`)};
   const text=(x,y,size,value,color='#111111')=>{setFill(color);ops.push(`BT /F1 ${size} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${pdfAscii(value)}) Tj ET`)};
   const pageHeader=()=>{text(left,H-24,16,`Urlaubsplan - ${title} - ${monthNames[month-1]} ${year}`,'#111111');text(left,H-40,8,`Erstellt am ${new Date().toLocaleDateString('de-DE')}`,'#555555');y=top;rect(left,y-rowH,nameW,rowH,'#d9d9d9');text(left+4,y-14,8,'Mitarbeiter');for(let d=1;d<=days;d++){const dt=new Date(year,month-1,d),fill=holidayName(dt)?'#f6d74a':dt.getDay()===0?'#777777':'#e9e9e9';rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,fill);text(left+nameW+(d-1)*cellW+1.4,y-12,5.8,String(d),dt.getDay()===0?'#ffffff':'#111111')}y-=rowH};
-  const finishPage=()=>{text(left,20,7,'U=Urlaub  K=Krankheit  F=Fortbildung  G=Geplanter freier Tag  U<->=verschoben');streams.push(ops.join('\n'));ops=[];lastDep=''};
+  const finishPage=()=>{text(left,20,7,'U=Urlaub  K=Krankheit  S=Seminar  F=Geplanter freier Tag  U<->=verschoben');streams.push(ops.join('\n'));ops=[];lastDep=''};
   pageHeader();
   if(!emps.length){rect(left,y-rowH,W-left-right,rowH,'#f3f3f3');text(left+4,y-14,8,'Keine Mitarbeiter in dieser Auswahl gefunden.');y-=rowH}
   for(const e of emps){
@@ -628,7 +628,7 @@ function exportMonthPdf(){
    rect(left,y-rowH,nameW,rowH,'#f7f7f7');text(left+4,y-14,7.2,leaderMode?`${e.name} (${e.department})`:e.name);
    for(let d=1;d<=days;d++){
     const dt=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(dt,x.from,x.to));let fill=dt.getDay()===0?'#777777':holidayName(dt)?'#f6d74a':'#ffffff',color=dt.getDay()===0?'#ffffff':'#111111';
-    if(v){if(moveForVacation(v))fill='#ee8fb5';else if(v.status==='Beantragt')fill='#f3cd45';else if(v.type==='Krankheit')fill='#9ec5e8';else if(v.type==='Fortbildung')fill='#c9a3df';else if(v.type==='Geplanter Freier Tag'||v.status==='Geplant')fill='#c8c8c8';else fill='#a8ce8a';color='#111111'}
+    if(v){if(moveForVacation(v))fill='#ee8fb5';else if(v.status==='Beantragt')fill='#f3cd45';else if(v.type==='Krankheit')fill='#9ec5e8';else if((v.type==='Seminar'||v.type==='Fortbildung'))fill='#c9a3df';else if(v.type==='Geplanter Freier Tag'||v.status==='Geplant')fill='#c8c8c8';else fill='#a8ce8a';color='#111111'}
     rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,fill);if(v)text(left+nameW+(d-1)*cellW+1,y-13,5.5,absenceCode(v),color)
    }
    y-=rowH;
@@ -641,3 +641,80 @@ function exportMonthPdf(){
 }
 
 setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSelects();renderAll()},0);
+
+/* Version 1.5: stabile Plan-Gruppen-IDs und neue Abwesenheitskürzel */
+(function(){
+ const normalizeV15Base=normalize;
+ normalize=function(d){
+  const n=normalizeV15Base(d);
+  n.vacations=(n.vacations||[]).map(v=>({...v,type:(v.type==='Seminar'||v.type==='Fortbildung')?'Seminar':v.type}));
+  n.planGroups=Array.isArray(n.planGroups)?n.planGroups.map(g=>({id:String(g.id),name:String(g.name||'').trim(),maxAway:Math.max(0,Number(g.maxAway??1))})).filter(g=>g.name):[];
+  n.departmentGroupIds={...(n.departmentGroupIds||{})};
+  const oldNames={...(n.departmentGroups||{})};
+  const byName=new Map(n.planGroups.map(g=>[normalizeGroupName(g.name),g]));
+  n.departments.forEach(dep=>{
+   let gid=n.departmentGroupIds[dep];
+   if(gid&&!n.planGroups.some(g=>g.id===String(gid)))gid='';
+   if(!gid){const old=String(oldNames[dep]||'').trim();if(old){const key=normalizeGroupName(old);let g=byName.get(key);if(!g){g={id:'pg_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),name:old,maxAway:Math.max(0,Number(n.planGroupMaxAway?.[old]??1))};n.planGroups.push(g);byName.set(key,g)}gid=g.id}}
+   n.departmentGroupIds[dep]=gid||'';
+  });
+  return n;
+ };
+ state=normalize(state);localStorage.setItem(STORE,JSON.stringify(state));
+
+ function groupById(id){return state.planGroups.find(g=>g.id===String(id))}
+ function departmentsForGroupId(id){return state.departments.filter(dep=>String(state.departmentGroupIds?.[dep]||'')===String(id))}
+ planGroups=function(){return state.planGroups.map(g=>g.name).sort((a,b)=>a.localeCompare(b,'de'))};
+ groupOptionValue=function(g){const obj=typeof g==='string'?state.planGroups.find(x=>x.name===g):g;return obj?`__groupid__:${obj.id}`:''};
+ selectedDepartments=function(value){if(value==='__leaders__')return[];if(String(value).startsWith('__groupid__:'))return departmentsForGroupId(String(value).slice(12));if(String(value).startsWith('__group__:')){const name=String(value).slice(10),g=state.planGroups.find(x=>normalizeGroupName(x.name)===normalizeGroupName(name));return g?departmentsForGroupId(g.id):[]}return[value]};
+ maxAwayForGroup=function(group){const g=String(group).startsWith('pg_')?groupById(group):state.planGroups.find(x=>normalizeGroupName(x.name)===normalizeGroupName(group));return Math.max(0,Number(g?.maxAway??1))};
+ groupVacationAwayCount=function(group,date){const g=String(group).startsWith('pg_')?groupById(group):state.planGroups.find(x=>normalizeGroupName(x.name)===normalizeGroupName(group));const deps=g?departmentsForGroupId(g.id):[];return state.employees.filter(e=>deps.includes(e.department)).filter(e=>vacsFor(e.id).some(v=>activeVacationForLimit(v)&&inRange(date,v.from,v.to))).length};
+
+ absenceCode=function(v){return ({Urlaub:'U',Sonderurlaub:'SU',Seminar:'S',Fortbildung:'S',Unbezahlt:'N',Krankheit:'K','Geplanter Freier Tag':'F'}[v.type]||'A')+(v.scope!=='full'?'½':'')+(moveForVacation(v)?'↔':'')};
+
+ const fillSelectsV15Base=fillSelects;
+ fillSelects=function(){
+  fillSelectsV15Base();
+  const cur=$('departmentFilter').value,ycur=$('yearDepartmentFilter').value;
+  const groupOpts=state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(g=>`<option value="__group__:${esc(g.name)}">Plan-Gruppe: ${esc(g.name)}</option>`).join('');
+  const depOpts=state.departments.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  $('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOpts+depOpts;
+  const valid=['__leaders__',...state.planGroups.map(g=>`__group__:${g.name}`),...state.departments];$('departmentFilter').value=valid.includes(cur)?cur:(state.departments[0]||'');
+  $('yearDepartmentFilter').innerHTML=groupOpts+depOpts;$('yearDepartmentFilter').value=valid.includes(ycur)&&ycur!=='__leaders__'?ycur:(state.departments[0]||'');
+  if($('newDepartmentGroup'))$('newDepartmentGroup').innerHTML='<option value="">Keine Plan-Gruppe</option>'+state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+ };
+
+ addDepartment=function(){
+  const name=$('newDepartment').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');if(state.departments.includes(name))return alert('Diese Abteilung existiert bereits.');
+  let groupId=$('newDepartmentGroup')?.value||'',newGroupName=$('newPlanGroupName')?.value.trim()||'';
+  if(newGroupName){let existing=state.planGroups.find(g=>normalizeGroupName(g.name)===normalizeGroupName(newGroupName));if(!existing){existing={id:'pg_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),name:newGroupName,maxAway:1};state.planGroups.push(existing)}groupId=existing.id}
+  state.departments.push(name);state.departmentSettings[name]=0;state.departmentMaxAway[name]=Math.max(0,Number($('newDepartmentMin').value||1));state.departmentGroupIds[name]=groupId;state.departmentGroups[name]=groupById(groupId)?.name||'';
+  $('newDepartment').value='';if($('newPlanGroupName'))$('newPlanGroupName').value='';saveState('Abteilung angelegt',`${name}${groupId?' · Plan-Gruppe '+groupById(groupId).name:''}`);renderAll()
+ };
+
+ window.editDepartmentGroup=i=>{
+  const dep=state.departments[i],current=state.departmentGroupIds?.[dep]||'';
+  const options=['0 = Keine Plan-Gruppe',...state.planGroups.map((g,idx)=>`${idx+1} = ${g.name}`),'N = Neue Plan-Gruppe'].join('\n');
+  const answer=prompt(`Plan-Gruppe für „${dep}“ auswählen:\n${options}`,current?String(state.planGroups.findIndex(g=>g.id===current)+1):'0');if(answer===null)return;
+  let id='';if(answer.toUpperCase()==='N'){const name=prompt('Name der neuen Plan-Gruppe:','');if(!name?.trim())return;let g=state.planGroups.find(x=>normalizeGroupName(x.name)===normalizeGroupName(name));if(!g){g={id:'pg_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7),name:name.trim(),maxAway:1};state.planGroups.push(g)}id=g.id}else{const idx=Number(answer)-1;if(Number(answer)>0&&state.planGroups[idx])id=state.planGroups[idx].id}
+  state.departmentGroupIds[dep]=id;state.departmentGroups[dep]=groupById(id)?.name||'';saveState('Plan-Gruppe geändert',`${dep}: ${groupById(id)?.name||'keine'}`);renderAll()
+ };
+
+ window.editPlanGroupMaximum=idOrName=>{let g=groupById(idOrName)||state.planGroups.find(x=>x.name===idOrName);if(!g)return;const value=prompt(`Maximal gleichzeitig abwesende Urlauber in der gesamten Plan-Gruppe „${g.name}“:`,g.maxAway);if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0)return alert('Bitte eine gültige Zahl ab 0 eingeben.');g.maxAway=Math.floor(n);state.planGroupMaxAway[g.name]=g.maxAway;saveState('Plan-Gruppen-Maximum geändert',`${g.name}: ${g.maxAway}`);renderAll()};
+
+ const renderDepartmentsV15Base=renderDepartments;
+ renderDepartments=function(){
+  renderDepartmentsV15Base();
+  const box=$('planGroupSettings');if(box)box.innerHTML=`<h3>Plan-Gruppen</h3><p class="muted">Plan-Gruppen werden direkt bei der Abteilung ausgewählt. Die Zuordnung wird intern über eine feste ID gespeichert.</p><div class="table-wrapper"><table><thead><tr><th>Plan-Gruppe</th><th>Abteilungen</th><th>Max. Urlauber gesamt</th><th>Aktion</th></tr></thead><tbody>${state.planGroups.map(g=>`<tr><td><strong>${esc(g.name)}</strong></td><td>${esc(departmentsForGroupId(g.id).join(', ')||'–')}</td><td>${g.maxAway}</td><td><button class="button tiny" onclick="editPlanGroupMaximum('${esc(g.id)}')">Maximum ändern</button></td></tr>`).join('')||'<tr><td colspan="4" class="muted">Noch keine Plan-Gruppe angelegt.</td></tr>'}</tbody></table></div>`;
+ };
+
+ const exportMonthExcelV15Base=exportMonthExcel;
+ exportMonthExcel=async function(){return exportMonthExcelV15Base()};
+
+ // Replace remaining visible legend text and type labels at runtime.
+ setTimeout(()=>{
+  document.querySelectorAll('.muted').forEach(el=>{el.innerHTML=el.innerHTML.replace(/S = Sonderurlaub/g,'SU = Sonderurlaub').replace(/F = Fortbildung/g,'S = Seminar').replace(/G = Geplanter Freier Tag/g,'F = Geplanter Freier Tag')});
+ },0);
+
+ fillSelects();renderAll();
+})();

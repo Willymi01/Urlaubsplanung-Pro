@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.4</title>
+  <title>Urlaubsplaner Berlin · v1.5</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.4 · GitHub Pages</p>
+    <p class="subtitle">Version 1.5 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.4</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.5</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -62,7 +62,7 @@
             <div><label for="vacationEmployee">Mitarbeiter</label><select id="vacationEmployee"></select></div>
             <div><label for="vacationFrom">Von</label><input id="vacationFrom" type="date"></div>
             <div><label for="vacationTo">Bis</label><input id="vacationTo" type="date"></div>
-            <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Fortbildung</option><option>Krankheit</option><option>Geplanter Freier Tag</option></select></div>
+            <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Seminar</option><option>Krankheit</option><option>Geplanter Freier Tag</option></select></div>
             <div><label for="vacationScope">Umfang</label><select id="vacationScope"><option value="full">Ganzer Tag</option><option value="half-am">Halber Tag vormittags</option><option value="half-pm">Halber Tag nachmittags</option></select></div>
             <div><label for="vacationStatus">Status</label><select id="vacationStatus"><option>Beantragt</option><option>Genehmigt</option><option>Geplant</option></select></div>
             <div class="span-2"><label for="vacationNote">Notiz</label><input id="vacationNote" placeholder="optional"></div>
@@ -71,7 +71,7 @@
         </div>
         <div id="calendarWarning"></div>
         <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
-        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschobener Urlaub · Dunkelgrau = Sonntag · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
+        <p class="muted">U = Urlaub · SU = Sonderurlaub · S = Seminar · K = Krankheit · F = Geplanter Freier Tag · Rosa = verschobener Urlaub · Dunkelgrau = Sonntag · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
       <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Verschobene Einträge werden im Plan rosa mit ↔ markiert. Die Details stehen direkt im Hinweis und bleiben im Änderungsprotokoll erhalten.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
     </section>
@@ -113,7 +113,7 @@
         </div>
         <div id="leaderMonthSummary"></div>
         <div class="table-wrapper"><table id="leaderCalendar" class="calendar leader-calendar"></table></div>
-        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschoben · Gelb = beantragt · Rot = mehrere Leiter gleichzeitig abwesend</p>
+        <p class="muted">U = Urlaub · SU = Sonderurlaub · S = Seminar · K = Krankheit · F = Geplanter Freier Tag · Rosa = verschoben · Gelb = beantragt · Rot = mehrere Leiter gleichzeitig abwesend</p>
       </div>
       <div class="panel">
         <div class="panel-heading"><div><h2>Leiter und Vertretungen</h2><p class="muted">Die nächste Abwesenheit und hinterlegte Vertretung je Leitung.</p></div></div>
@@ -152,7 +152,7 @@
       <div class="panel">
         <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen, umbenennen, maximale gleichzeitig abwesende Urlauber festlegen oder löschen. Beim Löschen können zugeordnete Mitarbeiter in eine andere Abteilung verschoben werden.</p></div></div>
         <div class="subpanel"><h3>Leiterplan</h3><div class="toolbar"><div><label for="leaderMinimum">Maximal gleichzeitig abwesende Leitungen</label><input id="leaderMinimum" type="number" min="0" value="1"></div><div><label for="keyLeaderMinimum">Mindestanzahl anwesender Schlüssel-Leitungen</label><input id="keyLeaderMinimum" type="number" min="0" value="1"></div><div><button id="saveLeaderMinimums" class="button primary">Leiterregeln speichern</button></div></div></div>
-        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><input id="newDepartmentGroup" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Maximal gleichzeitig abwesende Urlauber</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
+        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><select id="newDepartmentGroup"><option value="">Keine Plan-Gruppe</option></select></div><div><label for="newPlanGroupName">Neue Plan-Gruppe (optional)</label><input id="newPlanGroupName" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Maximal gleichzeitig abwesende Urlauber</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
         <div class="table-wrapper"><table id="departmentTable"></table></div>
       </div>
     </section>
