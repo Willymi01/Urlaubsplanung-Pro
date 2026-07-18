@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.2</title>
+  <title>Urlaubsplaner Berlin · v0.3</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.2 · GitHub Pages</p>
+    <p class="subtitle">Version 0.3 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.2</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.3</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -51,9 +51,9 @@
 
     <section id="page-calendar" class="page hidden">
       <div class="panel">
-        <div class="panel-heading"><h2>Monatsplan</h2><div class="actions"><button id="exportCsv" class="button light">CSV für Excel</button><button id="showVacationForm" class="button primary">Urlaub eintragen</button></div></div>
+        <div class="panel-heading"><div><h2>Urlaub planen</h2><p class="muted">Hier kannst du Urlaub eintragen und bestehende Einträge direkt verschieben.</p></div><div class="actions"><button id="exportCsv" class="button light">CSV für Excel</button><button id="showVacationForm" class="button primary">+ Urlaub eintragen</button></div></div>
         <div class="toolbar"><div><label for="departmentFilter">Abteilung</label><select id="departmentFilter"></select></div><div><label for="monthFilter">Monat</label><input id="monthFilter" type="month"></div></div>
-        <div id="vacationForm" class="subpanel hidden">
+        <div id="vacationForm" class="subpanel hidden"><h3 id="vacationFormTitle">Neuen Urlaub eintragen</h3><input id="editingVacationId" type="hidden">
           <div class="form-grid">
             <div><label for="vacationEmployee">Mitarbeiter</label><select id="vacationEmployee"></select></div>
             <div><label for="vacationFrom">Von</label><input id="vacationFrom" type="date"></div>
@@ -67,7 +67,7 @@
         <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
         <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · Grau = Wochenende · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
-      <div class="panel"><h2>Urlaubseinträge der gewählten Abteilung</h2><div class="table-wrapper"><table id="vacationList"></table></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Über „Verschieben“ werden der Zeitraum geändert und die Änderung automatisch in der Historie gespeichert.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
     </section>
 
     <section id="page-week" class="page hidden">
@@ -88,7 +88,7 @@
           <div class="checkbox-field"><label><input id="employeeLeader" type="checkbox"> Mitarbeiter ist Leiter</label></div>
         </div>
         <div class="actions"><button id="addEmployee" class="button primary">Mitarbeiter hinzufügen</button></div>
-        <div class="table-wrapper spaced"><table id="employeeTable"></table></div>
+        </div><div class="panel"><div class="panel-heading"><div><h2>Vorhandene Mitarbeiter</h2><p class="muted">Diese Liste wird unabhängig vom Eingabeformular angezeigt.</p></div><span id="employeeListCount" class="badge"></span></div><div class="table-wrapper"><table id="employeeTable"></table></div>
       </div>
     </section>
 
