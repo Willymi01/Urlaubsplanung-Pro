@@ -1,77 +1,21 @@
-# Urlaubsplaner
+# Urlaubsplaner – GitHub Pages Version 0.1
 
-Web-Anwendung zur Urlaubsplanung für einen Einzelhandelsbetrieb mit ungefähr zehn Abteilungen und 60 Mitarbeitern.
+Diese Version läuft vollständig statisch auf GitHub Pages.
 
-## Projektstruktur
+## Testzugang
 
-```text
-urlaubsplaner/
-├── backend/
-│   ├── app/
-│   ├── tests/
-│   └── requirements.txt
-├── data/
-├── docker/
-│   └── Dockerfile
-├── docs/
-│   ├── ARCHITECTURE.md
-│   └── ROADMAP.md
-├── .github/workflows/ci.yml
-├── docker-compose.yml
-└── README.md
-```
+- Name: `Admin`
+- PIN: `1234`
 
-## Lokal unter Windows starten
+## Veröffentlichung über GitHub Pages
 
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r backend\requirements.txt
-copy .env.example .env
-cd backend
-uvicorn app.main:app --reload
-```
+1. Inhalt dieses Ordners in ein GitHub-Repository hochladen.
+2. In GitHub zu **Settings → Pages** gehen.
+3. Unter **Build and deployment** als Source **GitHub Actions** wählen.
+4. Nach dem Workflow-Lauf wird die Seite veröffentlicht.
 
-Danach `http://localhost:8000` öffnen.
+Alternativ kann auch **Deploy from a branch** mit `main` und `/ (root)` verwendet werden.
 
-Erster Entwicklungszugang:
+## Wichtiger Hinweis
 
-```text
-Name: Admin
-PIN: 1234
-```
-
-Die PIN muss bei der ersten Anmeldung geändert werden. Vor einem produktiven Einsatz müssen die Werte in `.env` angepasst werden.
-
-## Mit Docker starten
-
-```bash
-cp .env.example .env
-docker compose up --build -d
-```
-
-Die Datenbank liegt in einem Docker-Volume und wird nicht in Git gespeichert.
-
-## Tests
-
-```bash
-cd backend
-pytest -q
-```
-
-## In ein bestehendes Git-Repository kopieren
-
-Den Inhalt dieses Ordners in den vorhandenen Projektordner kopieren. Den bestehenden `.git`-Ordner nicht löschen. Danach:
-
-```bash
-git status
-git add .
-git commit -m "chore: professionelle Projektstruktur für Phase 1"
-git push
-```
-
-## Hinweise
-
-- Git verwaltet nur Quellcode und Dokumentation.
-- `.env`, Datenbanken und echte Personaldaten gehören nicht ins Repository.
-- Für mehrere Rechner wird die App zentral betrieben; alle Nutzer greifen per Browser darauf zu.
+Die Daten werden nur im Browser (`localStorage`) gespeichert. Es gibt noch keine echte gemeinsame Datenbank und keine sichere Benutzerverwaltung.
