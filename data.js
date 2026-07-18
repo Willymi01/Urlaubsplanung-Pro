@@ -14,11 +14,11 @@ window.DEFAULT_DATA={
     {id:10,name:'Murat Yilmaz',department:'Lager',hours:37,vacationDays:36,leader:true,substitute:''}
   ],
   vacations:[
-    {id:101,employeeId:1,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:''},
-    {id:102,employeeId:2,from:'2027-07-12',to:'2027-07-16',type:'Urlaub',note:''},
-    {id:103,employeeId:3,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:''},
-    {id:104,employeeId:5,from:'2027-07-21',to:'2027-07-30',type:'Urlaub',note:''},
-    {id:105,employeeId:7,from:'2027-08-02',to:'2027-08-13',type:'Urlaub',note:''}
+    {id:101,employeeId:1,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt'},
+    {id:102,employeeId:2,from:'2027-07-12',to:'2027-07-16',type:'Urlaub',note:'',status:'Genehmigt'},
+    {id:103,employeeId:3,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt'},
+    {id:104,employeeId:5,from:'2027-07-21',to:'2027-07-30',type:'Urlaub',note:'',status:'Genehmigt'},
+    {id:105,employeeId:7,from:'2027-08-02',to:'2027-08-13',type:'Urlaub',note:'',status:'Genehmigt'}
   ],
   moves:[
     {id:201,employeeId:1,oldPeriod:'05.–09.07.2027',newPeriod:'19.–23.07.2027',reason:'Personalmangel',initiator:'Betrieb'},

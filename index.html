@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.3</title>
+  <title>Urlaubsplaner Berlin · v0.4</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.3 · GitHub Pages</p>
+    <p class="subtitle">Version 0.4 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.3</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.4</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -33,6 +33,7 @@
     <button data-page="leaders">Leiterplan</button>
     <button data-page="employees">Mitarbeiter</button>
     <button data-page="history">Verschiebungen</button>
+    <button data-page="departments">Abteilungen</button>
     <button data-page="settings">Datensicherung</button>
   </nav>
 
@@ -59,6 +60,7 @@
             <div><label for="vacationFrom">Von</label><input id="vacationFrom" type="date"></div>
             <div><label for="vacationTo">Bis</label><input id="vacationTo" type="date"></div>
             <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Fortbildung</option></select></div>
+            <div><label for="vacationStatus">Status</label><select id="vacationStatus"><option>Beantragt</option><option>Genehmigt</option><option>Geplant</option></select></div>
             <div class="span-2"><label for="vacationNote">Notiz</label><input id="vacationNote" placeholder="optional"></div>
           </div>
           <div class="actions"><button id="saveVacation" class="button primary">Speichern</button><button id="cancelVacation" class="button light">Abbrechen</button></div>
@@ -79,6 +81,7 @@
     <section id="page-employees" class="page hidden">
       <div class="panel">
         <h2>Mitarbeiterverwaltung</h2>
+        <input id="editingEmployeeId" type="hidden">
         <div class="form-grid">
           <div><label for="employeeName">Name</label><input id="employeeName" placeholder="Vor- und Nachname"></div>
           <div><label for="employeeDepartment">Abteilung</label><select id="employeeDepartment"></select></div>
@@ -87,7 +90,7 @@
           <div><label for="employeeSubstitute">Vertretung</label><select id="employeeSubstitute"><option value="">Keine</option></select></div>
           <div class="checkbox-field"><label><input id="employeeLeader" type="checkbox"> Mitarbeiter ist Leiter</label></div>
         </div>
-        <div class="actions"><button id="addEmployee" class="button primary">Mitarbeiter hinzufügen</button></div>
+        <div class="actions"><button id="addEmployee" class="button primary">Mitarbeiter hinzufügen</button><button id="cancelEmployeeEdit" class="button light hidden">Bearbeiten abbrechen</button></div>
         </div><div class="panel"><div class="panel-heading"><div><h2>Vorhandene Mitarbeiter</h2><p class="muted">Diese Liste wird unabhängig vom Eingabeformular angezeigt.</p></div><span id="employeeListCount" class="badge"></span></div><div class="table-wrapper"><table id="employeeTable"></table></div>
       </div>
     </section>
@@ -99,9 +102,18 @@
       </div>
     </section>
 
+
+    <section id="page-departments" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen oder umbenennen. Mitarbeiter und Urlaube bleiben beim Umbenennen erhalten.</p></div></div>
+        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Nonfood"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
+        <div class="table-wrapper"><table id="departmentTable"></table></div>
+      </div>
+    </section>
+
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 0.4 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>

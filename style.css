@@ -8,3 +8,10 @@ main{width:min(1550px,100%);margin:auto;padding:20px}.notice{margin-bottom:18px;
 .form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.span-2{grid-column:span 2}.checkbox-field{display:flex;align-items:center;padding-top:28px}.checkbox-field input{width:auto;margin-right:8px}.spaced{margin-top:18px}.table-wrapper{overflow:auto}table{width:100%;border-collapse:collapse;background:#fff}th,td{padding:9px;border:1px solid var(--border);text-align:left;white-space:nowrap}th{background:#edf2ef}.calendar th,.calendar td{min-width:38px;text-align:center}.calendar .employee-name{position:sticky;left:0;min-width:210px;text-align:left;background:#fff;z-index:2}.vacation{background:var(--vac);font-weight:700}.weekend{background:var(--weekend)}.holiday{background:var(--holiday)}.critical{background:var(--critical);font-weight:800}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e7ece9;font-size:12px}.leader-badge{color:var(--green-dark);background:var(--green-light)}.icon-button{border:0;background:transparent;font-size:17px}.file-button input{display:none}.positive{color:var(--green-dark);font-weight:700}.negative{color:#a61b29;font-weight:700}
 @media(max-width:900px){.metrics,.form-grid{grid-template-columns:1fr 1fr}.span-2{grid-column:span 2}}@media(max-width:600px){main{padding:12px}.metrics,.form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}.header-right{width:100%;justify-content:space-between}nav{position:static}.panel{padding:13px}}
 .button.tiny{padding:7px 10px;font-size:13px}.actions.compact{margin:0;gap:6px}.subpanel h3{margin-top:0}.panel-heading>div>p{margin:4px 0 0}.employee-list-note{margin-bottom:10px}
+
+/* Version 0.4 */
+.badge.approved{background:#dff3e8;color:#0c4d30}
+.badge.pending{background:#fff3cd;color:#744210}
+.badge.planned{background:#e8edf2;color:#475467}
+.pending-cell{background:#fff3cd;font-weight:700}
+.planned-cell{background:#e8edf2;color:#475467;font-weight:700}
