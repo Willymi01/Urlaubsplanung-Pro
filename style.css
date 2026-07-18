@@ -61,3 +61,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 1.2 */
 .calendar th small{display:block;max-width:64px;overflow:hidden;text-overflow:ellipsis;font-size:.58rem;line-height:1.05;color:#ffe16a;margin-top:3px}.calendar .sunday,.calendar .sunday-header{background:#363a38!important;color:#fff;border-left:2px solid #737a76;border-right:2px solid #737a76}.calendar .holiday-header{background:#6b5b13!important;color:#fff}.calendar td.critical-day{box-shadow:inset 0 -4px 0 #d94850;background:#34292b}.calendar td.critical.vacation-entry{background:#c63c45!important;color:#fff}.holiday-list{margin-top:10px;padding:10px 12px;border:1px solid #8c7a28;border-radius:10px;background:#332f1e;color:#f5e5a0}.holiday-hint{color:#ffe16a;font-weight:700}.calendar td:not(.sunday):not(.holiday):not(.vacation):not(.pending-cell):not(.planned-cell):not(.moved-cell):not(.critical):not(.critical-day){background:#242726}.calendar .weekend{background:#242726;color:inherit}
+
+/* Version 1.5 */
+.badge.rejected{background:#73313b;color:#fff}.permission-col{min-width:260px;white-space:normal}.permission-name{font-weight:700}#rolePermissionLegend th,#rolePermissionLegend td{text-align:center}#rolePermissionLegend th:first-child,#rolePermissionLegend td:first-child{text-align:left}

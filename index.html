@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.3</title>
+  <title>Urlaubsplaner Berlin · v1.5</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.4 · GitHub Pages</p>
+    <p class="subtitle">Version 1.5 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.4</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.5</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -172,6 +172,12 @@
         <div class="actions"><button id="saveUser" class="button primary">Benutzer speichern</button><button id="cancelUserEdit" class="button light hidden">Bearbeiten abbrechen</button></div>
       </div>
       <div class="panel"><div class="table-wrapper"><table id="userTable"></table></div></div>
+
+      <div class="panel">
+        <h2>Rollen & Berechtigungen</h2>
+        <p class="muted">Die folgende Übersicht zeigt, welche Rolle welche Aktionen ausführen darf.</p>
+        <div class="table-wrapper"><table id="rolePermissionLegend"></table></div>
+      </div>
       <div class="panel"><h2>Eigene PIN ändern</h2><div class="toolbar"><div><label for="oldPin">Bisherige PIN</label><input id="oldPin" type="password" inputmode="numeric"></div><div><label for="newPin">Neue PIN</label><input id="newPin" type="password" inputmode="numeric"></div><div><button id="changePin" class="button primary">PIN ändern</button></div></div><div id="pinStatus" class="status"></div></div>
     </section>
 
