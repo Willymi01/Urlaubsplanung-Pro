@@ -67,3 +67,32 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 2.0 */
 .storage-info{margin:14px 0;padding:14px;border:1px solid #59615d;border-radius:10px;background:#292e2b;color:#f4f4f4}.storage-info code{color:#ffd500}.storage-info small{color:#c7cfca}
+
+
+/* Version 2.1: eigenständiger Feiertagsstil */
+:root{--holiday-ochre:#8b6f12;--holiday-ochre-dark:#51400a;--holiday-border:#f1cc3e;--holiday-soft:#3b351d}
+.calendar th.holiday-header,.calendar th.holiday-column{
+ background:linear-gradient(180deg,var(--holiday-ochre),var(--holiday-ochre-dark))!important;
+ color:#fff8cf!important;
+ border-left:3px solid var(--holiday-border)!important;
+ border-right:3px solid var(--holiday-border)!important;
+ box-shadow:inset 0 -3px 0 #f1cc3e;
+ min-width:64px;
+}
+.calendar th .holiday-star{display:inline-block;margin-right:3px;color:#ffe16a;font-size:.78rem;vertical-align:top}
+.calendar th.holiday-header small{display:block;max-width:88px;white-space:normal;overflow:visible;text-overflow:clip;color:#fff3ad;font-size:.58rem;line-height:1.05;margin-top:2px}
+.calendar td.holiday-column{
+ border-left:3px solid var(--holiday-border)!important;
+ border-right:3px solid var(--holiday-border)!important;
+ box-shadow:inset 0 0 0 999px rgba(145,112,10,.13);
+}
+.calendar td.holiday-column.holiday{background:var(--holiday-soft)!important;color:#fff4bc!important}
+.calendar td.holiday-column.vacation,
+.calendar td.holiday-column.pending-cell,
+.calendar td.holiday-column.planned-cell,
+.calendar td.holiday-column.moved-cell,
+.calendar td.holiday-column.critical{
+ box-shadow:inset 3px 0 0 var(--holiday-border),inset -3px 0 0 var(--holiday-border),inset 0 -3px 0 var(--holiday-border)!important;
+}
+.holiday-list{background:#262414;border:1px solid var(--holiday-border);color:#fff2a8}
+.holiday-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.holiday-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#6f5910;border:1px solid #d8b72e;color:#fff7c7;font-weight:700;font-size:.88rem}

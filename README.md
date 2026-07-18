@@ -1,8 +1,8 @@
-# Urlaubsplaner Berlin – Version 2.0
+# Urlaubsplaner Berlin – Version 2.1
 
 ## Wichtigste Änderung: Updates ohne Datenverlust
 
-Die Anwendung verwendet ab Version 2.0 dauerhaft den Browser-Speicher:
+Die Anwendung verwendet ab Version 2.1 dauerhaft den Browser-Speicher:
 
 `urlaubsplaner.data`
 
@@ -17,7 +17,7 @@ Dieser Schlüssel bleibt bei künftigen Versionen gleich. Beim Austausch von `in
 - Einstellungen
 - Änderungsprotokoll
 
-Beim ersten Start migriert Version 2.0 automatisch die umfangreichsten gefundenen Daten aus älteren Speicherständen.
+Beim ersten Start migriert Version 2.1 automatisch die umfangreichsten gefundenen Daten aus älteren Speicherständen.
 
 ## Wichtige Einschränkung von GitHub Pages
 
@@ -32,3 +32,13 @@ Für einen anderen PC oder Browser bitte vorher unter **Datensicherung** eine JS
 ## Installation
 
 Den Inhalt des Ordners direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Programmdateien überschreiben. Nicht die Browserdaten löschen.
+
+
+## Neu in Version 2.1
+
+- Feiertage werden als eigene gold-/ockerfarbene Spalten dargestellt.
+- Feiertagsspalten besitzen stärkere Rahmen links und rechts.
+- In der Kopfzeile erscheint ein Stern sowie der vollständige Feiertagsname.
+- Urlaub bleibt grün, beantragt gelb und verschoben rosa; der Feiertag wird nur über Rahmen und Spaltenhintergrund markiert.
+- Feiertage im Monat erscheinen zusätzlich als gut lesbare Chips oberhalb des Kalenders.
+- Feiertage zählen weiterhin nicht als Urlaubstage.

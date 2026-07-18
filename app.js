@@ -728,3 +728,53 @@ migrateToV2();
 if($('backupExport'))$('backupExport').onclick=exportBackup;
 if($('backupImport'))$('backupImport').onchange=importBackup;
 setTimeout(()=>{renderAll();updateStorageInfo()},0);
+
+
+/* Version 2.1: Feiertage klarer vom Urlaub absetzen */
+function applyHolidayColumnDesign(){
+ const table=$('calendarTable'),monthInput=$('monthFilter');
+ if(!table||!monthInput||!monthInput.value)return;
+ const [year,month]=monthInput.value.split('-').map(Number);
+ const headers=[...table.querySelectorAll('thead th')].slice(1);
+ headers.forEach((th,index)=>{
+  const date=new Date(year,month-1,index+1),name=holidayName(date),isHoliday=Boolean(name);
+  th.classList.toggle('holiday-column',isHoliday);
+  th.classList.toggle('holiday-header',isHoliday);
+  if(isHoliday){
+   th.title=`${name} · gesetzlicher Feiertag in Berlin`;
+   let star=th.querySelector('.holiday-star');
+   if(!star){star=document.createElement('span');star.className='holiday-star';star.textContent='★';th.prepend(star)}
+   let label=th.querySelector('small');
+   if(!label){label=document.createElement('small');th.appendChild(label)}
+   label.textContent=name;
+  }else{
+   th.querySelector('.holiday-star')?.remove();
+  }
+ });
+ [...table.querySelectorAll('tbody tr')].forEach(row=>{
+  if(row.classList.contains('department-separator'))return;
+  [...row.querySelectorAll('td')].slice(1).forEach((cell,index)=>{
+   const date=new Date(year,month-1,index+1),name=holidayName(date),isHoliday=Boolean(name);
+   cell.classList.toggle('holiday-column',isHoliday);
+   if(isHoliday){
+    const hasAbsence=['vacation','pending-cell','planned-cell','moved-cell','critical'].some(c=>cell.classList.contains(c));
+    if(!hasAbsence)cell.classList.add('holiday');
+    cell.title=[cell.title,name,'Gesetzlicher Feiertag – zählt nicht als Urlaubstag'].filter(Boolean).join(' · ');
+   }
+  });
+ });
+ const holidayList=document.querySelector('.holiday-list');
+ if(holidayList){
+  const matches=[...holidayList.textContent.matchAll(/(\d{1,2}\.\d{1,2}\.\s+[^·]+)/g)].map(m=>m[1].trim());
+  if(matches.length)holidayList.innerHTML=`<strong>Feiertage im Monat:</strong><div class="holiday-chips">${matches.map(x=>`<span class="holiday-chip">★ ${esc(x)}</span>`).join('')}</div>`;
+ }
+}
+const renderCalendarV21Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV21Base();
+ applyHolidayColumnDesign();
+ requestAnimationFrame(applyHolidayColumnDesign);
+};
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
+if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()};
+setTimeout(()=>renderCalendar(),0);
