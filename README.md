@@ -1,21 +1,34 @@
-# Urlaubsplaner – GitHub Pages Version 0.1
+# Urlaubsplaner – Version 0.2
 
-Diese Version läuft vollständig statisch auf GitHub Pages.
+Statische GitHub-Pages-Version ohne Server und ohne Datenbank.
 
 ## Testzugang
 
 - Name: `Admin`
 - PIN: `1234`
 
-## Veröffentlichung über GitHub Pages
+## Neu in Version 0.2
 
-1. Inhalt dieses Ordners in ein GitHub-Repository hochladen.
-2. In GitHub zu **Settings → Pages** gehen.
-3. Unter **Build and deployment** als Source **GitHub Actions** wählen.
-4. Nach dem Workflow-Lauf wird die Seite veröffentlicht.
+- Wochenübersicht je Abteilung
+- Berliner Feiertage im Kalender
+- Berechnung geplanter Arbeitstage und Resturlaub
+- Urlaubseinträge können gelöscht werden
+- CSV-Export für Excel
+- JSON-Datensicherung mit Import und Export
+- Nächste Abwesenheiten auf dem Dashboard
+- verbesserte Leiter- und Fairnessübersicht
 
-Alternativ kann auch **Deploy from a branch** mit `main` und `/ (root)` verwendet werden.
+## GitHub Pages
 
-## Wichtiger Hinweis
+Lade **alle Dateien aus diesem Ordner direkt in den Hauptordner deines Repositorys**. Die `index.html` muss im Hauptordner liegen.
 
-Die Daten werden nur im Browser (`localStorage`) gespeichert. Es gibt noch keine echte gemeinsame Datenbank und keine sichere Benutzerverwaltung.
+Danach entweder:
+
+1. **Settings → Pages → Deploy from a branch**
+2. Branch `main`, Ordner `/ (root)`
+
+oder unter **Settings → Pages** die Quelle **GitHub Actions** wählen. Der beiliegende Workflow veröffentlicht die Seite automatisch.
+
+## Hinweis
+
+Die Daten werden im `localStorage` des Browsers gespeichert. Sie sind deshalb noch nicht zwischen mehreren Geräten oder Benutzern synchronisiert.
