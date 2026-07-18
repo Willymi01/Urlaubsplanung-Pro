@@ -1,25 +1,24 @@
-# Urlaubsplaner Berlin – Version 0.8
+# Urlaubsplaner Berlin – Version 0.9
 
-Statische GitHub-Pages-Testversion mit lokaler Speicherung im Browser.
+## Neu
+- Datenzentrale für optionale gemeinsame Serverdaten
+- Verbindungstest zum Backend
+- Daten zum Server senden und vom Server laden
+- Erkennung noch nicht synchronisierter lokaler Änderungen
+- Konfliktwarnung vor dem Überschreiben lokaler Daten
+- optionaler automatischer Abgleich nach Änderungen
+- Gerätekennung und letzter Synchronisierungszeitpunkt
+- mitgeliefertes kleines Node.js-Backend im Ordner `backend`
+- automatische Übernahme lokaler Daten aus Version 0.8
 
-## Neu in Version 0.8
-
-- Benutzerverwaltung mit Rollen: Administrator, Marktleitung, Abteilungsleitung und Stellvertretung
-- Benutzer aktivieren, deaktivieren, bearbeiten und löschen
-- Eigene PIN ändern
-- Letzte Anmeldung anzeigen
-- Abteilungsgebundene Konten vorbereiten
-- Lokales Änderungsprotokoll mit Benutzer, Zeitpunkt, Aktion und Details
-- Änderungsprotokoll als CSV exportieren
-- Datenübernahme aus Version 0.7
+## GitHub Pages
+Alle Dateien aus dem Hauptordner direkt in das Repository kopieren. Der Ordner `backend` darf mit hochgeladen werden, läuft dort aber nicht. Die Webseite funktioniert weiterhin vollständig im lokalen Modus.
 
 ## Testzugänge
-
 - Admin / 1234
 - Marktleitung / 5678
 - Anna Schmidt / 1111
 - Tom Wagner / 2222
 
-## Hinweis
-
-GitHub Pages hat kein sicheres Backend. PINs, Rollen und Protokollierung sind in dieser Version nur für Tests auf einem Gerät gedacht. Echte Sicherheit und gemeinsame Daten benötigen die geplante Server- und Datenbankversion.
+## Wichtiger Hinweis
+Die PIN-Anmeldung im GitHub-Pages-Modus ist weiterhin nur eine Demonstration. Erst mit einem produktiven Backend können Anmeldung, Rechte und Daten zentral und sicher umgesetzt werden.

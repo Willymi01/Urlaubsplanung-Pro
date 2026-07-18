@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.8</title>
+  <title>Urlaubsplaner Berlin · v0.9</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.8 · GitHub Pages</p>
+    <p class="subtitle">Version 0.9 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.8</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -37,6 +37,7 @@
     <button data-page="departments">Abteilungen</button>
     <button data-page="users" data-admin-only="true">Benutzer</button>
     <button data-page="audit" data-admin-only="true">Änderungsprotokoll</button>
+    <button data-page="sync" data-admin-only="true">Datenzentrale</button>
     <button data-page="settings">Datensicherung</button>
   </nav>
 
@@ -182,9 +183,42 @@
       </div>
     </section>
 
+
+    <section id="page-sync" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading">
+          <div><h2>Datenzentrale</h2><p class="muted">Die Anwendung kann weiterhin lokal genutzt oder mit einem separat betriebenen v0.9-Backend verbunden werden.</p></div>
+          <span id="syncConnectionBadge" class="badge planned">Lokalbetrieb</span>
+        </div>
+        <div class="metrics">
+          <article class="metric"><span>Gerätekennung</span><strong id="syncDeviceShort">–</strong></article>
+          <article class="metric"><span>Lokale Änderungen</span><strong id="syncPendingCount">0</strong></article>
+          <article class="metric"><span>Letzte Synchronisierung</span><strong id="syncLastTime" class="sync-time">Nie</strong></article>
+          <article class="metric"><span>Verbindungsstatus</span><strong id="syncStatusText" class="sync-time">Lokal</strong></article>
+        </div>
+        <div class="form-grid">
+          <div class="span-2"><label for="syncEndpoint">Backend-Adresse</label><input id="syncEndpoint" type="url" placeholder="https://dein-server.example.com"></div>
+          <div><label for="syncToken">Zugriffsschlüssel</label><input id="syncToken" type="password" placeholder="optional / vom Server"></div>
+          <div class="checkbox-field"><label><input id="syncAuto" type="checkbox"> Automatisch nach Änderungen synchronisieren</label></div>
+        </div>
+        <div class="actions spaced">
+          <button id="saveSyncSettings" class="button light">Einstellungen speichern</button>
+          <button id="testSyncConnection" class="button light">Verbindung testen</button>
+          <button id="pushSync" class="button primary">Daten zum Server senden</button>
+          <button id="pullSync" class="button light">Daten vom Server laden</button>
+        </div>
+        <div id="syncMessage" class="status" aria-live="polite">Noch kein Backend eingerichtet. Die lokale Nutzung funktioniert unverändert.</div>
+      </div>
+      <div class="panel">
+        <h2>Konfliktschutz</h2>
+        <p>Beim Herunterladen werden lokale, noch nicht synchronisierte Änderungen erkannt. Vor einem Überschreiben wird eine Bestätigung verlangt. Jede erfolgreiche Übertragung wird im Änderungsprotokoll festgehalten.</p>
+        <div class="notice"><strong>Wichtig:</strong> GitHub Pages stellt nur die Benutzeroberfläche bereit. Für gemeinsame Daten auf mehreren Geräten muss der enthaltene Ordner <code>backend</code> auf einem Server betrieben werden.</div>
+      </div>
+    </section>
+
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 0.8 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 0.9 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>

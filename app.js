@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id),clone=o=>JSON.parse(JSON.stringify(o));
-const STORE='vacationPlannerV08',OLD_STORES=['vacationPlannerV07','vacationPlannerV06','vacationPlannerV05','vacationPlannerV04','vacationPlannerV03','vacationPlannerV02'];
+const STORE='vacationPlannerV09',OLD_STORES=['vacationPlannerV07','vacationPlannerV06','vacationPlannerV05','vacationPlannerV04','vacationPlannerV03','vacationPlannerV02'];
 let currentUser=null;
 function normalize(raw){const b=clone(window.DEFAULT_DATA),d=raw&&typeof raw==='object'?raw:{};const departments=Array.isArray(d.departments)&&d.departments.length?d.departments:b.departments;const settings={...(b.departmentSettings||{}),...(d.departmentSettings||{})};departments.forEach(x=>{if(settings[x]==null)settings[x]=2});return{users:Array.isArray(d.users)?d.users:b.users,departments,departmentSettings:settings,employees:(Array.isArray(d.employees)?d.employees:b.employees).map(e=>({...e,carryover:Number(e.carryover||0)})),vacations:(Array.isArray(d.vacations)?d.vacations:b.vacations).map(v=>({...v,status:v.status||'Genehmigt',scope:v.scope||'full'})),moves:Array.isArray(d.moves)?d.moves:b.moves}}
 function loadState(){try{let raw=localStorage.getItem(STORE);if(!raw)for(const k of OLD_STORES){raw=localStorage.getItem(k);if(raw)break}return raw?normalize(JSON.parse(raw)):normalize(window.DEFAULT_DATA)}catch{return normalize(window.DEFAULT_DATA)}}
@@ -169,5 +169,61 @@ function changeOwnPin(){const old=$('oldPin').value,newPin=$('newPin').value;if(
 function renderAudit(){if(!$('auditTable'))return;const q=($('auditSearch')?.value||'').toLowerCase(),rows=(state.audit||[]).filter(a=>`${a.user} ${a.action} ${a.details}`.toLowerCase().includes(q));$('auditTable').innerHTML='<thead><tr><th>Zeitpunkt</th><th>Benutzer</th><th>Aktion</th><th>Details</th></tr></thead><tbody>'+rows.map(a=>`<tr><td>${new Date(a.at).toLocaleString('de-DE')}</td><td>${esc(a.user)}</td><td>${esc(a.action)}</td><td>${esc(a.details||'–')}</td></tr>`).join('')+'</tbody>'}
 function exportAuditCsv(){const rows=[['Zeitpunkt','Benutzer','Aktion','Details'],...(state.audit||[]).map(a=>[new Date(a.at).toLocaleString('de-DE'),a.user,a.action,a.details])];const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\r\n');download(`Aenderungsprotokoll-${iso(new Date())}.csv`,csv,'text/csv;charset=utf-8')}
 const originalBind=bind;bind=function(){originalBind();bindV08()};
+
+
+/* Version 0.9: optionale Server-Synchronisierung */
+const SYNC_STORE='vacationPlannerSyncV09';
+let syncConfig=loadSyncConfig();
+let syncTimer=null;
+function loadSyncConfig(){
+ try{const c=JSON.parse(localStorage.getItem(SYNC_STORE)||'{}');return{endpoint:c.endpoint||'',token:c.token||'',auto:c.auto===true,deviceId:c.deviceId||createDeviceId(),pending:Number(c.pending||0),lastSync:c.lastSync||'',status:c.status||'local'}}catch{return{endpoint:'',token:'',auto:false,deviceId:createDeviceId(),pending:0,lastSync:'',status:'local'}}
+}
+function createDeviceId(){return 'GERAET-'+Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).toUpperCase()}
+function saveSyncConfig(){localStorage.setItem(SYNC_STORE,JSON.stringify(syncConfig))}
+function normalizeEndpoint(value){return String(value||'').trim().replace(/\/+$/,'')}
+function syncHeaders(){const h={'Content-Type':'application/json'};if(syncConfig.token)h.Authorization='Bearer '+syncConfig.token;return h}
+function setSyncMessage(text,ok=null){if(!$('syncMessage'))return;$('syncMessage').textContent=text;$('syncMessage').classList.toggle('warning-danger',ok===false)}
+function renderSync(){
+ if(!$('syncEndpoint'))return;
+ $('syncEndpoint').value=syncConfig.endpoint;$('syncToken').value=syncConfig.token;$('syncAuto').checked=syncConfig.auto;
+ $('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);
+ $('syncPendingCount').textContent=syncConfig.pending;
+ $('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
+ const online=syncConfig.status==='online',configured=!!syncConfig.endpoint;
+ $('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Lokal';
+ const b=$('syncConnectionBadge');b.textContent=online?'Server verbunden':configured?'Server eingerichtet':'Lokalbetrieb';b.className='badge '+(online?'sync-online':configured?'pending':'planned');
+}
+function bindV09(){
+ $('saveSyncSettings')?.addEventListener('click',saveSyncSettings);
+ $('testSyncConnection')?.addEventListener('click',testSyncConnection);
+ $('pushSync')?.addEventListener('click',pushSync);
+ $('pullSync')?.addEventListener('click',pullSync);
+}
+function saveSyncSettings(){syncConfig.endpoint=normalizeEndpoint($('syncEndpoint').value);syncConfig.token=$('syncToken').value.trim();syncConfig.auto=$('syncAuto').checked;syncConfig.status=syncConfig.endpoint?'unknown':'local';saveSyncConfig();renderSync();setSyncMessage(syncConfig.endpoint?'Synchronisierungseinstellungen gespeichert.':'Lokaler Betrieb gespeichert.',true)}
+async function testSyncConnection(){
+ saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Bitte zuerst eine Backend-Adresse eintragen.',false);
+ setSyncMessage('Verbindung wird geprüft …');
+ try{const r=await fetch(syncConfig.endpoint+'/health',{headers:syncHeaders()});if(!r.ok)throw new Error('HTTP '+r.status);const info=await r.json();syncConfig.status='online';saveSyncConfig();renderSync();setSyncMessage('Verbindung erfolgreich: '+(info.name||'Urlaubsplaner-Backend')+'.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Verbindung fehlgeschlagen: '+e.message,false)}
+}
+async function pushSync(){
+ saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Kein Backend eingerichtet.',false);
+ setSyncMessage('Daten werden übertragen …');
+ try{const payload={schemaVersion:9,deviceId:syncConfig.deviceId,updatedAt:new Date().toISOString(),state};const r=await fetch(syncConfig.endpoint+'/api/state',{method:'PUT',headers:syncHeaders(),body:JSON.stringify(payload)});if(!r.ok)throw new Error('HTTP '+r.status);const info=await r.json();syncConfig.pending=0;syncConfig.lastSync=info.updatedAt||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten zum Server gesendet');localStorage.setItem(STORE,JSON.stringify(state));renderAll();setSyncMessage('Daten wurden erfolgreich zum Server gesendet.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Senden fehlgeschlagen: '+e.message,false)}
+}
+async function pullSync(){
+ saveSyncSettings();if(!syncConfig.endpoint)return setSyncMessage('Kein Backend eingerichtet.',false);
+ if(syncConfig.pending>0&&!confirm(`${syncConfig.pending} lokale Änderung(en) wurden noch nicht gesendet. Serverdaten trotzdem laden und lokal überschreiben?`))return;
+ setSyncMessage('Serverdaten werden geladen …');
+ try{const r=await fetch(syncConfig.endpoint+'/api/state',{headers:syncHeaders()});if(r.status===404)return setSyncMessage('Auf dem Server liegt noch kein Datenstand. Bitte zuerst „Daten zum Server senden“ verwenden.',false);if(!r.ok)throw new Error('HTTP '+r.status);const payload=await r.json();if(!payload.state)throw new Error('Ungültige Serverantwort');state=normalize(payload.state);syncConfig.pending=0;syncConfig.lastSync=payload.updatedAt||new Date().toISOString();syncConfig.status='online';saveSyncConfig();addAudit('Synchronisierung','Daten vom Server geladen');localStorage.setItem(STORE,JSON.stringify(state));fillLogin();renderAll();setSyncMessage('Serverdaten wurden erfolgreich geladen.',true)}catch(e){syncConfig.status='offline';saveSyncConfig();renderSync();setSyncMessage('Laden fehlgeschlagen: '+e.message,false)}
+}
+function scheduleAutoSync(){if(!syncConfig.auto||!syncConfig.endpoint)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>pushSync(),1200)}
+const saveStateV08=saveState;
+saveState=function(action='Daten geändert',details=''){
+ syncConfig.pending+=1;saveSyncConfig();saveStateV08(action,details);renderSync();scheduleAutoSync();
+};
+const renderAllV08=renderAll;
+renderAll=function(){renderAllV08();renderSync()};
+const bindV08Complete=bind;
+bind=function(){bindV08Complete();bindV09()};
 
 init();
