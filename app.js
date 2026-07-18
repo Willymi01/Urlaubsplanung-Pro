@@ -2113,3 +2113,144 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
 
  removePlanGroupsV25();fillSelects();renderAll();
 })();
+
+
+/* Version 2.6: definitive Einzelabteilungs-Logik, robuste Urlaubsaktionen und Cache-Bereinigung */
+(()=>{
+ const norm26=v=>String(v??'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+ const mayDecide26=()=>{
+  const role=String(currentUser?.role||'').toLocaleLowerCase('de-DE');
+  const label=String(roleLabel?.(currentUser?.role)||'').toLocaleLowerCase('de-DE');
+  return role==='admin'||role==='management'||label.includes('administrator')||label.includes('marktleitung');
+ };
+ const mayEdit26=()=>Boolean(currentUser)&&['admin','management','leader','deputy'].includes(String(currentUser.role));
+ const isExcluded26=date=>date.getDay()===0||Boolean(holidayName(date));
+
+ // Alle Überreste der früheren Plan-Gruppen konsequent aus Daten und Oberfläche entfernen.
+ function purgeGroups26(){
+  state.planGroups=[];state.planGroupMaxAway={};state.departmentGroups={};state.departmentGroupIds={};
+  state.employees=(state.employees||[]).map(e=>{const copy={...e};delete copy.planGroupId;return copy});
+  try{
+   Object.keys(localStorage).filter(k=>/plan.?group/i.test(k)).forEach(k=>localStorage.removeItem(k));
+   localStorage.setItem(STORE,JSON.stringify(state));
+  }catch{}
+ }
+ function removeGroupUi26(){
+  ['employeePlanGroup','employeeNewPlanGroup','employeeNewPlanGroupMax','employeeCreatePlanGroup','newDepartmentGroup','newDepartmentGroupName','standalonePlanGroupName','standalonePlanGroupMax','createPlanGroup','planGroupSettings','planGroupTable'].forEach(id=>document.getElementById(id)?.closest('.panel,.subpanel,.toolbar,div')?.remove());
+  const depPage=document.getElementById('page-departments');
+  if(depPage){
+   [...depPage.querySelectorAll('h2,h3,p,th,button,label')].forEach(el=>{
+    if(/Plan-?Grupp/i.test(el.textContent||'')){
+     const box=el.closest('.panel,.subpanel,.toolbar');
+     if(box&&box!==depPage)box.remove(); else if(el.tagName==='BUTTON')el.remove();
+    }
+   });
+  }
+ }
+ purgeGroups26();
+
+ // Urlaubstage: Montag bis Samstag, jedoch keine Berliner Feiertage. Sonntage nie zählen.
+ workingDays=function(from,to){
+  let count=0;
+  for(let d=localDate(from),end=localDate(to);d<=end;d.setDate(d.getDate()+1))if(!isExcluded26(d))count++;
+  return count;
+ };
+ vacationDays=function(v){const n=workingDays(v.from,v.to);return v.scope==='full'?n:n*0.5};
+
+ function employeeList26(choice){
+  if(choice==='__leaders__')return (state.employees||[]).filter(e=>e.leader);
+  return (state.employees||[]).filter(e=>norm26(e.department)===norm26(choice));
+ }
+ function visibleAbsence26(employee,date){
+  if(isExcluded26(date))return null;
+  return vacsFor(employee.id).find(v=>inRange(date,v.from,v.to))||null;
+ }
+ function activeAway26(choice,date){
+  if(isExcluded26(date))return 0;
+  return employeeList26(choice).filter(e=>{const v=visibleAbsence26(e,date);return v&&v.status!=='Abgelehnt'}).length;
+ }
+
+ // Auswahlfelder ausschließlich mit Leiterplan und Einzelabteilungen füllen.
+ fillSelects=function(){
+  const depOptions=(state.departments||[]).map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  const cal=document.getElementById('departmentFilter');
+  if(cal){const old=cal.value;cal.innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+depOptions;cal.value=old==='__leaders__'||state.departments.includes(old)?old:(state.departments[0]||'__leaders__')}
+  const year=document.getElementById('yearDepartmentFilter');if(year){const old=year.value;year.innerHTML=depOptions;year.value=state.departments.includes(old)?old:(state.departments[0]||'')}
+  const empDep=document.getElementById('employeeDepartment');if(empDep){const old=empDep.value;empDep.innerHTML=depOptions;if(state.departments.includes(old))empDep.value=old}
+  const sub=document.getElementById('employeeSubstitute');if(sub){const old=sub.value;sub.innerHTML='<option value="">Keine</option>'+(state.employees||[]).map(e=>`<option>${esc(e.name)}</option>`).join('');if([...sub.options].some(o=>o.value===old))sub.value=old}
+  const move=document.getElementById('moveEmployee');if(move)move.innerHTML=(state.employees||[]).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+  const userDep=document.getElementById('userDepartment');if(userDep){const old=userDep.value;userDep.innerHTML='<option value="">Alle / keine feste Abteilung</option>'+depOptions;if([...userDep.options].some(o=>o.value===old))userDep.value=old}
+  removeGroupUi26();
+ };
+
+ function calendarHeader26(year,month,days){
+  let html='<thead><tr><th class="employee-name">Mitarbeiter</th>';
+  for(let day=1;day<=days;day++){
+   const date=new Date(year,month-1,day),holiday=holidayName(date),weekday=date.toLocaleDateString('de-DE',{weekday:'short'}).replace('.','');
+   html+=`<th class="${date.getDay()===0?'sunday-cell':''} ${holiday?'holiday':''}" title="${esc(holiday||'')}"><strong>${day}</strong><small>${holiday?esc(holiday):weekday}</small></th>`;
+  }
+  return html+'</tr></thead><tbody>';
+ }
+ renderCalendar=function(){
+  const choice=document.getElementById('departmentFilter')?.value||'__leaders__';
+  const parts=(document.getElementById('monthFilter')?.value||'').split('-').map(Number),year=parts[0]||new Date().getFullYear(),month=parts[1]||new Date().getMonth()+1,days=new Date(year,month,0).getDate();
+  const leaderMode=choice==='__leaders__',employees=employeeList26(choice).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  const vacSel=document.getElementById('vacationEmployee');if(vacSel)vacSel.innerHTML=employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+  let html=calendarHeader26(year,month,days);
+  for(const e of employees){
+   html+=`<tr><td class="employee-name"><strong>${esc(e.name)}</strong>${leaderMode?`<br><small>${esc(e.department)} · Vertretung: ${esc(e.substitute||'Keine')}</small>`:e.leader?' <span class="badge leader-badge">Leiter</span>':''}</td>`;
+   for(let day=1;day<=days;day++){
+    const date=new Date(year,month-1,day),holiday=holidayName(date),v=visibleAbsence26(e,date),limit=leaderMode?Number(state.leaderMaxAway??state.leaderMinimum??1):Number(state.departmentMaxAway?.[choice]??1),critical=activeAway26(choice,date)>limit;
+    let cls=holiday?'holiday':date.getDay()===0?'sunday-cell':'';
+    if(v){if(v.status==='Abgelehnt')cls='rejected-cell';else if(moveForVacation(v))cls='moved-cell';else if(v.status==='Beantragt')cls='pending-cell';else if(v.status==='Geplant')cls='planned-cell';else cls=critical?'critical':'vacation'}else if(critical&&!isExcluded26(date))cls='critical';
+    html+=`<td class="${cls}" title="${esc(v?vacationTitle(v,date,holiday):(holiday||''))}">${v?absenceCode(v):''}</td>`;
+   }
+   html+='</tr>';
+  }
+  if(!employees.length)html+=`<tr><td colspan="${days+1}" class="empty-state"><strong>Keine Mitarbeiter gefunden.</strong></td></tr>`;
+  const table=document.getElementById('calendarTable');if(table)table.innerHTML=html+'</tbody>';
+  let peak=0;for(let day=1;day<=days;day++)peak=Math.max(peak,activeAway26(choice,new Date(year,month-1,day)));
+  const limit=leaderMode?Number(state.leaderMaxAway??state.leaderMinimum??1):Number(state.departmentMaxAway?.[choice]??1),warning=document.getElementById('calendarWarning');
+  if(warning)warning.innerHTML=peak>limit?`<div class="warning warning-danger"><strong>Urlauber-Limit überschritten:</strong> Bis zu ${peak} gleichzeitig abwesend, erlaubt sind ${limit}.</div>`:`<div class="notice"><strong>${leaderMode?'Leiterplan':esc(choice)}:</strong> Maximal ${peak} gleichzeitig im Urlaub; erlaubt sind ${limit}.</div>`;
+  renderVacationList(choice);
+ };
+
+ function listRows26(choice){const ids=new Set(employeeList26(choice).map(e=>Number(e.id)));return (state.vacations||[]).filter(v=>ids.has(Number(v.employeeId))).sort((a,b)=>localDate(a.from)-localDate(b.from))}
+ function actionButton26(label,action,id,extra=''){return `<button type="button" class="button tiny ${extra}" onclick="return window.UrlaubV26.${action}(${Number(id)},event)">${label}</button>`}
+ renderVacationList=function(choice){
+  const table=document.getElementById('vacationList');if(!table)return;
+  const rows=listRows26(choice);
+  table.innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{
+   const move=moveForVacation(v),hint=move?`↔ Verschoben von ${move.oldPeriod}; ${move.reason||'ohne Grundangabe'}`:(v.note||'–');
+   let actions='';if(mayEdit26())actions+=actionButton26('Verschieben/Bearbeiten','edit',v.id)+' ';
+   if(mayDecide26()&&v.status!=='Genehmigt')actions+=actionButton26('Genehmigen','approve',v.id,'primary')+' ';
+   if(mayDecide26()&&v.status!=='Abgelehnt')actions+=actionButton26('Ablehnen','reject',v.id,'reject')+' ';
+   if(mayEdit26())actions+=actionButton26('Löschen','remove',v.id,'danger');
+   return `<tr class="${v.status==='Abgelehnt'?'rejected-row':''}"><td>${esc(emp(v.employeeId)?.name||'')}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td>${esc(hint)}</td><td>${actions}</td></tr>`;
+  }).join('')+'</tbody>';
+ };
+
+ window.UrlaubV26={
+  edit(id,event){event?.preventDefault();event?.stopPropagation();const v=state.vacations.find(x=>Number(x.id)===Number(id));if(!v)return alert('Der Urlaubseintrag wurde nicht gefunden.');const e=emp(v.employeeId);if(e&&document.getElementById('departmentFilter'))document.getElementById('departmentFilter').value=e.department;renderCalendar();document.getElementById('editingVacationId').value=String(v.id);document.getElementById('vacationEmployee').value=String(v.employeeId);document.getElementById('vacationFrom').value=v.from;document.getElementById('vacationTo').value=v.to;document.getElementById('vacationType').value=v.type;document.getElementById('vacationScope').value=v.scope||'full';document.getElementById('vacationStatus').value=v.status;document.getElementById('vacationNote').value=v.note||'';document.getElementById('vacationFormTitle').textContent='Urlaub bearbeiten oder verschieben';document.getElementById('vacationForm').classList.remove('hidden');document.getElementById('vacationForm').scrollIntoView({behavior:'smooth',block:'start'});return false},
+  approve(id,event){event?.preventDefault();event?.stopPropagation();if(!mayDecide26())return alert('Nur Administrator und Marktleitung dürfen Urlaube genehmigen.');const v=state.vacations.find(x=>Number(x.id)===Number(id));if(!v)return;v.status='Genehmigt';v.note=String(v.note||'').replace(/^Muss verschoben werden:?\s*/i,'');saveState('Urlaub genehmigt',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)}`);renderAll();return false},
+  reject(id,event){event?.preventDefault();event?.stopPropagation();if(!mayDecide26())return alert('Nur Administrator und Marktleitung dürfen Urlaube ablehnen.');const v=state.vacations.find(x=>Number(x.id)===Number(id));if(!v)return;const reason=prompt('Grund für die Ablehnung / erforderliche Verschiebung:','Überschneidung oder Urlauber-Limit');if(reason===null)return false;v.status='Abgelehnt';v.note=`Muss verschoben werden${reason.trim()?': '+reason.trim():''}`;saveState('Urlaub abgelehnt',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)}`);renderAll();return false},
+  remove(id,event){event?.preventDefault();event?.stopPropagation();const v=state.vacations.find(x=>Number(x.id)===Number(id));if(!v)return;if(!confirm(`Urlaub von ${emp(v.employeeId)?.name||'Mitarbeiter'} (${period(v.from,v.to)}) wirklich löschen?`))return false;state.vacations=state.vacations.filter(x=>Number(x.id)!==Number(id));saveState('Urlaub gelöscht',`${emp(v.employeeId)?.name||''} · ${period(v.from,v.to)}`);renderAll();return false}
+ };
+
+ // Abteilungsansicht vollständig ohne Gruppenfelder oder Gruppenspalten.
+ renderDepartments=function(){
+  const table=document.getElementById('departmentTable');if(!table)return;
+  if(document.getElementById('leaderMinimum'))document.getElementById('leaderMinimum').value=state.leaderMaxAway??state.leaderMinimum??1;
+  if(document.getElementById('keyLeaderMinimum'))document.getElementById('keyLeaderMinimum').value=state.keyLeaderMinimum??1;
+  table.innerHTML='<thead><tr><th>Abteilung</th><th>Max. Urlauber</th><th>Mitarbeiter</th><th>Leiter</th><th>Aktion</th></tr></thead><tbody>'+(state.departments||[]).map((d,i)=>{const employees=(state.employees||[]).filter(e=>norm26(e.department)===norm26(d));return `<tr><td>${esc(d)}</td><td>${Number(state.departmentMaxAway?.[d]??1)}</td><td>${employees.length}</td><td>${esc(employees.filter(e=>e.leader).map(e=>e.name+(e.keyLeader?' 🔑':'')).join(', ')||'–')}</td><td><button type="button" class="button tiny" onclick="renameDepartment(${i})">Umbenennen</button> <button type="button" class="button tiny" onclick="editDepartmentMaximum(${i})">Max. Urlauber</button> <button type="button" class="button tiny danger" onclick="deleteDepartment(${i})">Löschen</button></td></tr>`}).join('')+'</tbody>';
+  removeGroupUi26();
+ };
+
+ const baseRenderAll26=renderAll;
+ renderAll=function(){purgeGroups26();baseRenderAll26();fillSelects();renderEmployees();renderDepartments();renderCalendar();if(document.getElementById('page-users'))renderUsers();if(document.getElementById('page-audit'))renderAudit();removeGroupUi26()};
+
+ // Alte Service Worker abmelden, damit GitHub Pages nicht länger veraltete Dateien ausliefert.
+ if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if('caches' in window)caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{})}
+ document.addEventListener('DOMContentLoaded',()=>{purgeGroups26();removeGroupUi26();fillSelects();renderAll()},{once:true});
+ purgeGroups26();removeGroupUi26();fillSelects();renderAll();
+})();

@@ -1,15 +1,14 @@
-# Urlaubsplaner Berlin – Version 2.5
+# Urlaubsplaner Berlin – Version 2.6
 
-## Änderungen
+## Korrekturen
 
-- Plan-Gruppen vollständig aus Oberfläche und Datenlogik entfernt
-- Urlaub wird wieder ausschließlich nach einzelnen Abteilungen geplant
-- Urlaubsaktionen Verschieben/Bearbeiten, Genehmigen, Ablehnen und Löschen stabil neu angebunden
-- Sonntage und Berliner Feiertage werden weder als Urlaubstage berechnet noch mit U markiert
-- Samstag bleibt ein normaler Arbeitstag
-- Benutzerseite, Änderungsprotokoll und Datensicherung wiederhergestellt
-- GitHub-Pages- und PWA-Kompatibilität bleiben erhalten
+- Plan-Gruppen vollständig aus Oberfläche, Datenmodell und Abteilungsverwaltung entfernt
+- Urlaubsaktionen direkt und robust angebunden: Bearbeiten, Genehmigen, Ablehnen und Löschen
+- Ablehnen ist für Administrator und Marktleitung sichtbar
+- Sonntage und Berliner Feiertage zählen nicht als Urlaubstage und zeigen kein Urlaubskürzel
+- Samstag bleibt ein regulärer Arbeitstag
+- Veraltete Service-Worker- und Browser-Caches werden automatisch entfernt
+- Benutzer, Änderungsprotokoll und Datensicherung bleiben erhalten
+- GitHub-Pages-kompatibel
 
-## Installation
-
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Dateien überschreiben. Danach Strg+F5 drücken. Eine installierte Desktop-App vollständig schließen und erneut öffnen.
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories kopieren.
