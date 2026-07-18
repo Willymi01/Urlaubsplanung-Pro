@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0c4d30">
+  <title>Urlaubsplaner Berlin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="loginPage" class="login-page">
+    <div class="login-card">
+      <div class="brand-mark">U</div>
+      <h1>Urlaubsplaner</h1>
+      <p class="subtitle">GitHub-Pages-Testversion</p>
+      <label for="loginName">Name</label>
+      <select id="loginName"></select>
+      <label for="loginPin">PIN</label>
+      <input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
+      <button id="loginButton" class="button button-primary login-button">Anmelden</button>
+      <div id="loginError" class="login-error"></div>
+      <div class="test-data">Testzugang: <strong>Admin</strong> · PIN <strong>1234</strong></div>
+    </div>
+  </section>
+
+  <div id="application" class="hidden">
+    <header>
+      <div class="brand">Urlaubsplaner · Berlin</div>
+      <div class="header-right">
+        <span id="loggedInUser"></span>
+        <button id="logoutButton" class="button button-light">Abmelden</button>
+      </div>
+    </header>
+
+    <nav id="navigation">
+      <button class="active" data-page="dashboard">Dashboard</button>
+      <button data-page="calendar">Abteilungsplan</button>
+      <button data-page="leaders">Leiterplan</button>
+      <button data-page="employees">Mitarbeiter</button>
+      <button data-page="history">Verschiebungen</button>
+    </nav>
+
+    <main>
+      <section id="page-dashboard" class="page">
+        <div class="notice">Diese Version speichert Daten nur lokal im Browser. Für den späteren Mehrbenutzerbetrieb wird eine Datenbank ergänzt.</div>
+        <div class="metrics">
+          <div class="metric"><span>Abteilungen</span><strong id="departmentCount">0</strong></div>
+          <div class="metric"><span>Mitarbeiter</span><strong id="employeeCount">0</strong></div>
+          <div class="metric"><span>Leiter</span><strong id="leaderCount">0</strong></div>
+          <div class="metric"><span>Urlaubseinträge</span><strong id="vacationCount">0</strong></div>
+        </div>
+        <div class="panel">
+          <h2>Aktuelle Hinweise</h2>
+          <div id="warnings"></div>
+        </div>
+      </section>
+
+      <section id="page-calendar" class="page hidden">
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Abteilungsplan</h2>
+            <button id="showVacationForm" class="button button-primary">Urlaub eintragen</button>
+          </div>
+          <div class="toolbar">
+            <div class="toolbar-field"><label for="departmentFilter">Abteilung</label><select id="departmentFilter"></select></div>
+            <div class="toolbar-field"><label for="monthFilter">Monat</label><input id="monthFilter" type="month"></div>
+          </div>
+          <div id="vacationForm" class="subpanel hidden">
+            <div class="form-grid">
+              <div><label for="vacationEmployee">Mitarbeiter</label><select id="vacationEmployee"></select></div>
+              <div><label for="vacationFrom">Von</label><input id="vacationFrom" type="date"></div>
+              <div><label for="vacationTo">Bis</label><input id="vacationTo" type="date"></div>
+              <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option></select></div>
+              <div class="span-2"><label for="vacationNote">Notiz</label><input id="vacationNote" placeholder="optional"></div>
+            </div>
+            <div class="actions">
+              <button id="saveVacation" class="button button-primary">Speichern</button>
+              <button id="cancelVacation" class="button button-light">Abbrechen</button>
+            </div>
+          </div>
+          <div id="calendarWarning"></div>
+          <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
+          <p class="muted">Grün = Urlaub · Grau = Wochenende · Rot = kritische Überschneidung</p>
+        </div>
+      </section>
+
+      <section id="page-leaders" class="page hidden">
+        <div class="panel">
+          <h2>Leiterplan</h2>
+          <div class="table-wrapper"><table id="leaderTable"></table></div>
+          <div id="leaderWarnings"></div>
+        </div>
+      </section>
+
+      <section id="page-employees" class="page hidden">
+        <div class="panel">
+          <h2>Mitarbeiterverwaltung</h2>
+          <div class="form-grid">
+            <div><label for="employeeName">Name</label><input id="employeeName" placeholder="Vor- und Nachname"></div>
+            <div><label for="employeeDepartment">Abteilung</label><select id="employeeDepartment"></select></div>
+            <div><label for="employeeHours">Wochenstunden</label><input id="employeeHours" type="number" min="1" max="60" value="37"></div>
+            <div><label for="employeeVacationDays">Urlaubstage</label><input id="employeeVacationDays" type="number" min="0" max="60" value="36"></div>
+            <div><label for="employeeSubstitute">Vertretung</label><select id="employeeSubstitute"><option value="">Keine</option></select></div>
+            <div class="checkbox-field"><label><input id="employeeLeader" type="checkbox"> Mitarbeiter ist Leiter</label></div>
+          </div>
+          <div class="actions"><button id="addEmployee" class="button button-primary">Mitarbeiter hinzufügen</button><button id="resetData" class="button button-danger">Testdaten zurücksetzen</button></div>
+          <div class="table-wrapper spaced"><table id="employeeTable"></table></div>
+        </div>
+      </section>
+
+      <section id="page-history" class="page hidden">
+        <div class="panel">
+          <h2>Urlaubsverschiebungen</h2>
+          <div class="form-grid">
+            <div><label for="moveEmployee">Mitarbeiter</label><select id="moveEmployee"></select></div>
+            <div><label for="moveOld">Alter Zeitraum</label><input id="moveOld" placeholder="z. B. 05.–09.07.2027"></div>
+            <div><label for="moveNew">Neuer Zeitraum</label><input id="moveNew" placeholder="z. B. 19.–23.07.2027"></div>
+            <div><label for="moveReason">Grund</label><input id="moveReason" placeholder="Personalmangel"></div>
+            <div><label for="moveInitiator">Veranlasst durch</label><select id="moveInitiator"><option>Betrieb</option><option>Mitarbeiter</option></select></div>
+          </div>
+          <div class="actions"><button id="addMove" class="button button-primary">Verschiebung speichern</button></div>
+          <div class="table-wrapper spaced"><table id="historyTable"></table></div>
+          <div id="fairnessWarnings"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
