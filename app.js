@@ -1682,3 +1682,91 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
 
  hydrateV22Groups();refreshGroupSelects();applyPermissions();renderAll();
 })();
+
+
+/* Version 2.3: vereinfachte Plan-Gruppen und robuste Urlaubsaktionen */
+(()=>{
+ const GROUP_STORE='vacationPlannerPlanGroupsV23';
+ const n=v=>String(v||'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+ const gid=()=>`pg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+ const canDecide=()=>['admin','management'].includes(currentUser?.role);
+ const canEditVacation=()=>['admin','management','leader','deputy'].includes(currentUser?.role);
+
+ function loadGroupsV23(){
+  let stored=[];try{stored=JSON.parse(localStorage.getItem(GROUP_STORE)||'[]')}catch{}
+  const combined=[...(Array.isArray(state.planGroups)?state.planGroups:[]),...(Array.isArray(stored)?stored:[])];
+  const out=[];for(const raw of combined){const name=String(raw?.name||'').trim();if(!name)continue;let g=out.find(x=>n(x.name)===n(name));if(g){g.maxAway=Math.max(g.maxAway,Math.max(0,Number(raw.maxAway??2)));continue}out.push({id:String(raw.id||gid()),name,maxAway:Math.max(0,Number(raw.maxAway??2))})}
+  state.planGroups=out;localStorage.setItem(GROUP_STORE,JSON.stringify(out));localStorage.setItem(STORE,JSON.stringify(state));
+ }
+ function saveGroupsV23(){state.planGroups=Array.isArray(state.planGroups)?state.planGroups:[];localStorage.setItem(GROUP_STORE,JSON.stringify(state.planGroups));localStorage.setItem(STORE,JSON.stringify(state))}
+ function groupByIdV23(id){return (state.planGroups||[]).find(g=>String(g.id)===String(id))||null}
+ function employeeGroupV23(e){return groupByIdV23(e?.planGroupId)}
+ function groupChoiceV23(id){return `__groupid__:${id}`}
+ function groupFromChoiceV23(choice){if(!String(choice).startsWith('__groupid__:'))return null;return groupByIdV23(String(choice).split(':')[1])}
+
+ function refreshGroupUiV23(){
+  loadGroupsV23();
+  const select=$('employeePlanGroup');if(select){const cur=select.value;select.innerHTML='<option value="">Keine Plan-Gruppe</option>'+state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');if([...select.options].some(o=>o.value===cur))select.value=cur}
+  const filter=$('departmentFilter');if(filter){const cur=filter.value;const assigned=new Set(state.employees.map(e=>e.department));const groupOpts=state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(g=>`<option value="${groupChoiceV23(g.id)}">Plan-Gruppe: ${esc(g.name)}</option>`).join('');const individual=(state.departments||[]).filter(dep=>!state.employees.some(e=>e.department===dep&&e.planGroupId)).map(dep=>`<option value="${esc(dep)}">${esc(dep)}</option>`).join('');filter.innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOpts+individual;const vals=[...filter.options].map(o=>o.value);filter.value=vals.includes(cur)?cur:(state.planGroups[0]?groupChoiceV23(state.planGroups[0].id):(vals[0]||''))}
+ }
+ function createGroupFromEmployeeV23(){
+  const name=$('employeeNewPlanGroup')?.value.trim(),maxAway=Math.max(0,Number($('employeeNewPlanGroupMax')?.value||2));if(!name)return alert('Bitte einen Namen für die Plan-Gruppe eingeben.');loadGroupsV23();if(state.planGroups.some(g=>n(g.name)===n(name)))return alert('Diese Plan-Gruppe existiert bereits.');const g={id:gid(),name,maxAway};state.planGroups.push(g);saveGroupsV23();refreshGroupUiV23();$('employeePlanGroup').value=g.id;$('employeeNewPlanGroup').value='';alert(`Plan-Gruppe „${name}“ wurde angelegt.`);renderAll()
+ }
+ const create=$('employeeCreatePlanGroup');if(create)create.addEventListener('click',createGroupFromEmployeeV23);
+
+ // Plan-Gruppe nur am Mitarbeiter speichern; Abteilungen bleiben unabhängig.
+ const saveEmployeeBeforeV23=saveEmployee;
+ saveEmployee=function(){
+  const selected=String($('employeePlanGroup')?.value||'');
+  saveEmployeeBeforeV23();
+  const name=$('employeeName')?.value.trim();
+  // saveEmployee leert das Formular; Zuordnung wurde bereits von früheren Versionen übernommen.
+  saveGroupsV23();
+ };
+
+ const editEmployeeBeforeV23=window.editEmployee;
+ window.editEmployee=function(id){editEmployeeBeforeV23(id);const e=emp(id);if(e&&$('employeePlanGroup'))$('employeePlanGroup').value=String(e.planGroupId||'')};
+
+ // Auswahl und Kalender ausschließlich anhand der Mitarbeiter-Plan-Gruppe.
+ employeesForSelection=function(choice){
+  if(choice==='__leaders__')return state.employees.filter(e=>e.leader);
+  const group=groupFromChoiceV23(choice);if(group)return state.employees.filter(e=>String(e.planGroupId||'')===String(group.id));
+  return state.employees.filter(e=>n(e.department)===n(choice)&&!e.planGroupId);
+ };
+ groupFromChoice=function(choice){return groupFromChoiceV23(choice)};
+ departmentsOfGroup=function(group){return [...new Set(state.employees.filter(e=>String(e.planGroupId||'')===String(group?.id)).map(e=>e.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'))};
+ assignmentBelongsToGroup=function(assignment,group){return String(assignment?.planGroupId||'')===String(group?.id)};
+ employeeInGroupDuringMonth=function(employee,group){return String(employee?.planGroupId||'')===String(group?.id)};
+ maxAwayForGroup=function(id){return Math.max(0,Number(groupByIdV23(id)?.maxAway??2))};
+ groupVacationAwayCount=function(groupOrChoice,date){const group=String(groupOrChoice).startsWith('__groupid__:')?groupFromChoiceV23(groupOrChoice):groupByIdV23(groupOrChoice);if(!group)return 0;return state.employees.filter(e=>String(e.planGroupId||'')===String(group.id)).filter(e=>vacsFor(e.id).some(v=>v.status!=='Abgelehnt'&&inRange(date,v.from,v.to))).length};
+
+ // Bestehende Mitarbeiterzuordnung sicher speichern.
+ const saveEmployeeOriginalV23=saveEmployee;
+ saveEmployee=function(){
+  const selectedGroup=String($('employeePlanGroup')?.value||''),editingId=Number($('editingEmployeeId')?.value||0);
+  saveEmployeeOriginalV23();
+  const employee=editingId?emp(editingId):state.employees[state.employees.length-1];if(employee){employee.planGroupId=selectedGroup;saveState('Plan-Gruppe des Mitarbeiters gespeichert',`${employee.name} · ${groupByIdV23(selectedGroup)?.name||'Keine'}`)}
+  refreshGroupUiV23();renderAll();
+ };
+
+ function vacationRowsForChoiceV23(choice){const ids=new Set(employeesForSelection(choice).map(e=>Number(e.id)));return state.vacations.filter(v=>ids.has(Number(v.employeeId))).sort((a,b)=>localDate(a.from)-localDate(b.from))}
+ renderVacationList=function(choice){
+  const rows=vacationRowsForChoiceV23(choice);
+  $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.note||'–');const decide=canDecide();return `<tr class="${v.status==='Abgelehnt'?'rejected-row':''}"><td>${esc(emp(v.employeeId)?.name||'')}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td>${esc(hint)}</td><td>${canEditVacation()?`<button type="button" class="button tiny" data-vac-action="edit" data-vac-id="${v.id}">Verschieben/Bearbeiten</button>`:''} ${decide&&v.status!=='Genehmigt'?`<button type="button" class="button tiny primary" data-vac-action="approve" data-vac-id="${v.id}">Genehmigen</button>`:''} ${decide&&v.status!=='Abgelehnt'?`<button type="button" class="button tiny reject" data-vac-action="reject" data-vac-id="${v.id}">Ablehnen</button>`:''} ${canEditVacation()?`<button type="button" class="button tiny danger" data-vac-action="delete" data-vac-id="${v.id}">Löschen</button>`:''}</td></tr>`}).join('')+'</tbody>'
+ };
+
+ // Event-Delegation verhindert nicht funktionierende Inline-Buttons.
+ const vacationList=$('vacationList');if(vacationList)vacationList.addEventListener('click',event=>{const button=event.target.closest('[data-vac-action]');if(!button)return;event.preventDefault();const id=Number(button.dataset.vacId),action=button.dataset.vacAction;if(action==='edit')window.editVacation(id);else if(action==='approve'){if(!canDecide())return alert('Nur Administrator und Marktleitung dürfen Urlaube genehmigen.');window.approveVacation(id)}else if(action==='reject'){if(!canDecide())return alert('Nur Administrator und Marktleitung dürfen Urlaube ablehnen.');window.rejectVacation(id)}else if(action==='delete')window.deleteVacation(id)});
+
+ // Abgelehnte Einträge im Kalender rot.
+ const oldAbsenceClassV23=absenceClass;absenceClass=function(v){if(v?.status==='Abgelehnt')return 'rejected-cell';return oldAbsenceClassV23(v)};
+
+ // Abteilungsseite ohne Plan-Gruppen-Bedienelemente.
+ const renderDepartmentsBeforeV23=renderDepartments;renderDepartments=function(){renderDepartmentsBeforeV23();const pg=$('planGroupSettings');if(pg)pg.remove();document.querySelectorAll('#page-departments button').forEach(b=>{if(/Plan-Gruppe/i.test(b.textContent))b.remove()})};
+
+ // Rechtelegende korrigieren und Entscheidung nur Admin/Marktleitung.
+ const applyPermissionsBeforeV23=applyPermissions;applyPermissions=function(){applyPermissionsBeforeV23();document.querySelectorAll('[data-vac-action="approve"],[data-vac-action="reject"]').forEach(el=>el.classList.toggle('hidden',!canDecide()))};
+
+ const renderAllBeforeV23=renderAll;renderAll=function(){loadGroupsV23();refreshGroupUiV23();renderAllBeforeV23();if($('departmentFilter'))renderVacationList($('departmentFilter').value)};
+ loadGroupsV23();refreshGroupUiV23();renderAll();
+})();

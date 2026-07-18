@@ -1,8 +1,8 @@
-# Urlaubsplaner Berlin – Version 2.2
+# Urlaubsplaner Berlin – Version 2.3
 
 GitHub-Pages-kompatible statische Web-App.
 
-## Neu in Version 2.2
+## Neu in Version 2.3
 
 - separate Auswahl von Plan-Gruppe und konkreter Abteilung in der Mitarbeiterverwaltung
 - eine Plan-Gruppe filtert die auswählbaren Abteilungen
@@ -23,7 +23,7 @@ Nach Veröffentlichung über GitHub Pages erscheint in Chrome oder Edge die Scha
 Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben. Anschließend einmal `Strg + F5` verwenden.
 
 
-## Neu in Version 2.2
+## Neu in Version 2.3
 
 - Kritischer Datenfehler behoben: Plan-Gruppen, Gruppenzuordnungen und weitere Einstellungen werden beim Neuladen nicht mehr aus dem LocalStorage entfernt.
 - Plan-Gruppen können unabhängig von einer Abteilung angelegt werden.
@@ -35,20 +35,31 @@ Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhand
 - GitHub Pages und installierbare PWA bleiben unterstützt.
 
 
-## Korrekturen in Version 2.2
+## Korrekturen in Version 2.3
 
 - Plan-Gruppen werden zusätzlich in einem separaten lokalen Sicherungsspeicher gehalten und bleiben nach dem Anlegen sichtbar.
 - Der Plan-Gruppen-Button wurde neu gebunden und bestätigt eine erfolgreiche Speicherung.
 - Nur Administrator und Marktleitung dürfen Urlaub genehmigen oder ablehnen.
 - Der Ablehnen-Button erscheint bei beantragten beziehungsweise genehmigten Urlauben für berechtigte Rollen.
 - „Verschieben/Bearbeiten“ öffnet das Urlaubsformular wieder zuverlässig und setzt Mitarbeiter, Zeitraum, Status und Abwesenheitsart.
-- Browser- und Service-Worker-Cache wurden auf Version 2.2 erhöht.
+- Browser- und Service-Worker-Cache wurden auf Version 2.3 erhöht.
 
 
-## Neu in Version 2.2
+## Neu in Version 2.3
 
 - Plan-Gruppen werden in einem eigenen dauerhaften Speicher gesichert und nach jedem Start wiederhergestellt.
 - Der Button „Plan-Gruppe anlegen“ wurde neu angebunden und aktualisiert die Auswahllisten sofort.
 - Benutzer und Änderungsprotokoll sind für Administrator und Marktleitung sichtbar.
 - Die Marktleitung besitzt auf der Benutzerseite Lesezugriff; Benutzer ändern kann weiterhin nur der Administrator.
 - Cache-Version für GitHub Pages und installierte Desktop-App wurde erhöht.
+
+
+## Neu in Version 2.3
+
+- Plan-Gruppen werden ausschließlich in der Mitarbeiterverwaltung angelegt und zugeordnet.
+- Abteilungsverwaltung enthält keine Plan-Gruppen-Auswahl mehr.
+- Monatsplan zeigt Plan-Gruppen anhand der direkten Mitarbeiterzuordnung.
+- Genehmigen und Ablehnen ist nur für Administrator und Marktleitung möglich.
+- Verschieben, Genehmigen, Ablehnen und Löschen verwenden robuste Event-Handler statt Inline-Aufrufe.
+- Abgelehnte Urlaube werden rot markiert.
+- Rechtelegende für Abteilungsleitung wurde korrigiert.

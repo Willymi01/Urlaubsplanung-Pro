@@ -79,3 +79,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 2.0 */
 .badge.rejected{background:#8d303b;color:#fff}.rejected-cell{background:#d64b55!important;color:#fff!important;font-weight:800;box-shadow:inset 0 0 0 2px #ff8a91}.rejected-row{background:rgba(214,75,85,.12)}.button.reject{background:#b83b47;color:#fff;margin-right:6px}.role-legend td{vertical-align:top;white-space:normal}.role-legend th:first-child{min-width:170px}
+
+/* Version 2.3 */
+.inline-create{display:grid;grid-template-columns:minmax(160px,1fr) 90px auto;gap:8px;align-items:end}.rejected-cell{background:#b43a45!important;color:#fff!important;font-weight:800}.rejected-row{background:rgba(180,58,69,.14)}.button.reject{background:#b43a45;color:#fff}.button.reject:hover{filter:brightness(1.08)}@media(max-width:760px){.inline-create{grid-template-columns:1fr}}
