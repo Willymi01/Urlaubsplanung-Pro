@@ -96,3 +96,17 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 }
 .holiday-list{background:#262414;border:1px solid var(--holiday-border);color:#fff2a8}
 .holiday-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.holiday-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#6f5910;border:1px solid #d8b72e;color:#fff7c7;font-weight:700;font-size:.88rem}
+
+.capacity-ok{
+ margin:9px 0;
+ padding:12px 13px;
+ border:1px solid #69a97c;
+ border-left:5px solid #2f8f4e;
+ border-radius:10px;
+ background:#e9f7ef;
+ color:#183d24;
+}
+@media (prefers-color-scheme: dark){
+ .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
+}
+body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}

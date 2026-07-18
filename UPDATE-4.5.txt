@@ -1,0 +1,14 @@
+URLAUBSPLANER 4.5 – PDF UND GRENZWERTE
+
+Behoben:
+- PDF-Texte, Tageszahlen, Namen und Urlaubskürzel sind wieder sichtbar.
+- Ein eingestelltes Maximum ist zulässig.
+- Leiter-Maximum 3: Warnung erst bei 4 gleichzeitig Abwesenden.
+- Abteilungsmaximum 1: Warnung erst bei 2 gleichzeitig Abwesenden.
+- Plan-Gruppen verwenden dieselbe eindeutige Regel.
+
+Installation:
+1. Alle Dateien in das GitHub-Repository hochladen und vorhandene ersetzen.
+2. Veröffentlichung von GitHub Pages abwarten.
+3. Seite mit Strg+F5 neu laden.
+4. Bei installierter App diese einmal schließen und erneut öffnen.
