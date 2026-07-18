@@ -1,8 +1,8 @@
-# Urlaubsplaner Berlin – Version 2.1
+# Urlaubsplaner Berlin – Version 2.2
 
 GitHub-Pages-kompatible statische Web-App.
 
-## Neu in Version 2.1
+## Neu in Version 2.2
 
 - separate Auswahl von Plan-Gruppe und konkreter Abteilung in der Mitarbeiterverwaltung
 - eine Plan-Gruppe filtert die auswählbaren Abteilungen
@@ -23,7 +23,7 @@ Nach Veröffentlichung über GitHub Pages erscheint in Chrome oder Edge die Scha
 Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben. Anschließend einmal `Strg + F5` verwenden.
 
 
-## Neu in Version 2.1
+## Neu in Version 2.2
 
 - Kritischer Datenfehler behoben: Plan-Gruppen, Gruppenzuordnungen und weitere Einstellungen werden beim Neuladen nicht mehr aus dem LocalStorage entfernt.
 - Plan-Gruppen können unabhängig von einer Abteilung angelegt werden.
@@ -35,11 +35,20 @@ Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhand
 - GitHub Pages und installierbare PWA bleiben unterstützt.
 
 
-## Korrekturen in Version 2.1
+## Korrekturen in Version 2.2
 
 - Plan-Gruppen werden zusätzlich in einem separaten lokalen Sicherungsspeicher gehalten und bleiben nach dem Anlegen sichtbar.
 - Der Plan-Gruppen-Button wurde neu gebunden und bestätigt eine erfolgreiche Speicherung.
 - Nur Administrator und Marktleitung dürfen Urlaub genehmigen oder ablehnen.
 - Der Ablehnen-Button erscheint bei beantragten beziehungsweise genehmigten Urlauben für berechtigte Rollen.
 - „Verschieben/Bearbeiten“ öffnet das Urlaubsformular wieder zuverlässig und setzt Mitarbeiter, Zeitraum, Status und Abwesenheitsart.
-- Browser- und Service-Worker-Cache wurden auf Version 2.1 erhöht.
+- Browser- und Service-Worker-Cache wurden auf Version 2.2 erhöht.
+
+
+## Neu in Version 2.2
+
+- Plan-Gruppen werden in einem eigenen dauerhaften Speicher gesichert und nach jedem Start wiederhergestellt.
+- Der Button „Plan-Gruppe anlegen“ wurde neu angebunden und aktualisiert die Auswahllisten sofort.
+- Benutzer und Änderungsprotokoll sind für Administrator und Marktleitung sichtbar.
+- Die Marktleitung besitzt auf der Benutzerseite Lesezugriff; Benutzer ändern kann weiterhin nur der Administrator.
+- Cache-Version für GitHub Pages und installierte Desktop-App wurde erhöht.

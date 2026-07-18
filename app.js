@@ -1548,3 +1548,137 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
 
  mergePlanGroupBackup();fillSelects();renderAll();
 })();
+
+/* Version 2.2: Plan-Gruppen dauerhaft speichern und Benutzerseite für Marktleitung */
+(()=>{
+ const V22_GROUP_STORE='vacationPlannerPlanGroupsV22';
+ const normal=value=>String(value||'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+ const makeId=()=>`pg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,9)}`;
+
+ function cleanGroups(groups){
+  const result=[];
+  for(const raw of Array.isArray(groups)?groups:[]){
+   const name=String(raw?.name||'').trim();if(!name)continue;
+   const existing=result.find(group=>normal(group.name)===normal(name));
+   if(existing){existing.maxAway=Math.max(existing.maxAway,Math.max(0,Number(raw.maxAway??2)));continue}
+   result.push({id:String(raw.id||makeId()),name,maxAway:Math.max(0,Number(raw.maxAway??2))});
+  }
+  return result;
+ }
+ function readV22Groups(){
+  try{const raw=JSON.parse(localStorage.getItem(V22_GROUP_STORE)||'{}');return raw&&typeof raw==='object'?raw:{}}catch{return{}}
+ }
+ function persistV22Groups(){
+  state.planGroups=cleanGroups(state.planGroups);
+  state.departmentGroupIds=state.departmentGroupIds||{};
+  state.departmentGroups=state.departmentGroups||{};
+  localStorage.setItem(V22_GROUP_STORE,JSON.stringify({
+   planGroups:state.planGroups,
+   departmentGroupIds:state.departmentGroupIds,
+   departmentGroups:state.departmentGroups,
+   planGroupMaxAway:state.planGroupMaxAway||{}
+  }));
+  localStorage.setItem(STORE,JSON.stringify(state));
+ }
+ function hydrateV22Groups(){
+  const backup=readV22Groups();
+  const legacy=(()=>{try{return JSON.parse(localStorage.getItem('vacationPlannerPlanGroupsV21')||'{}')}catch{return{}}})();
+  state.planGroups=cleanGroups([...(state.planGroups||[]),...(legacy.planGroups||[]),...(backup.planGroups||[])]);
+  state.departmentGroupIds={...(legacy.departmentGroupIds||{}),...(backup.departmentGroupIds||{}),...(state.departmentGroupIds||{})};
+  state.departmentGroups={...(legacy.departmentGroups||{}),...(backup.departmentGroups||{}),...(state.departmentGroups||{})};
+  state.planGroupMaxAway={...(legacy.planGroupMaxAway||{}),...(backup.planGroupMaxAway||{}),...(state.planGroupMaxAway||{})};
+  for(const department of state.departments||[]){
+   let id=String(state.departmentGroupIds[department]||'');
+   let group=state.planGroups.find(item=>String(item.id)===id);
+   if(!group){
+    const name=String(state.departmentGroups[department]||'').trim();
+    group=name?state.planGroups.find(item=>normal(item.name)===normal(name)):null;
+    id=group?String(group.id):'';
+   }
+   state.departmentGroupIds[department]=id;
+   state.departmentGroups[department]=group?.name||'';
+  }
+  persistV22Groups();
+ }
+
+ function groupOptions(selected=''){
+  return '<option value="">Keine Plan-Gruppe</option>'+state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(group=>`<option value="${esc(group.id)}" ${String(group.id)===String(selected)?'selected':''}>${esc(group.name)}</option>`).join('');
+ }
+ function refreshGroupSelects(){
+  hydrateV22Groups();
+  for(const id of ['employeePlanGroup','newDepartmentGroup']){
+   const select=$(id);if(!select)continue;
+   const selected=select.value;select.innerHTML=groupOptions(selected);
+   if(![...select.options].some(option=>option.value===selected))select.value='';
+  }
+ }
+
+ function createGroupV22(){
+  const name=$('standalonePlanGroupName')?.value.trim();
+  const maxAway=Math.max(0,Math.floor(Number($('standalonePlanGroupMax')?.value||2)));
+  if(!name)return alert('Bitte einen Namen für die Plan-Gruppe eingeben.');
+  hydrateV22Groups();
+  if(state.planGroups.some(group=>normal(group.name)===normal(name)))return alert('Diese Plan-Gruppe existiert bereits.');
+  const group={id:makeId(),name,maxAway};state.planGroups.push(group);
+  state.planGroupMaxAway=state.planGroupMaxAway||{};state.planGroupMaxAway[name]=maxAway;
+  persistV22Groups();
+  if($('standalonePlanGroupName'))$('standalonePlanGroupName').value='';
+  refreshGroupSelects();
+  if(typeof renderDepartments==='function')renderDepartments();
+  alert(`Die Plan-Gruppe „${name}“ wurde gespeichert.`);
+ }
+
+ const createButton=$('createPlanGroup');
+ if(createButton){
+  const replacement=createButton.cloneNode(true);createButton.replaceWith(replacement);replacement.addEventListener('click',createGroupV22);
+ }
+
+ const previousSaveState=saveState;
+ saveState=function(action='Daten geändert',details=''){
+  const result=previousSaveState(action,details);persistV22Groups();return result;
+ };
+
+ const previousFillSelects=fillSelects;
+ fillSelects=function(){hydrateV22Groups();previousFillSelects();refreshGroupSelects()};
+
+ const previousApplyPermissions=applyPermissions;
+ applyPermissions=function(){
+  previousApplyPermissions();
+  const managementAccess=['admin','management'].includes(currentUser?.role);
+  document.querySelectorAll('[data-management-visible="true"]').forEach(element=>element.classList.toggle('hidden',!managementAccess));
+  const userPage=$('page-users');
+  if(userPage){
+   const canEdit=currentUser?.role==='admin';
+   ['userName','userPin','userRole','userDepartment','userActive','saveUser','cancelUserEdit'].forEach(id=>{const element=$(id);if(element)element.disabled=!canEdit});
+   const intro=userPage.querySelector('.panel-heading .muted');
+   if(intro&&currentUser?.role==='management')intro.textContent='Benutzerkonten und Rollenübersicht. Die Marktleitung hat hier Lesezugriff; Änderungen sind Administratoren vorbehalten.';
+  }
+ };
+
+ const previousRenderUsers=renderUsers;
+ renderUsers=function(){
+  previousRenderUsers();
+  if(!$('userTable'))return;
+  if(currentUser?.role==='management'){
+   $('userTable').querySelectorAll('tbody tr').forEach(row=>{const cell=row.lastElementChild;if(cell)cell.innerHTML='<span class="muted">Nur Ansicht</span>'});
+  }
+ };
+
+ const previousRenderDepartments=renderDepartments;
+ renderDepartments=function(){
+  hydrateV22Groups();previousRenderDepartments();
+  const settings=$('planGroupSettings');
+  if(settings){
+   settings.innerHTML=`<h3>Plan-Gruppen</h3><p class="muted">Plan-Gruppen werden dauerhaft gespeichert. Ordne anschließend die Abteilungen über die Schaltfläche „Plan-Gruppe“ zu.</p><div class="table-wrapper"><table><thead><tr><th>Plan-Gruppe</th><th>Abteilungen</th><th>Max. Urlauber gesamt</th><th>Aktion</th></tr></thead><tbody>${state.planGroups.map(group=>{const departments=(state.departments||[]).filter(department=>String(state.departmentGroupIds?.[department]||'')===String(group.id));return `<tr><td><strong>${esc(group.name)}</strong></td><td>${esc(departments.join(', ')||'Noch keine Abteilung')}</td><td>${group.maxAway}</td><td><button class="button tiny" onclick="editPlanGroupMaximum('${esc(group.id)}')">Maximum ändern</button> <button class="button tiny danger" onclick="deletePlanGroupV22('${esc(group.id)}')">Löschen</button></td></tr>`}).join('')||'<tr><td colspan="4" class="muted">Noch keine Plan-Gruppe angelegt.</td></tr>'}</tbody></table></div>`;
+  }
+ };
+ window.deletePlanGroupV22=function(id){
+  hydrateV22Groups();const group=state.planGroups.find(item=>String(item.id)===String(id));if(!group)return;
+  const departments=(state.departments||[]).filter(department=>String(state.departmentGroupIds?.[department]||'')===String(id));
+  if(departments.length)return alert(`Diese Plan-Gruppe ist noch folgenden Abteilungen zugeordnet: ${departments.join(', ')}.`);
+  if(!confirm(`Plan-Gruppe „${group.name}“ wirklich löschen?`))return;
+  state.planGroups=state.planGroups.filter(item=>String(item.id)!==String(id));persistV22Groups();refreshGroupSelects();renderAll();
+ };
+
+ hydrateV22Groups();refreshGroupSelects();applyPermissions();renderAll();
+})();

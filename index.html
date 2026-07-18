@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v2.0</title>
-  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><link rel="stylesheet" href="style.css?v=2.0">
+  <title>Urlaubsplaner Berlin · v2.2</title>
+  <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/icon-192.png"><link rel="stylesheet" href="style.css?v=2.2">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 2.1 · GitHub Pages</p>
+    <p class="subtitle">Version 2.2 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 2.1</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 2.2</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="installAppButton" class="button light hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -33,8 +33,8 @@
     <button data-page="week">Wochenübersicht</button>
     <button data-page="employees">Mitarbeiter</button>
     <button data-page="departments">Abteilungen</button>
-    <button data-page="users" data-admin-only="true">Benutzer</button>
-    <button data-page="audit" data-admin-only="true">Änderungsprotokoll</button>
+    <button data-page="users" data-management-visible="true">Benutzer</button>
+    <button data-page="audit" data-management-visible="true">Änderungsprotokoll</button>
     <button data-page="sync" data-admin-only="true">Datenzentrale</button>
     <button data-page="settings">Datensicherung</button>
   </nav>
@@ -227,6 +227,6 @@
     </section>
   </main>
 </div>
-<script src="data.js?v=2.1"></script><script src="app.js?v=2.1"></script>
+<script src="data.js?v=2.2"></script><script src="app.js?v=2.2"></script>
 </body>
 </html>
