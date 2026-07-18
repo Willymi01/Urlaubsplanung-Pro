@@ -1,24 +1,25 @@
 window.DEFAULT_DATA={
   users:[{name:'Admin',pin:'1234',role:'admin'},{name:'Anna Schmidt',pin:'1111',role:'leader'},{name:'Tom Wagner',pin:'2222',role:'leader'}],
   departments:['Feinkost','Kasse','Getränke','Obst & Gemüse','Molkerei','Backshop','Drogerie','Tiefkühl','Lager','Verwaltung'],
+  departmentSettings:{'Feinkost':3,'Kasse':3,'Getränke':2,'Obst & Gemüse':2,'Molkerei':2,'Backshop':2,'Drogerie':1,'Tiefkühl':1,'Lager':2,'Verwaltung':1},
   employees:[
-    {id:1,name:'Anna Schmidt',department:'Feinkost',hours:37,vacationDays:36,leader:true,substitute:'Julia Becker'},
-    {id:2,name:'Peter Pfehr',department:'Feinkost',hours:37,vacationDays:36,leader:false,substitute:''},
-    {id:3,name:'Maria Guhra',department:'Feinkost',hours:30,vacationDays:30,leader:false,substitute:''},
-    {id:4,name:'Jan Kullick',department:'Feinkost',hours:37,vacationDays:36,leader:false,substitute:''},
-    {id:5,name:'Tom Wagner',department:'Kasse',hours:37,vacationDays:36,leader:true,substitute:'Max Richter'},
-    {id:6,name:'Max Richter',department:'Kasse',hours:30,vacationDays:30,leader:false,substitute:''},
-    {id:7,name:'Julia Becker',department:'Getränke',hours:37,vacationDays:36,leader:true,substitute:'Peter Hoffmann'},
-    {id:8,name:'Peter Hoffmann',department:'Getränke',hours:37,vacationDays:36,leader:false,substitute:''},
-    {id:9,name:'Sabine Krüger',department:'Obst & Gemüse',hours:37,vacationDays:36,leader:true,substitute:''},
-    {id:10,name:'Murat Yilmaz',department:'Lager',hours:37,vacationDays:36,leader:true,substitute:''}
+    {id:1,name:'Anna Schmidt',department:'Feinkost',hours:37,vacationDays:36,carryover:0,leader:true,substitute:'Julia Becker'},
+    {id:2,name:'Peter Pfehr',department:'Feinkost',hours:37,vacationDays:36,carryover:0,leader:false,substitute:''},
+    {id:3,name:'Maria Guhra',department:'Feinkost',hours:30,vacationDays:30,carryover:0,leader:false,substitute:''},
+    {id:4,name:'Jan Kullick',department:'Feinkost',hours:37,vacationDays:36,carryover:0,leader:false,substitute:''},
+    {id:5,name:'Tom Wagner',department:'Kasse',hours:37,vacationDays:36,carryover:0,leader:true,substitute:'Max Richter'},
+    {id:6,name:'Max Richter',department:'Kasse',hours:30,vacationDays:30,carryover:0,leader:false,substitute:''},
+    {id:7,name:'Julia Becker',department:'Getränke',hours:37,vacationDays:36,carryover:0,leader:true,substitute:'Peter Hoffmann'},
+    {id:8,name:'Peter Hoffmann',department:'Getränke',hours:37,vacationDays:36,carryover:0,leader:false,substitute:''},
+    {id:9,name:'Sabine Krüger',department:'Obst & Gemüse',hours:37,vacationDays:36,carryover:0,leader:true,substitute:''},
+    {id:10,name:'Murat Yilmaz',department:'Lager',hours:37,vacationDays:36,carryover:0,leader:true,substitute:''}
   ],
   vacations:[
-    {id:101,employeeId:1,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt'},
-    {id:102,employeeId:2,from:'2027-07-12',to:'2027-07-16',type:'Urlaub',note:'',status:'Genehmigt'},
-    {id:103,employeeId:3,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt'},
-    {id:104,employeeId:5,from:'2027-07-21',to:'2027-07-30',type:'Urlaub',note:'',status:'Genehmigt'},
-    {id:105,employeeId:7,from:'2027-08-02',to:'2027-08-13',type:'Urlaub',note:'',status:'Genehmigt'}
+    {id:101,employeeId:1,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'},
+    {id:102,employeeId:2,from:'2027-07-12',to:'2027-07-16',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'},
+    {id:103,employeeId:3,from:'2027-07-19',to:'2027-07-23',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'},
+    {id:104,employeeId:5,from:'2027-07-21',to:'2027-07-30',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'},
+    {id:105,employeeId:7,from:'2027-08-02',to:'2027-08-13',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'}
   ],
   moves:[
     {id:201,employeeId:1,oldPeriod:'05.–09.07.2027',newPeriod:'19.–23.07.2027',reason:'Personalmangel',initiator:'Betrieb'},

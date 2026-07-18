@@ -1,18 +1,26 @@
-# Urlaubsplaner Berlin – Version 0.4
+# Urlaubsplaner Berlin – Version 0.5
 
 Statische GitHub-Pages-Testversion.
 
-## Neu in 0.4
-- Mitarbeiter bearbeiten
+## Neu in Version 0.5
+
 - Abteilungen hinzufügen, umbenennen und löschen
-- Urlaubsstatus Beantragt, Genehmigt oder Geplant
-- Anträge direkt genehmigen
-- Konfliktprüfung beim Speichern
-- Hinweise auf Brückentage
-- Datenübernahme aus Version 0.3
+- Beim Löschen werden zugeordnete Mitarbeiter kontrolliert in eine andere Abteilung verschoben
+- Mindestbesetzung je Abteilung bearbeiten
+- Warnung, wenn die Mindestbesetzung unterschritten wird
+- Resturlaub aus dem Vorjahr je Mitarbeiter
+- Urlaubskonto mit Anspruch, Übertrag, genehmigten Tagen und Rest
+- Ganze und halbe Urlaubstage
+- Krankheit als zusätzliche Abwesenheitsart
+- Datenübernahme aus Version 0.4
+
+## Installation
+
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories hochladen und vorhandene Dateien überschreiben. Danach GitHub Pages neu laden, bei Bedarf mit Strg + F5.
 
 ## Testzugang
+
 - Name: Admin
 - PIN: 1234
 
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden.
+Die Daten liegen weiterhin nur im Browser (LocalStorage). Für den späteren Mehrbenutzerbetrieb wird eine zentrale Datenbank benötigt.
