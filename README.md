@@ -22,3 +22,9 @@ Alle Dateien aus dem Hauptordner direkt in das Repository kopieren. Der Ordner `
 
 ## Wichtiger Hinweis
 Die PIN-Anmeldung im GitHub-Pages-Modus ist weiterhin nur eine Demonstration. Erst mit einem produktiven Backend können Anmeldung, Rechte und Daten zentral und sicher umgesetzt werden.
+
+
+## Neu in v0.9.1
+- Verschobene Urlaube werden im Monats- und Leiterplan rosa mit ↔ dargestellt.
+- Der frühere Reiter „Verschiebungen“ wurde aus der Navigation entfernt; die Informationen bleiben im Plan und Änderungsprotokoll erhalten.
+- Neue Abwesenheitsart „Geplanter Freier Tag“ mit Kürzel G.

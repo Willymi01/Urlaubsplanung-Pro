@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.9</title>
+  <title>Urlaubsplaner Berlin · v0.9.1</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.9 · GitHub Pages</p>
+    <p class="subtitle">Version 0.9.1 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.9.1</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -33,7 +33,6 @@
     <button data-page="week">Wochenübersicht</button>
     <button data-page="leaders">Leiterplan</button>
     <button data-page="employees">Mitarbeiter</button>
-    <button data-page="history">Verschiebungen</button>
     <button data-page="departments">Abteilungen</button>
     <button data-page="users" data-admin-only="true">Benutzer</button>
     <button data-page="audit" data-admin-only="true">Änderungsprotokoll</button>
@@ -63,7 +62,7 @@
             <div><label for="vacationEmployee">Mitarbeiter</label><select id="vacationEmployee"></select></div>
             <div><label for="vacationFrom">Von</label><input id="vacationFrom" type="date"></div>
             <div><label for="vacationTo">Bis</label><input id="vacationTo" type="date"></div>
-            <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Fortbildung</option><option>Krankheit</option></select></div>
+            <div><label for="vacationType">Art</label><select id="vacationType"><option>Urlaub</option><option>Sonderurlaub</option><option>Unbezahlt</option><option>Fortbildung</option><option>Krankheit</option><option>Geplanter Freier Tag</option></select></div>
             <div><label for="vacationScope">Umfang</label><select id="vacationScope"><option value="full">Ganzer Tag</option><option value="half-am">Halber Tag vormittags</option><option value="half-pm">Halber Tag nachmittags</option></select></div>
             <div><label for="vacationStatus">Status</label><select id="vacationStatus"><option>Beantragt</option><option>Genehmigt</option><option>Geplant</option></select></div>
             <div class="span-2"><label for="vacationNote">Notiz</label><input id="vacationNote" placeholder="optional"></div>
@@ -72,9 +71,9 @@
         </div>
         <div id="calendarWarning"></div>
         <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
-        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · Grau = Wochenende · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
+        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschobener Urlaub · Grau = Wochenende · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
-      <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Über „Verschieben“ werden der Zeitraum geändert und die Änderung automatisch in der Historie gespeichert.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Verschobene Einträge werden im Plan rosa mit ↔ markiert. Die Details stehen direkt im Hinweis und bleiben im Änderungsprotokoll erhalten.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
     </section>
 
 
@@ -114,7 +113,7 @@
         </div>
         <div id="leaderMonthSummary"></div>
         <div class="table-wrapper"><table id="leaderCalendar" class="calendar leader-calendar"></table></div>
-        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · Gelb = beantragt · Rot = mehrere Leiter gleichzeitig abwesend</p>
+        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschoben · Gelb = beantragt · Rot = mehrere Leiter gleichzeitig abwesend</p>
       </div>
       <div class="panel">
         <div class="panel-heading"><div><h2>Leiter und Vertretungen</h2><p class="muted">Die nächste Abwesenheit und hinterlegte Vertretung je Leitung.</p></div></div>
