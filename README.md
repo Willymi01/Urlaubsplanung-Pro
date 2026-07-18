@@ -29,3 +29,12 @@ Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzung
 - Keine fehlerhafte 0-von-0- oder Mindestbesetzungswarnung mehr.
 - PDF-Export direkt aus den Planungsdaten mit Namen, Tageszahlen, Farben, Kürzeln und Abteilungsblöcken.
 - PDF-Folgeseiten bei vielen Mitarbeitern.
+
+
+## Korrekturen in Version 1.6
+
+- Plan-Gruppen finden Mitarbeiter auch bei abweichenden Leerzeichen oder Groß-/Kleinschreibung der Abteilungsnamen.
+- Gruppen werden im Auswahlfeld über feste IDs angesprochen.
+- Alte Gruppen-Namenszuordnungen werden automatisch repariert.
+- Beim Wechsel zum Monatsplan werden Wochentage, Feiertage und Abwesenheiten sofort vollständig gerendert.
+- Versionsparameter an CSS und JavaScript verhindern, dass GitHub Pages veraltete Dateien aus dem Browser-Cache verwendet.
