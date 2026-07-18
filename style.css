@@ -57,3 +57,4 @@ input[type="date"],input[type="month"]{color-scheme:dark}
 input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2.4);opacity:1;cursor:pointer}
 .date-metric strong{font-size:1.35rem}.date-metric small{display:block;margin-top:4px;text-transform:capitalize;color:var(--muted)}
 @media(max-width:620px){.month-stepper{grid-template-columns:40px minmax(135px,1fr) 40px}.month-arrow{height:42px}}
+.department-separator td{background:#4a504d!important;color:#ffd500!important;text-align:left;font-size:.92rem;border-top:3px solid #ffd500!important}.department-separator strong{color:#fff}.calendar td.critical{box-shadow:inset 0 0 0 2px #ef5350}.calendar .employee-name small{color:#cfd4d1}.subpanel h3{margin-top:0}

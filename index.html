@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.0</title>
+  <title>Urlaubsplaner Berlin · v1.1</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.0 · GitHub Pages</p>
+    <p class="subtitle">Version 1.1 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.0</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.1</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -133,7 +133,7 @@
           <div><label for="employeeVacationDays">Jahresurlaub</label><input id="employeeVacationDays" type="number" min="0" max="60" value="36"></div>
           <div><label for="employeeCarryover">Resturlaub Vorjahr</label><input id="employeeCarryover" type="number" min="0" max="60" step="0.5" value="0"></div>
           <div><label for="employeeSubstitute">Vertretung</label><select id="employeeSubstitute"><option value="">Keine</option></select></div>
-          <div class="checkbox-field"><label><input id="employeeLeader" type="checkbox"> Mitarbeiter ist Leiter</label></div>
+          <div class="checkbox-field"><label><input id="employeeLeader" type="checkbox"> Mitarbeiter ist Leiter</label></div><div class="checkbox-field"><label><input id="employeeKeyLeader" type="checkbox"> Schlüssel-Leitung (Auf-/Abschließen)</label></div>
         </div>
         <div class="actions"><button id="addEmployee" class="button primary">Mitarbeiter hinzufügen</button><button id="cancelEmployeeEdit" class="button light hidden">Bearbeiten abbrechen</button></div>
         </div><div class="panel"><div class="panel-heading"><div><h2>Vorhandene Mitarbeiter</h2><p class="muted">Diese Liste wird unabhängig vom Eingabeformular angezeigt.</p></div><span id="employeeListCount" class="badge"></span></div><div class="table-wrapper"><table id="employeeTable"></table></div>
@@ -151,7 +151,8 @@
     <section id="page-departments" class="page hidden">
       <div class="panel">
         <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen, umbenennen, Mindestbesetzung festlegen oder löschen. Beim Löschen können zugeordnete Mitarbeiter in eine andere Abteilung verschoben werden.</p></div></div>
-        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Nonfood"></div><div><label for="newDepartmentMin">Mindestbesetzung</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
+        <div class="subpanel"><h3>Leiterplan</h3><div class="toolbar"><div><label for="leaderMinimum">Mindestanzahl anwesender Leitungen</label><input id="leaderMinimum" type="number" min="0" value="1"></div><div><label for="keyLeaderMinimum">Mindestanzahl anwesender Schlüssel-Leitungen</label><input id="keyLeaderMinimum" type="number" min="0" value="1"></div><div><button id="saveLeaderMinimums" class="button primary">Leiterbesetzung speichern</button></div></div></div>
+        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><input id="newDepartmentGroup" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Mindestbesetzung</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
         <div class="table-wrapper"><table id="departmentTable"></table></div>
       </div>
     </section>
@@ -221,6 +222,6 @@
     </section>
   </main>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script><script src="data.js"></script><script src="app.js"></script>
+<script src="data.js"></script><script src="app.js"></script>
 </body>
 </html>

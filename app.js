@@ -276,3 +276,100 @@ const bindV08Complete=bind;
 bind=function(){bindV08Complete();bindV09()};
 
 init();
+
+/* Version 1.1: lokaler XLSX-Export, Leiter-Mindestbesetzung, Schlüssel-Leitung und Plan-Gruppen */
+const normalizeV11Base=normalize;
+normalize=function(raw){
+ const n=normalizeV11Base(raw),d=raw&&typeof raw==='object'?raw:{};
+ n.departmentGroups={...(d.departmentGroups||{})};
+ n.departments.forEach(dep=>{if(n.departmentGroups[dep]==null)n.departmentGroups[dep]=''});
+ n.leaderSettings={minimum:Math.max(0,Number(d.leaderSettings?.minimum??1)),keyMinimum:Math.max(0,Number(d.leaderSettings?.keyMinimum??1))};
+ n.employees=n.employees.map(e=>({...e,keyLeader:e.keyLeader===true}));
+ return n;
+};
+state=normalize(state);localStorage.setItem(STORE,JSON.stringify(state));
+
+function planGroups(){return [...new Set(state.departments.map(d=>state.departmentGroups?.[d]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'))}
+function selectedDepartments(value){if(value==='__leaders__')return [];if(String(value).startsWith('__group__:')){const g=value.slice(10);return state.departments.filter(d=>state.departmentGroups?.[d]===g)}return [value]}
+function groupOptionValue(g){return `__group__:${g}`}
+
+const fillSelectsV10=fillSelects;
+fillSelects=function(){
+ const cur=$('departmentFilter').value,ycur=$('yearDepartmentFilter').value;
+ fillSelectsV10();
+ const groups=planGroups();
+ const groupOpts=groups.map(g=>`<option value="${esc(groupOptionValue(g))}">Plan-Gruppe: ${esc(g)}</option>`).join('');
+ const depOpts=state.departments.map(d=>`<option>${esc(d)}</option>`).join('');
+ $('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOpts+depOpts;
+ const valid=['__leaders__',...groups.map(groupOptionValue),...state.departments];$('departmentFilter').value=valid.includes(cur)?cur:(state.departments[0]||'');
+ $('yearDepartmentFilter').innerHTML=groupOpts+depOpts;$('yearDepartmentFilter').value=[...groups.map(groupOptionValue),...state.departments].includes(ycur)?ycur:(state.departments[0]||'');
+};
+
+function leaderDayStats(date){const leaders=state.employees.filter(e=>e.leader),present=leaders.filter(e=>!vacsFor(e.id).some(v=>v.status!=='Geplant'&&inRange(date,v.from,v.to))),keyPresent=present.filter(e=>e.keyLeader);return{total:leaders.length,present:present.length,keyPresent:keyPresent.length}}
+
+renderCalendar=function(){
+ const choice=$('departmentFilter').value||state.departments[0],leaderMode=choice==='__leaders__',deps=selectedDepartments(choice),groupMode=deps.length>1,parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],days=new Date(year,month,0).getDate();
+ const emps=leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department));
+ $('vacationEmployee').innerHTML=emps.map(e=>`<option value="${e.id}">${esc(e.name)}${groupMode?' · '+esc(e.department):''}</option>`).join('');
+ let h='<thead><tr><th class="employee-name">Mitarbeiter</th>';for(let d=1;d<=days;d++)h+=`<th>${d}</th>`;h+='</tr></thead><tbody>';
+ let lastDep='';
+ for(const e of emps.sort((a,b)=>deps.indexOf(a.department)-deps.indexOf(b.department)||a.name.localeCompare(b.name,'de'))){
+  if(groupMode&&e.department!==lastDep){h+=`<tr class="department-separator"><td colspan="${days+1}"><strong>${esc(e.department)}</strong> · Mindestbesetzung ${Number(state.departmentSettings?.[e.department]??2)}</td></tr>`;lastDep=e.department}
+  h+=`<tr><td class="employee-name"><strong>${esc(e.name)}</strong>${leaderMode?`<br><small>${esc(e.department)} · ${e.keyLeader?'🔑 Schlüssel-Leitung · ':''}Vertretung: ${esc(e.substitute||'Keine')}</small>`:e.leader?` <span class="badge leader-badge">Leiter${e.keyLeader?' 🔑':''}</span>`:''}</td>`;
+  for(let d=1;d<=days;d++){
+   const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let cls=[0,6].includes(date.getDay())?'weekend':'';if(holidayName(date))cls='holiday';
+   let critical=false;
+   if(leaderMode){const st=leaderDayStats(date);critical=st.present<Number(state.leaderSettings.minimum||0)||st.keyPresent<Number(state.leaderSettings.keyMinimum||0)}
+   else {const total=state.employees.filter(x=>x.department===e.department).length,abs=countDepartmentAbsence(e.department,date),min=Number(state.departmentSettings?.[e.department]??2);critical=total-abs<min}
+   if(v)cls=moveForVacation(v)?'moved-cell':v.status==='Beantragt'?'pending-cell':v.status==='Geplant'?'planned-cell':critical?'critical':'vacation';else if(critical)cls='critical';
+   h+=`<td class="${cls}" title="${esc(vacationTitle(v,date,leaderMode?e.department:''))}">${v?absenceCode(v):''}</td>`
+  }h+='</tr>'
+ }
+ $('calendarTable').innerHTML=h+'</tbody>';
+ if(leaderMode){let bad=0,keyBad=0;for(let d=1;d<=days;d++){const st=leaderDayStats(new Date(year,month-1,d));if(st.present<Number(state.leaderSettings.minimum||0))bad++;if(st.keyPresent<Number(state.leaderSettings.keyMinimum||0))keyBad++}$('calendarWarning').innerHTML=(bad||keyBad)?`<div class="warning warning-danger"><strong>Leiterbesetzung:</strong> ${bad} Tag(e) unter Mindestbesetzung, ${keyBad} Tag(e) ohne ausreichende Schlüssel-Leitung. Eingestellt: ${state.leaderSettings.minimum} Leitung(en), davon ${state.leaderSettings.keyMinimum} mit Schlüssel.</div>`:'<div class="notice"><strong>Leiterbesetzung:</strong> Mindestbesetzung und Schlüsselbesetzung sind im Monat erfüllt.</div>';renderVacationList('__leaders__')}
+ else {const warnings=deps.map(dep=>{const es=state.employees.filter(e=>e.department===dep),m=maxOverlapForDepartment(dep),min=Number(state.departmentSettings?.[dep]??2),available=es.length-m;return available<min?`${dep}: nur ${available} von ${es.length} verfügbar (Minimum ${min})`:''}).filter(Boolean);$('calendarWarning').innerHTML=warnings.length?`<div class="warning warning-danger"><strong>Mindestbesetzung:</strong> ${warnings.map(esc).join(' · ')}</div>`:'';renderVacationList(choice)}
+};
+
+const renderEmployeesV10=renderEmployees;
+renderEmployees=function(){renderEmployeesV10();const table=$('employeeTable');if(table){table.querySelector('thead tr').insertAdjacentHTML('beforeend','<th>Schlüssel</th>');table.querySelectorAll('tbody tr').forEach((tr,i)=>tr.insertAdjacentHTML('beforeend',`<td>${state.employees[i]?.keyLeader?'🔑 Ja':'–'}</td>`))}}
+saveEmployee=function(){const name=$('employeeName').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');const id=Number($('editingEmployeeId').value),obj={name,department:$('employeeDepartment').value,hours:Number($('employeeHours').value),vacationDays:Number($('employeeVacationDays').value),carryover:Number($('employeeCarryover').value||0),leader:$('employeeLeader').checked,keyLeader:$('employeeKeyLeader').checked,substitute:$('employeeSubstitute').value};if(obj.keyLeader)obj.leader=true;if(id){const e=emp(id);Object.assign(e,obj)}else state.employees.push({id:Date.now(),...obj});saveState('Mitarbeiter gespeichert',name);clearEmployeeForm();renderAll()}
+window.editEmployee=id=>{const e=emp(id);if(!e)return;$('editingEmployeeId').value=id;$('employeeName').value=e.name;$('employeeDepartment').value=e.department;$('employeeHours').value=e.hours;$('employeeVacationDays').value=e.vacationDays;$('employeeCarryover').value=e.carryover||0;$('employeeLeader').checked=e.leader;$('employeeKeyLeader').checked=e.keyLeader===true;$('employeeSubstitute').value=e.substitute||'';$('addEmployee').textContent='Änderungen speichern';$('cancelEmployeeEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+clearEmployeeForm=function(){$('editingEmployeeId').value='';$('employeeName').value='';$('employeeHours').value=37;$('employeeVacationDays').value=36;$('employeeCarryover').value=0;$('employeeLeader').checked=false;$('employeeKeyLeader').checked=false;$('employeeSubstitute').value='';$('addEmployee').textContent='Mitarbeiter hinzufügen';$('cancelEmployeeEdit').classList.add('hidden')}
+
+renderDepartments=function(){
+ $('leaderMinimum').value=state.leaderSettings.minimum;$('keyLeaderMinimum').value=state.leaderSettings.keyMinimum;
+ $('departmentTable').innerHTML='<thead><tr><th>Abteilung</th><th>Plan-Gruppe</th><th>Mindestbesetzung</th><th>Mitarbeiter</th><th>Leiter</th><th>Aktion</th></tr></thead><tbody>'+state.departments.map((d,i)=>{const es=state.employees.filter(e=>e.department===d),min=Number(state.departmentSettings?.[d]??2),group=state.departmentGroups?.[d]||'–';return `<tr><td>${esc(d)}</td><td>${esc(group)}</td><td>${min}</td><td>${es.length}</td><td>${esc(es.filter(e=>e.leader).map(e=>e.name+(e.keyLeader?' 🔑':'')).join(', ')||'–')}</td><td><button class="button tiny" onclick="renameDepartment(${i})">Umbenennen</button> <button class="button tiny" onclick="editDepartmentGroup(${i})">Plan-Gruppe</button> <button class="button tiny" onclick="editDepartmentMinimum(${i})">Mindestbesetzung</button> <button class="button tiny danger" onclick="deleteDepartment(${i})">Löschen</button></td></tr>`}).join('')+'</tbody>'
+};
+const addDepartmentV10=addDepartment;
+addDepartment=function(){const name=$('newDepartment').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');if(state.departments.includes(name))return alert('Diese Abteilung existiert bereits.');state.departments.push(name);state.departmentSettings[name]=Math.max(0,Number($('newDepartmentMin').value||0));state.departmentGroups[name]=$('newDepartmentGroup').value.trim();$('newDepartment').value='';$('newDepartmentGroup').value='';saveState('Abteilung angelegt',name);renderAll()}
+window.editDepartmentGroup=i=>{const d=state.departments[i],value=prompt(`Plan-Gruppe für „${d}“ (leer = keine Gruppe):`,state.departmentGroups?.[d]||'');if(value===null)return;state.departmentGroups[d]=value.trim();saveState('Plan-Gruppe geändert',`${d}: ${value.trim()||'keine'}`);renderAll()}
+function saveLeaderMinimums(){state.leaderSettings.minimum=Math.max(0,Math.floor(Number($('leaderMinimum').value||0)));state.leaderSettings.keyMinimum=Math.max(0,Math.floor(Number($('keyLeaderMinimum').value||0)));saveState('Leiterbesetzung geändert',`${state.leaderSettings.minimum} Leiter, ${state.leaderSettings.keyMinimum} Schlüssel-Leiter`);renderAll()}
+
+// Echter XLSX-Export ohne CDN oder Internetverbindung.
+function xmlEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0)}return(c^0xffffffff)>>>0}
+function u16(n){return new Uint8Array([n&255,(n>>>8)&255])}function u32(n){return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255])}
+function concatBytes(parts){const n=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(n);let o=0;for(const p of parts){out.set(p,o);o+=p.length}return out}
+function zipStore(files){const te=new TextEncoder(),locals=[],centrals=[];let offset=0;for(const [name,text] of Object.entries(files)){const nb=te.encode(name),data=te.encode(text),crc=crc32(data),local=concatBytes([u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),nb,data]);locals.push(local);centrals.push(concatBytes([u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nb]));offset+=local.length}const central=concatBytes(centrals),body=concatBytes(locals);return concatBytes([body,central,u32(0x06054b50),u16(0),u16(0),u16(centrals.length),u16(centrals.length),u32(central.length),u32(body.length),u16(0)])}
+function xlsxCell(ref,value,style=0){return `<c r="${ref}" t="inlineStr" s="${style}"><is><t>${xmlEscape(value)}</t></is></c>`}
+exportMonthExcel=async function(){
+ const btn=$('exportExcel');btn.disabled=true;const old=btn.textContent;btn.textContent='Excel wird erstellt …';
+ try{
+  const choice=$('departmentFilter').value||state.departments[0],leaderMode=choice==='__leaders__',deps=selectedDepartments(choice),groupMode=deps.length>1,[year,month]=$('monthFilter').value.split('-').map(Number),days=new Date(year,month,0).getDate();
+  const employees=(leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).sort((a,b)=>deps.indexOf(a.department)-deps.indexOf(b.department)||a.name.localeCompare(b.name,'de'));
+  const rows=[];let r=1;const title=leaderMode?'Leiterplan (alle Abteilungen)':groupMode?`Plan-Gruppe ${state.departmentGroups[deps[0]]}`:choice;
+  rows.push(`<row r="${r}">${xlsxCell('A'+r,`Urlaubsplan – ${title}`,1)}</row>`);r++;
+  rows.push(`<row r="${r}">${xlsxCell('A'+r,`${String(month).padStart(2,'0')}/${year} · Erstellt am ${new Date().toLocaleDateString('de-DE')}`,2)}</row>`);r++;
+  let header=xlsxCell('A'+r,'Mitarbeiter / Abteilung',1);for(let d=1;d<=days;d++)header+=xlsxCell(excelColumnName(d+1)+r,d,1);rows.push(`<row r="${r}">${header}</row>`);r++;
+  let lastDep='';
+  for(const e of employees){if(groupMode&&e.department!==lastDep){rows.push(`<row r="${r}">${xlsxCell('A'+r,`${e.department} · Mindestbesetzung ${state.departmentSettings[e.department]??2}`,8)}</row>`);r++;lastDep=e.department}let cells=xlsxCell('A'+r,leaderMode?`${e.name} · ${e.department}${e.keyLeader?' · Schlüssel-Leitung':''}`:e.name,0);for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to));let st=[0,6].includes(date.getDay())?6:0;if(holidayName(date))st=7;if(v)st=moveForVacation(v)?4:v.status==='Beantragt'?3:v.type==='Krankheit'?5:v.status==='Geplant'?6:2;cells+=xlsxCell(excelColumnName(d+1)+r,v?absenceCode(v):'',st)}rows.push(`<row r="${r}">${cells}</row>`);r++}
+  rows.push(`<row r="${r}">${xlsxCell('A'+r,'Legende: U Urlaub · K Krankheit · F Fortbildung · G geplanter freier Tag · ↔ verschoben · 🔑 Schlüssel-Leitung',2)}</row>`);
+  const last=excelColumnName(days+1),sheet=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${last}${r}"/><sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="3" topLeftCell="B4" activePane="bottomRight" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="${days+1}" width="4.2" customWidth="1"/></cols><sheetData>${rows.join('')}</sheetData><mergeCells count="3"><mergeCell ref="A1:${last}1"/><mergeCell ref="A2:${last}2"/><mergeCell ref="A${r}:${last}${r}"/></mergeCells><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font><font><i/><color rgb="FF666666"/><sz val="10"/><name val="Calibri"/></font></fonts><fills count="10"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF303532"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFA9D18E"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFD966"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF49ABC"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF9DC3E6"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFE699"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF5B605D"/></patternFill></fill></fills><borders count="2"><border/><border><left style="thin"><color rgb="FF999999"/></left><right style="thin"><color rgb="FF999999"/></right><top style="thin"><color rgb="FF999999"/></top><bottom style="thin"><color rgb="FF999999"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0"/><xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="6" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="7" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="0" fillId="8" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf><xf numFmtId="0" fontId="1" fillId="9" borderId="1" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files={'[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>','_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>','xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Monatsplan" sheetId="1" r:id="rId1"/></sheets></workbook>','xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>','xl/worksheets/sheet1.xml':sheet,'xl/styles.xml':styles};
+  const blob=new Blob([zipStore(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Monatsplan-${safeFileName(title)}-${year}-${String(month).padStart(2,'0')}.xlsx`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+ }catch(err){console.error(err);alert('Excel-Export fehlgeschlagen: '+(err?.message||err))}finally{btn.disabled=false;btn.textContent=old}
+};
+
+// Nach dem ursprünglichen init die neuen Bedienelemente verbinden.
+setTimeout(()=>{if($('saveLeaderMinimums'))$('saveLeaderMinimums').onclick=saveLeaderMinimums;if($('exportExcel'))$('exportExcel').onclick=exportMonthExcel;renderAll()},0);
