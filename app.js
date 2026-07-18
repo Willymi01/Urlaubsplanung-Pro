@@ -34,7 +34,7 @@ function setDefaults(){const d=new Date(),month=`${d.getFullYear()}-${String(d.g
 function bind(){
  $('loginButton').onclick=login;$('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')login()});$('logoutButton').onclick=()=>{$('application').classList.add('hidden');$('loginPage').classList.remove('hidden');$('loginPin').value='';currentUser=null};
  $('navigation').onclick=e=>{const p=e.target.dataset.page;if(!p)return;document.querySelectorAll('#navigation button').forEach(b=>b.classList.toggle('active',b===e.target));document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$('page-'+p).classList.remove('hidden');renderAll()};
- $('departmentFilter').onchange=renderCalendar;$('yearDepartmentFilter').onchange=renderYear;$('yearFilter').onchange=renderYear;$('yearStatusFilter').onchange=renderYear;$('printYearPlan').onclick=()=>window.print();$('exportYearCsv').onclick=exportYearCsv;$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar();};$('previousMonth').onclick=()=>changeCalendarMonth(-1);$('nextMonth').onclick=()=>changeCalendarMonth(1);$('leaderMonthFilter').onchange=renderLeaders;$('weekDate').onchange=renderWeek;$('showVacationForm').onclick=openNewVacation;$('cancelVacation').onclick=closeVacationForm;$('saveVacation').onclick=saveVacation;
+ $('departmentFilter').onchange=()=>renderCalendar();$('yearDepartmentFilter').onchange=renderYear;$('yearFilter').onchange=renderYear;$('yearStatusFilter').onchange=renderYear;$('printYearPlan').onclick=()=>window.print();$('exportYearCsv').onclick=exportYearCsv;$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar();};$('previousMonth').onclick=()=>changeCalendarMonth(-1);$('nextMonth').onclick=()=>changeCalendarMonth(1);$('leaderMonthFilter').onchange=renderLeaders;$('weekDate').onchange=renderWeek;$('showVacationForm').onclick=openNewVacation;$('cancelVacation').onclick=closeVacationForm;$('saveVacation').onclick=saveVacation;
  $('addEmployee').onclick=saveEmployee;$('cancelEmployeeEdit').onclick=clearEmployeeForm;$('addMove').onclick=addMove;$('addDepartment').onclick=addDepartment;
  $('resetData').onclick=resetData;$('backupExport').onclick=exportBackup;$('backupImport').onchange=importBackup;$('exportCsv').onclick=exportCsv;$('exportExcel').onclick=exportMonthExcel;
 }
@@ -626,3 +626,43 @@ statusBadge=function(s){if(s==='Abgelehnt')return '<span class="badge rejected">
 // Dadurch werden Sonntage und Feiertage sofort nach einem Abteilungswechsel neu markiert.
 if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
 setTimeout(()=>{renderAll()},0);
+
+
+/* Version 1.5.2: Kalender-Markierungen nach Abteilungswechsel zuverlässig neu anwenden */
+function refreshCalendarSpecialDays(){
+ const table=$('calendarTable'),monthInput=$('monthFilter');
+ if(!table||!monthInput||!monthInput.value)return;
+ const parts=monthInput.value.split('-').map(Number),year=parts[0],month=parts[1];
+ const headers=[...table.querySelectorAll('thead th')].slice(1);
+ headers.forEach((th,index)=>{
+  const date=new Date(year,month-1,index+1),holiday=holidayName(date),sunday=date.getDay()===0;
+  th.classList.toggle('sunday-header',sunday);
+  th.classList.toggle('holiday-header',Boolean(holiday));
+  th.title=holiday||date.toLocaleDateString('de-DE',{weekday:'long'});
+  const existing=th.querySelector('small');
+  if(holiday){
+   if(existing)existing.textContent=holiday;
+   else th.insertAdjacentHTML('beforeend',`<small>${esc(holiday)}</small>`);
+  }else if(existing)existing.remove();
+ });
+ [...table.querySelectorAll('tbody tr')].forEach(row=>{
+  if(row.classList.contains('department-separator'))return;
+  const cells=[...row.querySelectorAll('td')].slice(1);
+  cells.forEach((cell,index)=>{
+   const date=new Date(year,month-1,index+1),holiday=holidayName(date),sunday=date.getDay()===0;
+   cell.classList.toggle('sunday',sunday);
+   cell.classList.toggle('holiday',Boolean(holiday));
+   const hasAbsence=['vacation','pending-cell','planned-cell','moved-cell','critical'].some(c=>cell.classList.contains(c));
+   if(!hasAbsence)cell.title=holiday||date.toLocaleDateString('de-DE',{weekday:'long'});
+  });
+ });
+}
+const renderCalendarV152Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV152Base();
+ refreshCalendarSpecialDays();
+ requestAnimationFrame(refreshCalendarSpecialDays);
+};
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
+if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()};
+setTimeout(()=>{renderCalendar()},0);
