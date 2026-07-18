@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Urlaubsplaner{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/dashboard">Urlaubsplaner</a>
+    {% if user %}
+    <nav>
+      <a href="/dashboard">Start</a>
+      {% if user.role == 'admin' %}
+      <a href="/admin/departments">Abteilungen</a>
+      <a href="/admin/users">Benutzer</a>
+      {% endif %}
+      <a href="/change-pin">PIN ändern</a>
+      <form method="post" action="/logout" class="inline-form">
+        <input type="hidden" name="csrf" value="{{ csrf_token }}">
+        <button class="link-button" type="submit">Abmelden</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

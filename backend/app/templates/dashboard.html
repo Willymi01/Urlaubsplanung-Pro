@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Start – Urlaubsplaner{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Phase 1</p>
+    <h1>Hallo {{ user.display_name }}</h1>
+    <p>Die sichere Anmeldung und die Grunddatenbank sind eingerichtet.</p>
+  </div>
+  <span class="status-pill">System bereit</span>
+</section>
+
+{% if user.must_change_pin %}
+<div class="alert warning">Bitte ändere zuerst deine vorläufige PIN.</div>
+{% endif %}
+
+<section class="metrics">
+  <article><span>Abteilungen</span><strong>{{ department_count }}</strong></article>
+  <article><span>Abteilungsleiter</span><strong>{{ manager_count }}</strong></article>
+  <article><span>Deine Rolle</span><strong>{{ 'Administrator' if user.role == 'admin' else 'Abteilungsleiter' }}</strong></article>
+</section>
+
+<section class="panel">
+  <h2>Nächster Ausbauschritt</h2>
+  <p>In Phase 2 folgen Mitarbeiterverwaltung, Leitungskennzeichnung und zeitabhängige Abteilungszuordnung.</p>
+</section>
+{% endblock %}

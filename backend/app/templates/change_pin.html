@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}PIN ändern – Urlaubsplaner{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <h1>PIN ändern</h1>
+  <p class="muted">Die PIN muss aus 4 bis 8 Ziffern bestehen.</p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  {% if success %}<div class="alert success">{{ success }}</div>{% endif %}
+  <form method="post" action="/change-pin" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf_token }}">
+    <label>Bisherige PIN<input type="password" name="current_pin" inputmode="numeric" required></label>
+    <label>Neue PIN<input type="password" name="new_pin" inputmode="numeric" maxlength="8" required></label>
+    <label>Neue PIN wiederholen<input type="password" name="new_pin_repeat" inputmode="numeric" maxlength="8" required></label>
+    <button class="primary" type="submit">PIN speichern</button>
+  </form>
+</section>
+{% endblock %}

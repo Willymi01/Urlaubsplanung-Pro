@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Abteilungen – Urlaubsplaner{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="eyebrow">Administration</p><h1>Abteilungen</h1></div></div>
+<section class="two-column">
+  <article class="panel">
+    <h2>Abteilung anlegen</h2>
+    <form method="post" action="/admin/departments" class="stack">
+      <input type="hidden" name="csrf" value="{{ csrf_token }}">
+      <label>Name<input name="name" maxlength="120" placeholder="z. B. Feinkost" required></label>
+      <button class="primary" type="submit">Abteilung speichern</button>
+    </form>
+  </article>
+  <article class="panel">
+    <h2>Vorhandene Abteilungen</h2>
+    <ul class="clean-list">
+      {% for item in departments %}<li><span>{{ item.name }}</span><span class="badge on">Aktiv</span></li>
+      {% else %}<li>Noch keine Abteilungen angelegt.</li>{% endfor %}
+    </ul>
+  </article>
+</section>
+{% endblock %}

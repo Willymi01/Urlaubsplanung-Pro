@@ -1,0 +1,17 @@
+services:
+  urlaubsplaner:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: sqlite:////app/data/urlaubplaner.db
+    volumes:
+      - urlaubsplaner_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  urlaubsplaner_data:
