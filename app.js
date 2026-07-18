@@ -49,6 +49,70 @@ function bridgeWarnings(v){const result=[];for(let d=localDate(v.from),end=local
 function changeCalendarMonth(offset){const value=$('monthFilter').value||`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`,p=value.split('-').map(Number),d=new Date(p[0],p[1]-1+offset,1);$('monthFilter').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()}
 function isoWeek(date){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yearStart=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-yearStart)/86400000)+1)/7)}
 function weekLabel(from,to){const a=isoWeek(localDate(from)),b=isoWeek(localDate(to));return a===b?`KW ${a}`:`KW ${a}–${b}`}
+
+function vacationDaysInYear(v,year){
+ if(!countsAgainstVacation(v))return 0;
+ const yearStart=new Date(year,0,1),yearEnd=new Date(year,11,31);
+ const start=localDate(v.from),end=localDate(v.to);
+ if(end<yearStart||start>yearEnd)return 0;
+ const clippedStart=start<yearStart?yearStart:start;
+ const clippedEnd=end>yearEnd?yearEnd:end;
+ const days=workingDays(iso(clippedStart),iso(clippedEnd));
+ return v.scope==='full'?days:days*.5;
+}
+
+function renderDepartmentVacationSummary(){
+ const table=$('departmentVacationSummary');
+ if(!table)return;
+ const year=new Date().getFullYear();
+ if($('departmentVacationYear'))$('departmentVacationYear').textContent=String(year);
+
+ const rows=state.departments.map(department=>{
+  const employees=state.employees.filter(e=>e.department===department&&e.active!==false);
+  const ids=new Set(employees.map(e=>Number(e.id)));
+  const entitlement=employees.reduce((sum,e)=>sum+Number(e.vacationDays||0)+Number(e.carryover||0),0);
+  const departmentVacations=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&v.type==='Urlaub');
+  const approved=departmentVacations.filter(v=>v.status==='Genehmigt').reduce((sum,v)=>sum+vacationDaysInYear(v,year),0);
+  const pending=departmentVacations.filter(v=>v.status==='Beantragt').reduce((sum,v)=>sum+vacationDaysInYear(v,year),0);
+  const planned=departmentVacations.filter(v=>v.status==='Geplant').reduce((sum,v)=>sum+vacationDaysInYear(v,year),0);
+  const rejected=departmentVacations.filter(v=>v.status==='Abgelehnt').reduce((sum,v)=>sum+vacationDaysInYear(v,year),0);
+  const unplanned=Math.max(0,entitlement-approved-pending-planned);
+  return{department,employees:employees.length,entitlement,unplanned,pending,approved,rejected,planned};
+ });
+
+ const total=rows.reduce((a,r)=>({
+  employees:a.employees+r.employees,
+  entitlement:a.entitlement+r.entitlement,
+  unplanned:a.unplanned+r.unplanned,
+  pending:a.pending+r.pending,
+  approved:a.approved+r.approved,
+  rejected:a.rejected+r.rejected,
+  planned:a.planned+r.planned
+ }),{employees:0,entitlement:0,unplanned:0,pending:0,approved:0,rejected:0,planned:0});
+
+ const n=value=>Number(value||0).toLocaleString('de-DE',{maximumFractionDigits:1});
+ table.innerHTML=`<thead><tr>
+  <th>Abteilung</th><th>Mitarbeiter</th><th>Gesamtanspruch</th>
+  <th>Noch nicht verplant</th><th>Noch nicht bestätigt</th>
+  <th>Genehmigt</th><th>Abgelehnt</th><th>Geplant</th>
+ </tr></thead><tbody>
+ ${rows.map(r=>`<tr>
+  <td><strong>${esc(r.department)}</strong></td>
+  <td>${r.employees}</td>
+  <td>${n(r.entitlement)}</td>
+  <td class="summary-unplanned">${n(r.unplanned)}</td>
+  <td class="summary-pending">${n(r.pending)}</td>
+  <td class="summary-approved">${n(r.approved)}</td>
+  <td class="summary-rejected">${n(r.rejected)}</td>
+  <td class="summary-planned">${n(r.planned)}</td>
+ </tr>`).join('')}
+ <tr class="summary-total">
+  <td><strong>Gesamt</strong></td><td>${total.employees}</td><td>${n(total.entitlement)}</td>
+  <td>${n(total.unplanned)}</td><td>${n(total.pending)}</td><td>${n(total.approved)}</td>
+  <td>${n(total.rejected)}</td><td>${n(total.planned)}</td>
+ </tr></tbody>`;
+}
+
 function renderDashboard(){
  const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate()),limit=new Date(today);
  limit.setDate(limit.getDate()+28);
@@ -93,6 +157,7 @@ function renderDashboard(){
   }).join('')+
   (rows.length?'':'<tr><td colspan="5" class="muted">In den nächsten vier Wochen ist kein Urlaub eingetragen.</td></tr>')+
   '</tbody>';
+ renderDepartmentVacationSummary();
 }
 function renderEmployees(){$('employeeListCount').textContent=`${state.employees.length} Mitarbeiter`;$('employeeTable').innerHTML='<thead><tr><th>Name</th><th>Abteilung</th><th>Stunden</th><th>Anspruch</th><th>Übertrag</th><th>Genehmigt</th><th>Rest</th><th>Leiter</th><th>Vertretung</th><th>Aktion</th></tr></thead><tbody>'+state.employees.map(e=>{const planned=vacsFor(e.id).filter(v=>v.status==='Genehmigt'&&countsAgainstVacation(v)).reduce((s,v)=>s+vacationDays(v),0),total=Number(e.vacationDays||0)+Number(e.carryover||0),rest=total-planned;return `<tr><td>${esc(e.name)}</td><td>${esc(e.department)}</td><td>${e.hours}</td><td>${e.vacationDays}</td><td>${e.carryover||0}</td><td>${planned}</td><td class="${rest<0?'negative':'positive'}">${rest}</td><td>${e.leader?'Ja':'Nein'}</td><td>${esc(e.substitute||'–')}</td><td><button class="button tiny" onclick="editEmployee(${e.id})">Bearbeiten</button> <button class="button tiny danger" onclick="deleteEmployee(${e.id})">Löschen</button></td></tr>`}).join('')+'</tbody>'}
 function saveEmployee(){const name=$('employeeName').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');const id=Number($('editingEmployeeId').value),obj={name,department:$('employeeDepartment').value,hours:Number($('employeeHours').value),vacationDays:Number($('employeeVacationDays').value),carryover:Number($('employeeCarryover').value||0),leader:$('employeeLeader').checked,substitute:$('employeeSubstitute').value};if(id){const e=emp(id);Object.assign(e,obj)}else state.employees.push({id:Date.now(),...obj});saveState();clearEmployeeForm();renderAll()}
@@ -282,6 +347,20 @@ function renderSync(){
  $('syncEndpoint').value=syncConfig.endpoint;$('syncToken').value=syncConfig.token;if($('syncAccessCode'))$('syncAccessCode').value=syncConfig.accessCode;$('syncAuto').checked=syncConfig.auto;
  $('syncDeviceShort').textContent=syncConfig.deviceId.replace('GERAET-','').slice(0,12);$('syncPendingCount').textContent=syncConfig.pending;$('syncLastTime').textContent=syncConfig.lastSync?new Date(syncConfig.lastSync).toLocaleString('de-DE'):'Nie';
  const online=syncConfig.status==='online',configured=!!(syncConfig.endpoint&&syncConfig.token&&syncConfig.accessCode);$('syncStatusText').textContent=online?'Verbunden':configured?'Nicht geprüft':'Lokal';const b=$('syncConnectionBadge');b.textContent=online?'Supabase verbunden':configured?'Supabase eingerichtet':'Lokalbetrieb';b.className='badge '+(online?'sync-online':configured?'pending':'planned');
+ const lamp=$('globalSyncLamp'),lampText=$('globalSyncLampText');
+ if(lamp&&lampText){
+  const pending=Number(syncConfig.pending||0);
+  let mode='local',text='Lokal';
+  if(!navigator.onLine){mode='offline';text='Offline – lokal';}
+  else if(autoSyncBusy){mode='syncing';text='Synchronisiere …';}
+  else if(syncConfig.status==='conflict'){mode='warning';text='Konflikt';}
+  else if(online&&pending===0){mode='online';text='Online – aktuell';}
+  else if(online&&pending>0){mode='warning';text=`${pending} Änderung${pending===1?'':'en'} offen`;}
+  else if(configured){mode='warning';text='Verbindung wird geprüft';}
+  lamp.className='sync-lamp sync-lamp-'+mode;
+  lampText.textContent=text;
+  lamp.title=syncConfig.lastSync?'Letzte Synchronisierung: '+new Date(syncConfig.lastSync).toLocaleString('de-DE'):text;
+ }
 }
 function bindV09(){$('saveSyncSettings')?.addEventListener('click',saveSyncSettings);$('testSyncConnection')?.addEventListener('click',testSyncConnection);$('pushSync')?.addEventListener('click',()=>pushSync(true));$('pullSync')?.addEventListener('click',()=>pullSync(true));}
 function saveSyncSettings(){syncConfig.endpoint=normalizeEndpoint($('syncEndpoint').value);syncConfig.token=$('syncToken').value.trim();syncConfig.accessCode=($('syncAccessCode')?.value||'').trim();syncConfig.auto=$('syncAuto').checked;syncConfig.status=syncConfig.endpoint?'unknown':'local';saveSyncConfig();renderSync();setSyncMessage(syncConfig.endpoint?'Supabase-Einstellungen gespeichert.':'Lokaler Betrieb gespeichert.',true)}
@@ -558,23 +637,106 @@ renderCalendar=function(){
 };
 
 function pdfEscape(s){return String(s??'').replace(/[\\()]/g,'\\$&').replace(/[äÄ]/g,m=>m==='ä'?'ae':'Ae').replace(/[öÖ]/g,m=>m==='ö'?'oe':'Oe').replace(/[üÜ]/g,m=>m==='ü'?'ue':'Ue').replace(/ß/g,'ss').replace(/[↔🔑]/g,'')}
+
 function exportMonthPdf(){
  try{
   const choice=$('departmentFilter').value||state.departments[0],leaderMode=choice==='__leaders__',deps=selectedDepartments(choice),parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],days=new Date(year,month,0).getDate();
   const emps=(leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).sort((a,b)=>a.department.localeCompare(b.department,'de')||a.name.localeCompare(b.name,'de'));
   const title=leaderMode?'Leiterplan':String(choice).startsWith('__group__:')?`Plan-Gruppe ${choice.slice(10)}`:choice;
-  const W=842,H=595,left=28,top=545,nameW=145,cellW=(W-left-18-nameW)/days,rowH=18;let pages=[],content=[],y=top;
-  const txt=(x,y,size,text)=>content.push(`0 g BT /F1 ${size} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfEscape(text)}) Tj ET`);
-  const rect=(x,y,w,h,gray=0.92)=>content.push(`${gray} g ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f 0 G ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S`);
-  const header=()=>{txt(left,H-25,15,`Urlaubsplan - ${title} - ${String(month).padStart(2,'0')}/${year}`);y=top;rect(left,y-rowH,nameW,rowH,.85);txt(left+3,y-13,8,'Mitarbeiter');for(let d=1;d<=days;d++){rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,.9);txt(left+nameW+(d-1)*cellW+1,y-13,6,String(d))}y-=rowH};
-  const finish=()=>{pages.push(content.join('\n'));content=[]};header();let lastDep='';
-  for(const e of emps){if(y<45){finish();header()}if(deps.length>1&&e.department!==lastDep){rect(left,y-rowH,W-left-18,rowH,.78);txt(left+3,y-13,8,`${e.department} - max. ${state.departmentMaxAway?.[e.department]??1}`);y-=rowH;lastDep=e.department}rect(left,y-rowH,nameW,rowH,.97);txt(left+3,y-13,7,leaderMode?`${e.name} (${e.department})`:e.name);for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to)&&isDisplayAbsenceDay(x,date));let shade=date.getDay()===0?.72:holidayName(date)?.82:.98;if(v)shade=moveForVacation(v)?.75:v.status==='Beantragt'?.86:.9;rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,shade);if(v)txt(left+nameW+(d-1)*cellW+1,y-13,6,absenceCode(v))}y-=rowH}
-  txt(left,22,7,'U=Urlaub  K=Krankheit  F=Fortbildung  G=Geplanter freier Tag  rosa=verschoben');finish();
-  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';const pageIds=[],contentIds=[];let id=3;for(let i=0;i<pages.length;i++){pageIds.push(id++);contentIds.push(id++)}const fontId=id++;objects[2]=`<< /Type /Pages /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] /Count ${pages.length} >>`;objects[fontId]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';for(let i=0;i<pages.length;i++){objects[pageIds[i]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentIds[i]} 0 R >>`;objects[contentIds[i]]=`<< /Length ${pages[i].length} >>\nstream\n${pages[i]}\nendstream`}
-  let pdf='%PDF-1.4\n',offsets=[0];for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`}const xref=pdf.length;pdf+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  const blob=new Blob([pdf],{type:'application/pdf'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Monatsplan-${safeFileName(title)}-${year}-${String(month).padStart(2,'0')}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
- }catch(err){console.error(err);alert('PDF-Export fehlgeschlagen: '+(err?.message||err))}
+  const W=842,H=595,left=28,top=535,nameW=150,cellW=(W-left-18-nameW)/days,rowH=18;
+  let pages=[],content=[],y=top,pageNumber=1;
+
+  const rgb=(r,g,b)=>`${(r/255).toFixed(3)} ${(g/255).toFixed(3)} ${(b/255).toFixed(3)}`;
+  const txt=(x,y,size,text,color=[24,27,26],bold=false)=>content.push(`${rgb(...color)} rg BT /${bold?'F2':'F1'} ${size} Tf ${x.toFixed(1)} ${y.toFixed(1)} Td (${pdfEscape(text)}) Tj ET`);
+  const rect=(x,y,w,h,fill=[255,255,255],stroke=[86,92,89])=>content.push(`${rgb(...fill)} rg ${rgb(...stroke)} RG ${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re B`);
+  const footer=()=>{
+   txt(left,18,7,'U Urlaub  |  S Sonderurlaub  |  F Fortbildung  |  K Krankheit  |  G Geplanter freier Tag',[70,75,73]);
+   txt(W-115,18,7,`Seite ${pageNumber}  |  ${new Date().toLocaleDateString('de-DE')}`,[70,75,73]);
+  };
+  const header=()=>{
+   rect(left,H-43,W-left-18,30,[0,80,164],[247,209,23]);
+   txt(left+10,H-34,15,`Urlaubsplan - ${title} - ${String(month).padStart(2,'0')}/${year}`,[255,255,255],true);
+   y=top;
+   rect(left,y-rowH,nameW,rowH,[247,209,23],[0,80,164]);
+   txt(left+4,y-13,8,'Mitarbeiter',[20,24,23],true);
+   for(let d=1;d<=days;d++){
+    const date=new Date(year,month-1,d);
+    const fill=holidayName(date)?[185,143,18]:date.getDay()===0?[78,82,80]:[230,235,232];
+    const color=(holidayName(date)||date.getDay()===0)?[255,255,255]:[20,24,23];
+    rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,fill,[90,96,93]);
+    txt(left+nameW+(d-1)*cellW+1,y-13,6,String(d),color,true);
+   }
+   y-=rowH;
+  };
+  const finish=()=>{footer();pages.push(content.join('\n'));content=[];pageNumber++};
+
+  header();
+  let lastDep='';
+  for(const e of emps){
+   if(y<48){finish();header()}
+   if(deps.length>1&&e.department!==lastDep){
+    rect(left,y-rowH,W-left-18,rowH,[0,80,164],[247,209,23]);
+    txt(left+4,y-13,8,`${e.department} - max. ${state.departmentMaxAway?.[e.department]??1}`,[255,255,255],true);
+    y-=rowH;
+    lastDep=e.department;
+   }
+   rect(left,y-rowH,nameW,rowH,[244,246,245],[90,96,93]);
+   txt(left+4,y-13,7,leaderMode?`${e.name} (${e.department})`:e.name,[20,24,23],true);
+   for(let d=1;d<=days;d++){
+    const date=new Date(year,month-1,d);
+    const v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to)&&isDisplayAbsenceDay(x,date));
+    let fill=date.getDay()===0?[92,96,94]:holidayName(date)?[185,143,18]:[255,255,255];
+    let textColor=(date.getDay()===0||holidayName(date))?[255,255,255]:[20,24,23];
+    if(v){
+     const moved=Boolean(moveForVacation(v));
+     const palette={
+      Urlaub:[159,196,126],
+      Krankheit:[198,60,69],
+      Fortbildung:[95,155,211],
+      Sonderurlaub:[235,161,73],
+      Unbezahlt:[168,139,180],
+      'Geplanter Freier Tag':[184,187,185]
+     };
+     fill=moved?[234,130,171]:(v.status==='Beantragt'?[240,200,61]:(palette[v.type]||[159,196,126]));
+     textColor=[18,22,20];
+    }
+    rect(left+nameW+(d-1)*cellW,y-rowH,cellW,rowH,fill,[90,96,93]);
+    if(v)txt(left+nameW+(d-1)*cellW+1,y-13,6,absenceCode(v),textColor,true);
+   }
+   y-=rowH;
+  }
+
+  finish();
+
+  const objects=[];objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  const pageIds=[],contentIds=[];let id=3;
+  for(let i=0;i<pages.length;i++){pageIds.push(id++);contentIds.push(id++)}
+  const fontId=id++,boldFontId=id++;
+  objects[2]=`<< /Type /Pages /Kids [${pageIds.map(x=>x+' 0 R').join(' ')}] /Count ${pages.length} >>`;
+  objects[fontId]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  objects[boldFontId]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>';
+  for(let i=0;i<pages.length;i++){
+   objects[pageIds[i]]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${fontId} 0 R /F2 ${boldFontId} 0 R >> >> /Contents ${contentIds[i]} 0 R >>`;
+   objects[contentIds[i]]=`<< /Length ${pages[i].length} >>\nstream\n${pages[i]}\nendstream`;
+  }
+  let pdf='%PDF-1.4\n',offsets=[0];
+  for(let i=1;i<objects.length;i++){offsets[i]=pdf.length;pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`}
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for(let i=1;i<objects.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+
+  const blob=new Blob([pdf],{type:'application/pdf'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Monatsplan-${safeFileName(title)}-${year}-${String(month).padStart(2,'0')}.pdf`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+ }catch(err){
+  console.error(err);
+  alert('PDF-Export fehlgeschlagen: '+(err?.message||err));
+ }
 }
+
 setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;renderAll()},0);
 
 
@@ -979,3 +1141,5 @@ if(document.readyState==='complete'){
 setTimeout(bootAutomaticSync,1200);
 
 /* Version 4.6: PDF-Fix, eindeutige Grenzwerte und wiederhergestelltes AutoSync */
+
+/* Version 5.0: Abteilungs-Dashboard, farbiger PDF-Export und globale Statuslampe */

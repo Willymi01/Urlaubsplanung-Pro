@@ -110,3 +110,28 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
  .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
 }
 body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
+
+
+/* Version 5.0 */
+.sync-lamp{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #666d69;border-radius:999px;background:#303432;color:#fff;font-size:.82rem;font-weight:700;white-space:nowrap}
+.sync-lamp-dot{width:11px;height:11px;border-radius:50%;background:#929995;box-shadow:0 0 0 3px rgba(255,255,255,.08)}
+.sync-lamp-online .sync-lamp-dot{background:#4ed477;box-shadow:0 0 10px rgba(78,212,119,.85)}
+.sync-lamp-syncing .sync-lamp-dot{background:#f7d117;box-shadow:0 0 10px rgba(247,209,23,.8);animation:syncPulse 1s infinite}
+.sync-lamp-warning .sync-lamp-dot{background:#f0a43c;box-shadow:0 0 10px rgba(240,164,60,.8)}
+.sync-lamp-offline .sync-lamp-dot{background:#e5535e;box-shadow:0 0 10px rgba(229,83,94,.8)}
+.sync-lamp-local .sync-lamp-dot{background:#929995}
+@keyframes syncPulse{50%{opacity:.35;transform:scale(.75)}}
+
+#departmentVacationSummary th,#departmentVacationSummary td{text-align:right}
+#departmentVacationSummary th:first-child,#departmentVacationSummary td:first-child{text-align:left}
+#departmentVacationSummary .summary-unplanned{background:#324f3a;color:#dff5e8;font-weight:800}
+#departmentVacationSummary .summary-pending{background:#68591f;color:#fff1a4;font-weight:800}
+#departmentVacationSummary .summary-approved{background:#284e3c;color:#dff5e8;font-weight:800}
+#departmentVacationSummary .summary-rejected{background:#672f38;color:#ffdce0;font-weight:800}
+#departmentVacationSummary .summary-planned{background:#464b49;color:#eef1ef;font-weight:800}
+#departmentVacationSummary .summary-total td{border-top:3px solid #f7d117;background:#303432;font-weight:900;color:#fff}
+
+@media(max-width:700px){
+ .sync-lamp{order:-1}
+ #departmentVacationSummary{font-size:.85rem}
+}

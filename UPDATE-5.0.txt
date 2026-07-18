@@ -1,0 +1,22 @@
+URLAUBSPLANER 5.0
+
+Neu:
+- Dashboard-Übersicht pro Abteilung:
+  Gesamtanspruch, noch nicht verplant, noch nicht bestätigt,
+  genehmigt, abgelehnt und geplant.
+- Globale Statuslampe im Kopfbereich:
+  Online/aktuell, synchronisiert, offene Änderungen, offline oder Konflikt.
+- Farbiger PDF-Monatsplan:
+  farbige Kopfzeile, Abteilungen, Urlaub, Krankheit, Fortbildung,
+  Sonderurlaub, geplante freie Tage, Wochenenden und Feiertage.
+- Seitenzahl und Druckdatum im PDF.
+
+Wichtig:
+- Die funktionierende AutoSync-Logik aus Version 4.6 wurde nicht ersetzt.
+- Die Statuslampe liest nur den vorhandenen Synchronisationsstatus aus.
+
+Installation:
+1. Alle Dateien in GitHub hochladen und vorhandene Dateien ersetzen.
+2. Veröffentlichung von GitHub Pages abwarten.
+3. Seite mit Strg+F5 neu laden.
+4. Installierte App vollständig schließen und erneut öffnen.
