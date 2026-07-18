@@ -848,3 +848,152 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
  // Sofortiger sauberer Erst-Render und Cache-unabhängiges Neuzeichnen nach Laden.
  requestAnimationFrame(()=>{fillSelects();renderAll();requestAnimationFrame(renderCalendar)});
 })();
+
+/* Version 1.7: direkte Mitarbeiter-Zuordnung zu Plan-Gruppen */
+(function(){
+ const V17_GROUP_PREFIX='__employee_group__:';
+ const originalNormalizeV17=normalize;
+ normalize=function(data){
+  const normalized=originalNormalizeV17(data);
+  normalized.employees=(normalized.employees||[]).map(employee=>{
+   const copy={...employee};
+   copy.planGroupId=String(copy.planGroupId||'');
+   const rawDepartment=String(copy.department||'').trim();
+   if(!copy.planGroupId){
+    let group=null;
+    if(rawDepartment.startsWith(V17_GROUP_PREFIX))group=normalized.planGroups?.find(item=>String(item.id)===rawDepartment.slice(V17_GROUP_PREFIX.length));
+    if(!group&&/^Plan-Gruppe\s*:/i.test(rawDepartment)){const name=rawDepartment.replace(/^Plan-Gruppe\s*:/i,'').trim();group=normalized.planGroups?.find(item=>normalizeGroupName(item.name)===normalizeGroupName(name));}
+    if(!group)group=normalized.planGroups?.find(item=>normalizeGroupName(item.name)===normalizeGroupName(rawDepartment));
+    if(group){copy.planGroupId=String(group.id);copy.department='';}
+   }
+   return copy;
+  });
+  return normalized;
+ };
+ state=normalize(state);localStorage.setItem(STORE,JSON.stringify(state));
+
+ function v17GroupById(id){return state.planGroups.find(group=>String(group.id)===String(id))}
+ function v17GroupForEmployee(employee){
+  if(!employee)return null;
+  if(employee.planGroupId){const direct=v17GroupById(employee.planGroupId);if(direct)return direct;}
+  const raw=String(employee.department||'').trim();
+  if(raw.startsWith(V17_GROUP_PREFIX))return v17GroupById(raw.slice(V17_GROUP_PREFIX.length));
+  if(/^Plan-Gruppe\s*:/i.test(raw)){const name=raw.replace(/^Plan-Gruppe\s*:/i,'').trim();return state.planGroups.find(group=>normalizeGroupName(group.name)===normalizeGroupName(name));}
+  return state.planGroups.find(group=>normalizeGroupName(group.name)===normalizeGroupName(raw))||null;
+ }
+ function v17EmployeeDepartmentKey(employee){return departmentKey(employee?.department||'')}
+ function v17DepartmentBelongsToAnyGroup(department){
+  const depKey=departmentKey(department);
+  return state.planGroups.some(group=>departmentsInGroup(group).some(dep=>departmentKey(dep)===depKey));
+ }
+ function v17EmployeesForGroup(group){
+  if(!group)return[];
+  const memberKeys=new Set(departmentsInGroup(group).map(departmentKey));
+  return state.employees.filter(employee=>{
+   const direct=v17GroupForEmployee(employee);
+   if(direct&&String(direct.id)===String(group.id))return true;
+   return memberKeys.has(v17EmployeeDepartmentKey(employee));
+  });
+ }
+ function v17EmployeeLabel(employee){
+  const group=v17GroupForEmployee(employee);
+  return group?`Plan-Gruppe: ${group.name}`:(employee.department||'Keine Zuordnung');
+ }
+
+ const oldEmployeesForSelection=employeesForSelection;
+ employeesForSelection=function(choice){
+  if(choice==='__leaders__')return state.employees.filter(employee=>employee.leader);
+  const group=groupObjectFromChoice(choice);
+  if(group)return v17EmployeesForGroup(group);
+  const selected=selectedDepartments(choice);
+  const keys=new Set(selected.map(departmentKey));
+  return state.employees.filter(employee=>!v17GroupForEmployee(employee)&&keys.has(v17EmployeeDepartmentKey(employee)));
+ };
+
+ const oldFillSelectsV17=fillSelects;
+ fillSelects=function(){
+  oldFillSelectsV17();
+  const currentCalendar=$('departmentFilter')?.value||'';
+  const currentYear=$('yearDepartmentFilter')?.value||'';
+  const groupOptions=state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(group=>`<option value="__groupid__:${esc(group.id)}">Plan-Gruppe: ${esc(group.name)}</option>`).join('');
+  const visibleDepartments=state.departments.filter(department=>!v17DepartmentBelongsToAnyGroup(department));
+  const calendarDepartmentOptions=visibleDepartments.map(department=>`<option value="${esc(department)}">${esc(department)}</option>`).join('');
+  if($('departmentFilter')){
+   $('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOptions+calendarDepartmentOptions;
+   const valid=['__leaders__',...state.planGroups.map(group=>`__groupid__:${group.id}`),...visibleDepartments];
+   let desired=currentCalendar;
+   if(String(desired).startsWith('__group__:')){const group=groupObjectFromChoice(desired);desired=group?`__groupid__:${group.id}`:'';}
+   if(!valid.includes(desired)){
+    const oldDepartment=canonicalDepartment(desired),group=state.planGroups.find(item=>departmentsInGroup(item).some(dep=>departmentKey(dep)===departmentKey(oldDepartment)));
+    desired=group?`__groupid__:${group.id}`:(visibleDepartments[0]||'__leaders__');
+   }
+   $('departmentFilter').value=desired;
+  }
+  if($('yearDepartmentFilter')){
+   $('yearDepartmentFilter').innerHTML=groupOptions+calendarDepartmentOptions;
+   const valid=[...state.planGroups.map(group=>`__groupid__:${group.id}`),...visibleDepartments];
+   let desired=currentYear;
+   if(String(desired).startsWith('__group__:')){const group=groupObjectFromChoice(desired);desired=group?`__groupid__:${group.id}`:'';}
+   if(!valid.includes(desired))desired=valid[0]||'';
+   $('yearDepartmentFilter').value=desired;
+  }
+  if($('employeeDepartment')){
+   const currentEmployeeValue=$('employeeDepartment').value;
+   const employeeGroupOptions=state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(group=>`<option value="${V17_GROUP_PREFIX}${esc(group.id)}">Plan-Gruppe: ${esc(group.name)}</option>`).join('');
+   const allDepartmentOptions=state.departments.map(department=>`<option value="${esc(department)}">${esc(department)}</option>`).join('');
+   $('employeeDepartment').innerHTML='<option value="">Bitte auswählen</option>'+employeeGroupOptions+allDepartmentOptions;
+   if([...$('employeeDepartment').options].some(option=>option.value===currentEmployeeValue))$('employeeDepartment').value=currentEmployeeValue;
+  }
+ };
+
+ saveEmployee=function(){
+  const name=$('employeeName').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');
+  const selection=$('employeeDepartment').value;if(!selection)return alert('Bitte eine Abteilung oder Plan-Gruppe auswählen.');
+  const isGroup=selection.startsWith(V17_GROUP_PREFIX),planGroupId=isGroup?selection.slice(V17_GROUP_PREFIX.length):'',department=isGroup?'':selection;
+  const id=Number($('editingEmployeeId').value),obj={name,department,planGroupId,hours:Number($('employeeHours').value),vacationDays:Number($('employeeVacationDays').value),carryover:Number($('employeeCarryover').value||0),leader:$('employeeLeader').checked,keyLeader:$('employeeKeyLeader')?.checked||false,substitute:$('employeeSubstitute').value};
+  if(obj.keyLeader)obj.leader=true;
+  if(id){const employee=emp(id);Object.assign(employee,obj)}else state.employees.push({id:Date.now(),...obj});
+  saveState('Mitarbeiter gespeichert',`${name} · ${isGroup?'Plan-Gruppe '+(v17GroupById(planGroupId)?.name||''):department}`);clearEmployeeForm();renderAll();
+ };
+
+ window.editEmployee=function(id){
+  const employee=emp(id);if(!employee)return;
+  $('editingEmployeeId').value=id;$('employeeName').value=employee.name;fillSelects();
+  const group=v17GroupForEmployee(employee);$('employeeDepartment').value=group?V17_GROUP_PREFIX+group.id:employee.department;
+  $('employeeHours').value=employee.hours;$('employeeVacationDays').value=employee.vacationDays;$('employeeCarryover').value=employee.carryover||0;$('employeeLeader').checked=employee.leader;if($('employeeKeyLeader'))$('employeeKeyLeader').checked=employee.keyLeader||false;$('employeeSubstitute').value=employee.substitute||'';$('addEmployee').textContent='Änderungen speichern';$('cancelEmployeeEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});
+ };
+
+ const oldRenderEmployeesV17=renderEmployees;
+ renderEmployees=function(){
+  oldRenderEmployeesV17();
+  const table=$('employeeTable');if(!table)return;
+  table.innerHTML='<thead><tr><th>Name</th><th>Zuordnung</th><th>Stunden</th><th>Urlaubskonto</th><th>Leiter</th><th>Vertretung</th><th></th></tr></thead><tbody>'+state.employees.map(employee=>{const used=usedDays(employee.id),entitlement=Number(employee.vacationDays||0)+Number(employee.carryover||0),remaining=entitlement-used;return `<tr><td>${esc(employee.name)}</td><td>${esc(v17EmployeeLabel(employee))}</td><td>${employee.hours}</td><td>Anspruch ${employee.vacationDays||0} + Übertrag ${employee.carryover||0} · Verplant ${used} · <strong>Rest ${remaining}</strong></td><td>${employee.leader?'Ja'+(employee.keyLeader?' 🔑':''):'Nein'}</td><td>${esc(employee.substitute||'–')}</td><td><button class="button tiny" onclick="editEmployee(${employee.id})">Bearbeiten</button> <button class="icon-button" onclick="deleteEmployee(${employee.id})">🗑️</button></td></tr>`}).join('')+'</tbody>';
+ };
+
+ const oldRenderCalendarV17=renderCalendar;
+ renderCalendar=function(){
+  oldRenderCalendarV17();
+  const choice=$('departmentFilter').value,group=groupObjectFromChoice(choice);if(!group)return;
+  const employees=v17EmployeesForGroup(group),deps=departmentsInGroup(group),[year,month]=$('monthFilter').value.split('-').map(Number),days=new Date(year,month,0).getDate();
+  let html='<thead><tr><th class="employee-name">Mitarbeiter</th>';
+  for(let day=1;day<=days;day++){const date=new Date(year,month-1,day),holiday=holidayName(date),weekday=['So','Mo','Di','Mi','Do','Fr','Sa'][date.getDay()];html+=`<th class="${date.getDay()===0?'sunday-header':''} ${holiday?'holiday-header':''}" title="${esc(holiday||weekday)}"><span>${day}</span><small>${holiday?esc(holiday):weekday}</small></th>`;}html+='</tr></thead><tbody>';
+  if(!employees.length)html+=`<tr><td colspan="${days+1}" class="empty-plan"><strong>Keine Mitarbeiter gefunden.</strong><br><small>Ordne Mitarbeiter in der Mitarbeiterverwaltung direkt der Plan-Gruppe „${esc(group.name)}“ oder einer Mitgliedsabteilung zu.</small></td></tr>`;
+  const depOrder=new Map(deps.map((dep,index)=>[departmentKey(dep),index]));
+  employees.sort((a,b)=>{const ga=v17GroupForEmployee(a),gb=v17GroupForEmployee(b),ia=ga?deps.length:(depOrder.get(v17EmployeeDepartmentKey(a))??deps.length+1),ib=gb?deps.length:(depOrder.get(v17EmployeeDepartmentKey(b))??deps.length+1);return ia-ib||a.name.localeCompare(b.name,'de')});
+  let lastSection='';
+  employees.forEach(employee=>{const directGroup=v17GroupForEmployee(employee),section=directGroup?'Direkt der Plan-Gruppe zugeordnet':canonicalDepartment(employee.department);if(section!==lastSection){html+=`<tr class="department-separator"><td colspan="${days+1}"><strong>${esc(section)}</strong>${directGroup?'':` · maximal ${maxAwayForDepartment(section)} Urlauber gleichzeitig`}</td></tr>`;lastSection=section;}html+=`<tr><td class="employee-name"><strong>${esc(employee.name)}</strong>${employee.leader?` <span class="badge leader-badge">Leiter${employee.keyLeader?' 🔑':''}</span>`:''}</td>`;for(let day=1;day<=days;day++){const date=new Date(year,month-1,day),vacation=vacsFor(employee.id).find(v=>inRange(date,v.from,v.to)),holiday=holidayName(date),critical=groupVacationAwayCount(group.id,date)>maxAwayForGroup(group.id)||(!directGroup&&departmentVacationAwayCount(section,date)>maxAwayForDepartment(section));let className=date.getDay()===0?'sunday':'';if(holiday)className='holiday';if(vacation)className=moveForVacation(vacation)?'moved-cell':vacation.status==='Beantragt'?'pending-cell':vacation.status==='Geplant'?'planned-cell':critical?'critical vacation-entry':'vacation';else if(critical)className=(className?className+' ':'')+'critical-day';html+=`<td class="${className}" title="${esc(vacationTitle(vacation,date,directGroup?group.name:section))}">${vacation?absenceCode(vacation):''}</td>`;}html+='</tr>';});
+  $('calendarTable').innerHTML=html+'</tbody>';
+  let peak=0,bad=0;for(let day=1;day<=days;day++){const count=groupVacationAwayCount(group.id,new Date(year,month-1,day));peak=Math.max(peak,count);if(count>maxAwayForGroup(group.id))bad++;}
+  const messages=[bad?`<div class="warning warning-danger"><strong>Plan-Gruppe ${esc(group.name)}:</strong> an ${bad} Tag(en) mehr als ${maxAwayForGroup(group.id)} Urlauber gleichzeitig (Spitze ${peak}).</div>`:`<div class="notice"><strong>Plan-Gruppe ${esc(group.name)}:</strong> ${employees.length} Mitarbeiter · ${deps.length} Mitgliedsabteilungen · Maximum ${maxAwayForGroup(group.id)} Urlauber.</div>`];
+  const holidays=[];for(let day=1;day<=days;day++){const date=new Date(year,month-1,day),name=holidayName(date);if(name)holidays.push(`${day}.${month}. ${name}`)}if(holidays.length)messages.push(`<div class="holiday-list"><strong>Feiertage:</strong> ${holidays.map(esc).join(' · ')}</div>`);
+  $('calendarWarning').innerHTML=messages.join('');renderVacationList(choice);
+ };
+
+ groupVacationAwayCount=function(groupOrChoice,date){
+  const group=String(groupOrChoice).startsWith('__')?groupObjectFromChoice(groupOrChoice):state.planGroups.find(item=>String(item.id)===String(groupOrChoice)||normalizeGroupName(item.name)===normalizeGroupName(groupOrChoice));
+  return v17EmployeesForGroup(group).filter(employee=>vacsFor(employee.id).some(vacation=>activeVacationForLimit(vacation)&&inRange(date,vacation.from,vacation.to))).length;
+ };
+
+ saveState('Version 1.7 migriert','Direkte Plan-Gruppen-Zuordnung für Mitarbeiter aktiviert');
+ requestAnimationFrame(()=>{fillSelects();renderAll();});
+})();

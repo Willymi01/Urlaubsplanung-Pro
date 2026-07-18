@@ -64,3 +64,6 @@ input[type="date"]::-webkit-calendar-picker-indicator,input[type="month"]::-webk
 
 /* Version 1.4 */
 .empty-plan{padding:24px!important;text-align:center!important;background:#2b2f2d!important;color:#f2f3f2!important}.empty-plan small{display:block;margin-top:6px;white-space:normal;color:#b9bfbc}.calendar th small{white-space:normal;max-width:72px}.department-separator td{position:relative}.department-separator td::before{content:"Planbereich";display:inline-block;margin-right:8px;padding:2px 6px;border:1px solid #ffd500;border-radius:4px;color:#ffd500;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em}
+
+/* Version 1.7 */
+#employeeDepartment option[value^="__employee_group__:"]{font-weight:700;color:#ffd500}

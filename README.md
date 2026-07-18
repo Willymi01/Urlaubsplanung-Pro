@@ -31,10 +31,20 @@ Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzung
 - PDF-Folgeseiten bei vielen Mitarbeitern.
 
 
-## Korrekturen in Version 1.6
+## Korrekturen in Version 1.7
 
 - Plan-Gruppen finden Mitarbeiter auch bei abweichenden Leerzeichen oder Groß-/Kleinschreibung der Abteilungsnamen.
 - Gruppen werden im Auswahlfeld über feste IDs angesprochen.
 - Alte Gruppen-Namenszuordnungen werden automatisch repariert.
 - Beim Wechsel zum Monatsplan werden Wochentage, Feiertage und Abwesenheiten sofort vollständig gerendert.
 - Versionsparameter an CSS und JavaScript verhindern, dass GitHub Pages veraltete Dateien aus dem Browser-Cache verwendet.
+
+
+## Neu in Version 1.7
+
+- Plan-Gruppen können in der Mitarbeiterverwaltung direkt ausgewählt werden.
+- Mitarbeiter können entweder einer konkreten Abteilung oder direkt einer Plan-Gruppe zugeordnet werden.
+- Bestehende uneinheitliche Gruppen-Zuordnungen werden automatisch erkannt.
+- Im Monatsplan werden Abteilungen, die zu einer Plan-Gruppe gehören, nicht mehr zusätzlich einzeln angeboten.
+- Gruppenpläne berücksichtigen Mitarbeiter aus Mitgliedsabteilungen sowie direkt der Gruppe zugeordnete Mitarbeiter.
+- Die Mitarbeiterliste zeigt bei direkter Gruppenzuordnung den Namen der Plan-Gruppe.
