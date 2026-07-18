@@ -1,50 +1,19 @@
-# Urlaubsplaner v1.2
+# Urlaubsplaner Berlin – Version 1.8
 
-Neu in v1.2:
+Statische, GitHub-Pages-kompatible Web-App.
 
-- Abteilungen werden über die maximale Zahl gleichzeitig abwesender Urlauber gesteuert.
-- Leiterplan mit maximal gleichzeitig abwesenden Leitungen.
-- Rote Markierung nur noch an Tagen, an denen das eingestellte Maximum tatsächlich überschritten wird.
-- Samstag ist ein normaler Arbeitstag.
-- Sonntag wird deutlich dunkler hervorgehoben.
-- Feiertagsnamen erscheinen in der Kalenderüberschrift, im Hinweisbereich und beim Überfahren einer Zelle.
-- Hinweise auf Feiertage bis zu zwei Tage vor Urlaubsbeginn oder nach Urlaubsende erscheinen in der Urlaubsliste.
-- Plan-Gruppen und eigene Maximalwerte je Unterabteilung bleiben erhalten.
+## Neu in Version 1.8
 
-Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzungen werden bei der ersten Übernahme in passende Maximalwerte umgerechnet.
+- Mitarbeiter werden wieder ausschließlich einer konkreten Abteilung zugeordnet.
+- Die zugehörige Plan-Gruppe wird in der Mitarbeiterverwaltung automatisch und schreibgeschützt angezeigt.
+- Gruppierte Einzelabteilungen werden im Monatsplan nicht separat angeboten; dort erscheint nur die Plan-Gruppe.
+- Datierte Abteilungswechsel sind möglich: Beim Bearbeiten eine neue Abteilung und „gültig ab“ auswählen.
+- Alte und neue Abteilungszuordnung werden als Verlauf gespeichert.
+- Im Monatsplan wird der Mitarbeiter vor dem Wechsel in der alten und ab dem Wechsel in der neuen Abteilung geführt.
+- Plan-Gruppen berücksichtigen datierte Abteilungswechsel automatisch.
+- Mitarbeiter mit Abteilungswechsel werden in der Liste und im Plan gekennzeichnet.
+- Bestehende Daten aus Version 1.7 werden automatisch migriert.
 
-## Version 1.4
-- Feiertagshinweis je Mitarbeiter erst ab mehr als zwei zugeordneten Feiertagen im Kalenderjahr.
-- Feiertage im Urlaub sowie bis zu zwei Tage davor oder danach werden gezählt.
-- Direkter PDF-Download des Monatsplans.
-- Testzugang-Hinweis auf der Anmeldung entfernt.
-- Plan-Gruppen sind im Monatsplan auswählbar und besitzen ein eigenes Gesamtmaximum für gleichzeitig abwesende Urlauber.
+## Installation
 
-
-## Korrekturen in Version 1.4
-
-- Plan-Gruppen lösen zugeordnete Abteilungen tolerant gegenüber Leerzeichen und Groß-/Kleinschreibung auf.
-- Mitarbeiter aller Unterabteilungen werden im gemeinsamen Monatsplan angezeigt und nach Abteilung getrennt.
-- Warnungen basieren ausschließlich auf maximal gleichzeitig abwesenden Urlaubern.
-- Keine fehlerhafte 0-von-0- oder Mindestbesetzungswarnung mehr.
-- PDF-Export direkt aus den Planungsdaten mit Namen, Tageszahlen, Farben, Kürzeln und Abteilungsblöcken.
-- PDF-Folgeseiten bei vielen Mitarbeitern.
-
-
-## Korrekturen in Version 1.7
-
-- Plan-Gruppen finden Mitarbeiter auch bei abweichenden Leerzeichen oder Groß-/Kleinschreibung der Abteilungsnamen.
-- Gruppen werden im Auswahlfeld über feste IDs angesprochen.
-- Alte Gruppen-Namenszuordnungen werden automatisch repariert.
-- Beim Wechsel zum Monatsplan werden Wochentage, Feiertage und Abwesenheiten sofort vollständig gerendert.
-- Versionsparameter an CSS und JavaScript verhindern, dass GitHub Pages veraltete Dateien aus dem Browser-Cache verwendet.
-
-
-## Neu in Version 1.7
-
-- Plan-Gruppen können in der Mitarbeiterverwaltung direkt ausgewählt werden.
-- Mitarbeiter können entweder einer konkreten Abteilung oder direkt einer Plan-Gruppe zugeordnet werden.
-- Bestehende uneinheitliche Gruppen-Zuordnungen werden automatisch erkannt.
-- Im Monatsplan werden Abteilungen, die zu einer Plan-Gruppe gehören, nicht mehr zusätzlich einzeln angeboten.
-- Gruppenpläne berücksichtigen Mitarbeiter aus Mitgliedsabteilungen sowie direkt der Gruppe zugeordnete Mitarbeiter.
-- Die Mitarbeiterliste zeigt bei direkter Gruppenzuordnung den Namen der Plan-Gruppe.
+Alle Dateien direkt in den Hauptordner des GitHub-Repositories kopieren und vorhandene Dateien überschreiben. Anschließend GitHub Pages neu laden und einmal Strg + F5 drücken.

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v1.7</title>
+  <title>Urlaubsplaner Berlin · v1.8</title>
   <link rel="stylesheet" href="style.css?v=1.6">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 1.7 · GitHub Pages</p>
+    <p class="subtitle">Version 1.8 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.7</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 1.8</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -129,6 +129,8 @@
         <div class="form-grid">
           <div><label for="employeeName">Name</label><input id="employeeName" placeholder="Vor- und Nachname"></div>
           <div><label for="employeeDepartment">Abteilung</label><select id="employeeDepartment"></select></div>
+          <div><label for="employeePlanGroupDisplay">Plan-Gruppe (automatisch)</label><input id="employeePlanGroupDisplay" type="text" value="Keine Plan-Gruppe" readonly></div>
+          <div><label for="employeeTransferDate">Abteilungswechsel gültig ab</label><input id="employeeTransferDate" type="date"><small class="muted">Nur ausfüllen, wenn ein bestehender Mitarbeiter die Abteilung wechselt.</small></div>
           <div><label for="employeeHours">Wochenstunden</label><input id="employeeHours" type="number" min="1" max="60" value="37"></div>
           <div><label for="employeeVacationDays">Jahresurlaub</label><input id="employeeVacationDays" type="number" min="0" max="60" value="36"></div>
           <div><label for="employeeCarryover">Resturlaub Vorjahr</label><input id="employeeCarryover" type="number" min="0" max="60" step="0.5" value="0"></div>

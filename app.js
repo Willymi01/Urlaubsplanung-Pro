@@ -997,3 +997,168 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
  saveState('Version 1.7 migriert','Direkte Plan-Gruppen-Zuordnung für Mitarbeiter aktiviert');
  requestAnimationFrame(()=>{fillSelects();renderAll();});
 })();
+
+/* Version 1.8: Abteilung als Stammdatum, automatische Plan-Gruppe und datierte Abteilungswechsel */
+(function(){
+ const V18_START='2000-01-01';
+ const key=value=>String(value||'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+ const isoDay=date=>`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+ const dayBefore=value=>{const d=localDate(value);d.setDate(d.getDate()-1);return isoDay(d)};
+ const monthBounds=(year,month)=>({start:new Date(year,month-1,1),end:new Date(year,month,0)});
+ const groupForDepartment=department=>{
+  const canonical=state.departments.find(dep=>key(dep)===key(department));if(!canonical)return null;
+  const id=String(state.departmentGroupIds?.[canonical]||'');
+  if(id){const direct=state.planGroups.find(group=>String(group.id)===id);if(direct)return direct}
+  const oldName=String(state.departmentGroups?.[canonical]||'').trim();
+  return oldName?state.planGroups.find(group=>normalizeGroupName(group.name)===normalizeGroupName(oldName))||null:null;
+ };
+ const groupDepartments=group=>{
+  if(!group)return[];
+  const byId=state.departments.filter(dep=>String(state.departmentGroupIds?.[dep]||'')===String(group.id));
+  if(byId.length)return byId;
+  return state.departments.filter(dep=>normalizeGroupName(state.departmentGroups?.[dep])===normalizeGroupName(group.name));
+ };
+ const groupFromChoice=choice=>{
+  const value=String(choice||'');
+  if(value.startsWith('__groupid__:'))return state.planGroups.find(group=>String(group.id)===value.slice(12))||null;
+  if(value.startsWith('__group__:'))return state.planGroups.find(group=>normalizeGroupName(group.name)===normalizeGroupName(value.slice(10)))||null;
+  return null;
+ };
+ function normalizeAssignments(employee){
+  let items=Array.isArray(employee.departmentHistory)?employee.departmentHistory:[];
+  items=items.map(item=>({department:String(item.department||'').trim(),from:String(item.from||V18_START),to:String(item.to||'')})).filter(item=>item.department);
+  if(!items.length&&employee.department)items=[{department:String(employee.department).trim(),from:V18_START,to:''}];
+  items.sort((a,b)=>a.from.localeCompare(b.from));
+  // Bereiche lückenlos und ohne Überlappung halten.
+  for(let i=0;i<items.length-1;i++)if(!items[i].to||items[i].to>=items[i+1].from)items[i].to=dayBefore(items[i+1].from);
+  if(items.length)items[items.length-1].to='';
+  employee.departmentHistory=items;
+  if(items.length)employee.department=items[items.length-1].department;
+  employee.planGroupId='';
+  return items;
+ }
+ state.employees.forEach(employee=>{
+  // Alte direkte Gruppen-Zuordnungen auf eine echte Mitgliedsabteilung migrieren.
+  if(!employee.department&&employee.planGroupId){const group=state.planGroups.find(item=>String(item.id)===String(employee.planGroupId)),deps=groupDepartments(group);if(deps.length)employee.department=deps[0]}
+  normalizeAssignments(employee);
+ });
+ localStorage.setItem(STORE,JSON.stringify(state));
+
+ function departmentAt(employee,date){
+  if(!employee)return'';
+  const iso=typeof date==='string'?date:isoDay(date);
+  const history=normalizeAssignments(employee);
+  const match=[...history].reverse().find(item=>item.from<=iso&&(!item.to||item.to>=iso));
+  return match?.department||employee.department||'';
+ }
+ function belongsToDepartmentOn(employee,department,date){return key(departmentAt(employee,date))===key(department)}
+ function belongsToGroupOn(employee,group,date){const dep=departmentAt(employee,date);return groupDepartments(group).some(item=>key(item)===key(dep))}
+ function assignedAnyDay(employee,predicate,year,month){const {start,end}=monthBounds(year,month);for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1))if(predicate(employee,new Date(d)))return true;return false}
+ function employeeGroupLabel(employee){const group=groupForDepartment(employee.department);return group?group.name:'Keine Plan-Gruppe'}
+ function updatePlanGroupDisplay(){const dep=$('employeeDepartment')?.value||'';const group=groupForDepartment(dep);if($('employeePlanGroupDisplay'))$('employeePlanGroupDisplay').value=group?group.name:'Keine Plan-Gruppe'}
+ function historyLabel(employee){const history=normalizeAssignments(employee);if(history.length<2)return'';return history.map(item=>`${item.department} ab ${localDate(item.from).toLocaleDateString('de-DE')}${item.to?' bis '+localDate(item.to).toLocaleDateString('de-DE'):''}`).join(' · ')}
+
+ // Nur reale Abteilungen auswählbar. Die Plan-Gruppe wird automatisch von der Abteilung abgeleitet.
+ const fillSelectsV18Base=fillSelects;
+ fillSelects=function(){
+  fillSelectsV18Base();
+  if($('employeeDepartment')){
+   const current=$('employeeDepartment').value;
+   $('employeeDepartment').innerHTML='<option value="">Bitte Abteilung auswählen</option>'+state.departments.map(dep=>`<option value="${esc(dep)}">${esc(dep)}</option>`).join('');
+   if(state.departments.some(dep=>dep===current))$('employeeDepartment').value=current;
+   updatePlanGroupDisplay();
+  }
+  // Im Monatsplan gruppierte Einzelabteilungen ausblenden.
+  const groupedKeys=new Set(state.planGroups.flatMap(group=>groupDepartments(group)).map(key));
+  const visible=state.departments.filter(dep=>!groupedKeys.has(key(dep)));
+  const groupOptions=state.planGroups.slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(group=>`<option value="__groupid__:${esc(group.id)}">Plan-Gruppe: ${esc(group.name)}</option>`).join('');
+  if($('departmentFilter')){
+   const wanted=$('departmentFilter').value;
+   $('departmentFilter').innerHTML='<option value="__leaders__">Leiterplan (alle Abteilungen)</option>'+groupOptions+visible.map(dep=>`<option value="${esc(dep)}">${esc(dep)}</option>`).join('');
+   const options=[...$('departmentFilter').options].map(option=>option.value);
+   if(options.includes(wanted))$('departmentFilter').value=wanted;else $('departmentFilter').value=options[1]||'__leaders__';
+  }
+  if($('yearDepartmentFilter')){
+   const wanted=$('yearDepartmentFilter').value;
+   $('yearDepartmentFilter').innerHTML=groupOptions+visible.map(dep=>`<option value="${esc(dep)}">${esc(dep)}</option>`).join('');
+   const options=[...$('yearDepartmentFilter').options].map(option=>option.value);$('yearDepartmentFilter').value=options.includes(wanted)?wanted:(options[0]||'');
+  }
+ };
+ if($('employeeDepartment'))$('employeeDepartment').addEventListener('change',updatePlanGroupDisplay);
+
+ saveEmployee=function(){
+  const name=$('employeeName').value.trim(),department=$('employeeDepartment').value;if(!name)return alert('Bitte einen Namen eingeben.');if(!department)return alert('Bitte eine Abteilung auswählen.');
+  const id=Number($('editingEmployeeId').value),transferDate=$('employeeTransferDate')?.value||'';
+  const common={name,hours:Number($('employeeHours').value),vacationDays:Number($('employeeVacationDays').value),carryover:Number($('employeeCarryover').value||0),leader:$('employeeLeader').checked,keyLeader:$('employeeKeyLeader')?.checked||false,substitute:$('employeeSubstitute').value};if(common.keyLeader)common.leader=true;
+  if(id){
+   const employee=emp(id);normalizeAssignments(employee);const previous=employee.department;
+   if(key(previous)!==key(department)){
+    if(!transferDate)return alert('Bitte für den Abteilungswechsel das Datum „gültig ab“ angeben.');
+    const last=employee.departmentHistory[employee.departmentHistory.length-1];
+    if(last&&transferDate<=last.from)return alert('Das Wechsel-Datum muss nach dem Beginn der aktuellen Zuordnung liegen.');
+    if(last)last.to=dayBefore(transferDate);
+    employee.departmentHistory.push({department,from:transferDate,to:''});
+   }
+   Object.assign(employee,common,{department,planGroupId:''});normalizeAssignments(employee);
+  }else{
+   state.employees.push({id:Date.now(),...common,department,planGroupId:'',departmentHistory:[{department,from:V18_START,to:''}]});
+  }
+  saveState('Mitarbeiter gespeichert',`${name} · ${department}${transferDate?' ab '+transferDate:''}`);clearEmployeeForm();renderAll();
+ };
+
+ window.editEmployee=function(id){
+  const employee=emp(id);if(!employee)return;normalizeAssignments(employee);$('editingEmployeeId').value=id;$('employeeName').value=employee.name;fillSelects();$('employeeDepartment').value=employee.department;updatePlanGroupDisplay();$('employeeTransferDate').value='';$('employeeHours').value=employee.hours;$('employeeVacationDays').value=employee.vacationDays;$('employeeCarryover').value=employee.carryover||0;$('employeeLeader').checked=employee.leader;if($('employeeKeyLeader'))$('employeeKeyLeader').checked=employee.keyLeader||false;$('employeeSubstitute').value=employee.substitute||'';$('addEmployee').textContent='Änderungen speichern';$('cancelEmployeeEdit').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});
+ };
+ const clearEmployeeFormV18Base=clearEmployeeForm;
+ clearEmployeeForm=function(){clearEmployeeFormV18Base();if($('employeeTransferDate'))$('employeeTransferDate').value='';updatePlanGroupDisplay()};
+
+ renderEmployees=function(){
+  $('employeeListCount').textContent=`${state.employees.length} Mitarbeiter`;
+  $('employeeTable').innerHTML='<thead><tr><th>Name</th><th>Aktuelle Abteilung / Plan-Gruppe</th><th>Stunden</th><th>Urlaubskonto</th><th>Leiter</th><th>Vertretung</th><th>Aktion</th></tr></thead><tbody>'+state.employees.map(employee=>{const used=usedDays(employee.id),entitlement=Number(employee.vacationDays||0)+Number(employee.carryover||0),remaining=entitlement-used,history=historyLabel(employee);return `<tr><td>${esc(employee.name)}${history?`<div class="transfer-history">${esc(history)}</div>`:''}</td><td><strong>${esc(employee.department||'–')}</strong><br><small>${esc(employeeGroupLabel(employee))}</small></td><td>${employee.hours}</td><td>Anspruch ${employee.vacationDays||0} + Übertrag ${employee.carryover||0} · Verplant ${used} · <strong>Rest ${remaining}</strong></td><td>${employee.leader?'Ja'+(employee.keyLeader?' 🔑':''):'Nein'}</td><td>${esc(employee.substitute||'–')}</td><td><button class="button tiny" onclick="editEmployee(${employee.id})">Bearbeiten</button> <button class="icon-button" onclick="deleteEmployee(${employee.id})">🗑️</button></td></tr>`}).join('')+'</tbody>';
+ };
+
+ // Datumsabhängige Auswahl: Ein Wechsel wird ab seinem Gültigkeitsdatum im passenden Plan sichtbar.
+ employeesForSelection=function(choice){
+  if(choice==='__leaders__')return state.employees.filter(employee=>employee.leader);
+  const group=groupFromChoice(choice),[year,month]=($('monthFilter')?.value||`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`).split('-').map(Number);
+  if(group)return state.employees.filter(employee=>assignedAnyDay(employee,(e,date)=>belongsToGroupOn(e,group,date),year,month));
+  return state.employees.filter(employee=>assignedAnyDay(employee,(e,date)=>belongsToDepartmentOn(e,choice,date),year,month));
+ };
+ departmentVacationAwayCount=function(department,date){return state.employees.filter(employee=>belongsToDepartmentOn(employee,department,date)).filter(employee=>vacsFor(employee.id).some(vacation=>activeVacationForLimit(vacation)&&inRange(date,vacation.from,vacation.to))).length};
+ groupVacationAwayCount=function(groupOrChoice,date){const group=String(groupOrChoice).startsWith('__')?groupFromChoice(groupOrChoice):state.planGroups.find(item=>String(item.id)===String(groupOrChoice)||normalizeGroupName(item.name)===normalizeGroupName(groupOrChoice));if(!group)return 0;return state.employees.filter(employee=>belongsToGroupOn(employee,group,date)).filter(employee=>vacsFor(employee.id).some(vacation=>activeVacationForLimit(vacation)&&inRange(date,vacation.from,vacation.to))).length};
+
+ renderCalendar=function(){
+  if(!$('monthFilter').value){const now=new Date();$('monthFilter').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`}
+  const choice=$('departmentFilter').value,[year,month]=$('monthFilter').value.split('-').map(Number),days=new Date(year,month,0).getDate(),leaderMode=choice==='__leaders__',group=groupFromChoice(choice),employees=employeesForSelection(choice);
+  $('vacationEmployee').innerHTML=employees.map(employee=>`<option value="${employee.id}">${esc(employee.name)}</option>`).join('');
+  let html='<thead><tr><th class="employee-name">Mitarbeiter</th>';for(let day=1;day<=days;day++){const date=new Date(year,month-1,day),holiday=holidayName(date),weekday=['So','Mo','Di','Mi','Do','Fr','Sa'][date.getDay()];html+=`<th class="${date.getDay()===0?'sunday-header':''} ${holiday?'holiday-header':''}" title="${esc(holiday||weekday)}"><span>${day}</span><small>${holiday?esc(holiday):weekday}</small></th>`}html+='</tr></thead><tbody>';
+  if(!employees.length)html+=`<tr><td colspan="${days+1}" class="empty-plan"><strong>Keine Mitarbeiter gefunden.</strong><br><small>${group?'Prüfe die Abteilungen der Plan-Gruppe und die datierten Mitarbeiter-Zuordnungen.':'Prüfe die Abteilungszuordnung der Mitarbeiter.'}</small></td></tr>`;
+  const sections=group?groupDepartments(group):[];let lastSection='';
+  employees.sort((a,b)=>a.name.localeCompare(b.name,'de')).forEach(employee=>{
+   const firstDate=new Date(year,month-1,1),section=leaderMode?'':group?(departmentAt(employee,firstDate)||departmentAt(employee,new Date(year,month,days))):choice;
+   if(group&&section!==lastSection){html+=`<tr class="department-separator"><td colspan="${days+1}"><strong>${esc(section)}</strong> · maximal ${maxAwayForDepartment(section)} Urlauber gleichzeitig</td></tr>`;lastSection=section}
+   html+=`<tr><td class="employee-name"><strong>${esc(employee.name)}</strong>${employee.leader?` <span class="badge leader-badge">Leiter${employee.keyLeader?' 🔑':''}</span>`:''}${normalizeAssignments(employee).length>1?'<span class="department-transfer-note">Abteilungswechsel</span>':''}${leaderMode?`<br><small>${esc(departmentAt(employee,firstDate)||employee.department)} · Vertretung: ${esc(employee.substitute||'Keine')}</small>`:''}</td>`;
+   for(let day=1;day<=days;day++){
+    const date=new Date(year,month-1,day),dep=departmentAt(employee,date),assigned=leaderMode?true:group?belongsToGroupOn(employee,group,date):belongsToDepartmentOn(employee,choice,date),vacation=assigned?vacsFor(employee.id).find(v=>inRange(date,v.from,v.to)):null,holiday=holidayName(date);
+    let cls=!assigned?'assignment-inactive':date.getDay()===0?'sunday':'';if(assigned&&holiday)cls='holiday';
+    const critical=assigned&&!leaderMode&&(group?groupVacationAwayCount(group.id,date)>maxAwayForGroup(group.id)||departmentVacationAwayCount(dep,date)>maxAwayForDepartment(dep):departmentVacationAwayCount(choice,date)>maxAwayForDepartment(choice));
+    if(vacation)cls=moveForVacation(vacation)?'moved-cell':vacation.status==='Beantragt'?'pending-cell':vacation.status==='Geplant'?'planned-cell':critical?'critical vacation-entry':'vacation';else if(critical)cls=(cls?cls+' ':'')+'critical-day';
+    html+=`<td class="${cls}" title="${assigned?esc(vacationTitle(vacation,date,dep)):esc('Noch nicht / nicht mehr dieser Abteilung zugeordnet')}">${vacation?absenceCode(vacation):''}</td>`;
+   }
+   html+='</tr>';
+  });
+  $('calendarTable').innerHTML=html+'</tbody>';
+  const notices=[];
+  if(leaderMode){let peak=0;for(let day=1;day<=days;day++){const date=new Date(year,month-1,day);peak=Math.max(peak,employees.filter(employee=>vacsFor(employee.id).some(v=>activeVacationForLimit(v)&&inRange(date,v.from,v.to))).length)}notices.push(peak>maxAwayForLeaders()?`<div class="warning warning-danger"><strong>Leiterüberschneidung:</strong> Bis zu ${peak} Leitungen gleichzeitig abwesend.</div>`:'<div class="notice"><strong>Leiterplan:</strong> Keine Überschreitung im gewählten Monat.</div>')}
+  else if(group){let bad=0,peak=0;for(let day=1;day<=days;day++){const count=groupVacationAwayCount(group.id,new Date(year,month-1,day));peak=Math.max(peak,count);if(count>maxAwayForGroup(group.id))bad++}notices.push(bad?`<div class="warning warning-danger"><strong>Plan-Gruppe ${esc(group.name)}:</strong> an ${bad} Tag(en) über dem Maximum von ${maxAwayForGroup(group.id)} (Spitze ${peak}).</div>`:`<div class="notice"><strong>Plan-Gruppe ${esc(group.name)}:</strong> ${employees.length} Mitarbeiter aus ${groupDepartments(group).length} Abteilungen · Maximum ${maxAwayForGroup(group.id)} Urlauber.</div>`)}
+  else{let peak=0,bad=0;for(let day=1;day<=days;day++){const count=departmentVacationAwayCount(choice,new Date(year,month-1,day));peak=Math.max(peak,count);if(count>maxAwayForDepartment(choice))bad++}if(bad)notices.push(`<div class="warning warning-danger"><strong>${esc(choice)}:</strong> an ${bad} Tag(en) über dem Maximum von ${maxAwayForDepartment(choice)} (Spitze ${peak}).</div>`)}
+  const holidays=[];for(let day=1;day<=days;day++){const date=new Date(year,month-1,day),name=holidayName(date);if(name)holidays.push(`${day}.${month}. ${name}`)}if(holidays.length)notices.push(`<div class="holiday-list"><strong>Feiertage:</strong> ${holidays.map(esc).join(' · ')}</div>`);
+  $('calendarWarning').innerHTML=notices.join('');renderVacationList(choice);
+ };
+
+ // Urlaubsbearbeitung öffnet den Plan, in dem die Person zum Beginn des Eintrags geführt wird.
+ window.editVacation=function(id){const vacation=state.vacations.find(item=>item.id===id);if(!vacation)return;const employee=emp(vacation.employeeId),dep=departmentAt(employee,vacation.from),group=groupForDepartment(dep);fillSelects();$('departmentFilter').value=group?`__groupid__:${group.id}`:dep;renderCalendar();$('editingVacationId').value=id;$('vacationEmployee').value=vacation.employeeId;$('vacationFrom').value=vacation.from;$('vacationTo').value=vacation.to;$('vacationType').value=vacation.type;$('vacationScope').value=vacation.scope||'full';$('vacationStatus').value=vacation.status;$('vacationNote').value=vacation.note||'';$('vacationFormTitle').textContent='Urlaub bearbeiten oder verschieben';$('vacationForm').classList.remove('hidden');$('vacationForm').scrollIntoView({behavior:'smooth'})};
+
+ saveState('Version 1.8 migriert','Automatische Plan-Gruppen-Anzeige und datierte Abteilungswechsel aktiviert');
+ requestAnimationFrame(()=>{fillSelects();renderAll();requestAnimationFrame(renderCalendar)});
+})();
