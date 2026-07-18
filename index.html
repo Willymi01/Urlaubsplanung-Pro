@@ -71,7 +71,7 @@
         </div>
         <div id="calendarWarning"></div>
         <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
-        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschobener Urlaub · Grau = Wochenende · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
+        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschobener Urlaub · Dunkelgrau = Sonntag · Gelb = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
       <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Verschobene Einträge werden im Plan rosa mit ↔ markiert. Die Details stehen direkt im Hinweis und bleiben im Änderungsprotokoll erhalten.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
     </section>
@@ -150,9 +150,9 @@
 
     <section id="page-departments" class="page hidden">
       <div class="panel">
-        <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen, umbenennen, Mindestbesetzung festlegen oder löschen. Beim Löschen können zugeordnete Mitarbeiter in eine andere Abteilung verschoben werden.</p></div></div>
-        <div class="subpanel"><h3>Leiterplan</h3><div class="toolbar"><div><label for="leaderMinimum">Mindestanzahl anwesender Leitungen</label><input id="leaderMinimum" type="number" min="0" value="1"></div><div><label for="keyLeaderMinimum">Mindestanzahl anwesender Schlüssel-Leitungen</label><input id="keyLeaderMinimum" type="number" min="0" value="1"></div><div><button id="saveLeaderMinimums" class="button primary">Leiterbesetzung speichern</button></div></div></div>
-        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><input id="newDepartmentGroup" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Mindestbesetzung</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
+        <div class="panel-heading"><div><h2>Abteilungen verwalten</h2><p class="muted">Abteilungen hinzufügen, umbenennen, maximale gleichzeitig abwesende Urlauber festlegen oder löschen. Beim Löschen können zugeordnete Mitarbeiter in eine andere Abteilung verschoben werden.</p></div></div>
+        <div class="subpanel"><h3>Leiterplan</h3><div class="toolbar"><div><label for="leaderMinimum">Maximal gleichzeitig abwesende Leitungen</label><input id="leaderMinimum" type="number" min="0" value="1"></div><div><label for="keyLeaderMinimum">Mindestanzahl anwesender Schlüssel-Leitungen</label><input id="keyLeaderMinimum" type="number" min="0" value="1"></div><div><button id="saveLeaderMinimums" class="button primary">Leiterregeln speichern</button></div></div></div>
+        <div class="toolbar"><div><label for="newDepartment">Neue Abteilung</label><input id="newDepartment" placeholder="z. B. Käse"></div><div><label for="newDepartmentGroup">Plan-Gruppe</label><input id="newDepartmentGroup" placeholder="z. B. Bedienung"></div><div><label for="newDepartmentMin">Maximal gleichzeitig abwesende Urlauber</label><input id="newDepartmentMin" type="number" min="0" value="2"></div><div><button id="addDepartment" class="button primary">Abteilung hinzufügen</button></div></div>
         <div class="table-wrapper"><table id="departmentTable"></table></div>
       </div>
     </section>

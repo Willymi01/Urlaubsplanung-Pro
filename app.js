@@ -373,3 +373,82 @@ exportMonthExcel=async function(){
 
 // Nach dem ursprünglichen init die neuen Bedienelemente verbinden.
 setTimeout(()=>{if($('saveLeaderMinimums'))$('saveLeaderMinimums').onclick=saveLeaderMinimums;if($('exportExcel'))$('exportExcel').onclick=exportMonthExcel;renderAll()},0);
+
+/* Version 1.2: maximale Urlauber, Feiertagsnamen, Samstag normal, Sonntag hervorgehoben */
+const normalizeV12Base=normalize;
+normalize=function(raw){
+ const n=normalizeV12Base(raw),d=raw&&typeof raw==='object'?raw:{};
+ n.departmentMaxAway={...(d.departmentMaxAway||{})};
+ n.departments.forEach(dep=>{
+  if(n.departmentMaxAway[dep]==null){
+   const total=n.employees.filter(e=>e.department===dep).length;
+   const oldMin=Number(n.departmentSettings?.[dep]??Math.max(0,total-1));
+   n.departmentMaxAway[dep]=Math.max(0,total-oldMin)||1;
+  }
+ });
+ n.leaderSettings.maxAway=Math.max(0,Number(d.leaderSettings?.maxAway??n.leaderSettings?.maxAway??1));
+ return n;
+};
+state=normalize(state);localStorage.setItem(STORE,JSON.stringify(state));
+
+function activeAbsence(v){return v&&v.status!=='Geplant'}
+function departmentAwayCount(dep,date){return state.employees.filter(e=>e.department===dep).filter(e=>vacsFor(e.id).some(v=>activeAbsence(v)&&inRange(date,v.from,v.to))).length}
+function nearbyHolidayWarnings(v){
+ if(!v||v.type!=='Urlaub')return [];
+ const start=localDate(v.from),end=localDate(v.to),found=[];
+ for(let offset=1;offset<=2;offset++){
+  const before=new Date(start);before.setDate(before.getDate()-offset);
+  const after=new Date(end);after.setDate(after.getDate()+offset);
+  const bn=holidayName(before),an=holidayName(after);
+  if(bn)found.push(`${bn} (${before.toLocaleDateString('de-DE')}) ${offset} Tag${offset===1?'':'e'} vor Urlaubsbeginn`);
+  if(an)found.push(`${an} (${after.toLocaleDateString('de-DE')}) ${offset} Tag${offset===1?'':'e'} nach Urlaubsende`);
+ }
+ return [...new Set(found)];
+}
+
+const vacationTitleV12Base=vacationTitle;
+vacationTitle=function(v,date,extra=''){
+ const base=vacationTitleV12Base(v,date,extra),near=nearbyHolidayWarnings(v);
+ return [base,near.length?`Feiertagshinweis: ${near.join('; ')}`:''].filter(Boolean).join(' · ');
+};
+
+renderVacationList=function(choice){
+ const deps=selectedDepartments(choice),ids=(choice==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));
+ $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–'));return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td><button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button> ${v.status==='Beantragt'?`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`:''} <button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button></td></tr>`}).join('')+'</tbody>';
+};
+
+renderCalendar=function(){
+ const choice=$('departmentFilter').value||state.departments[0],leaderMode=choice==='__leaders__',deps=selectedDepartments(choice),groupMode=deps.length>1,parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],days=new Date(year,month,0).getDate();
+ const emps=(leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).sort((a,b)=>leaderMode?a.name.localeCompare(b.name,'de'):deps.indexOf(a.department)-deps.indexOf(b.department)||a.name.localeCompare(b.name,'de'));
+ $('vacationEmployee').innerHTML=emps.map(e=>`<option value="${e.id}">${esc(e.name)}${groupMode?' · '+esc(e.department):''}</option>`).join('');
+ let h='<thead><tr><th class="employee-name">Mitarbeiter</th>';
+ for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),hn=holidayName(date),sun=date.getDay()===0;h+=`<th class="${sun?'sunday-header':''} ${hn?'holiday-header':''}" title="${esc(hn)}">${d}${hn?`<small>${esc(hn)}</small>`:''}</th>`}h+='</tr></thead><tbody>';
+ let lastDep='';
+ for(const e of emps){
+  if(groupMode&&e.department!==lastDep){h+=`<tr class="department-separator"><td colspan="${days+1}"><strong>${esc(e.department)}</strong> · maximal ${Number(state.departmentMaxAway?.[e.department]??1)} gleichzeitig abwesend</td></tr>`;lastDep=e.department}
+  h+=`<tr><td class="employee-name"><strong>${esc(e.name)}</strong>${leaderMode?`<br><small>${esc(e.department)} · ${e.keyLeader?'🔑 Schlüssel-Leitung · ':''}Vertretung: ${esc(e.substitute||'Keine')}</small>`:e.leader?` <span class="badge leader-badge">Leiter${e.keyLeader?' 🔑':''}</span>`:''}</td>`;
+  for(let d=1;d<=days;d++){
+   const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to)),hn=holidayName(date),sun=date.getDay()===0;
+   let cls=sun?'sunday':'';if(hn)cls='holiday';
+   let critical=false;
+   if(leaderMode){const absent=state.employees.filter(x=>x.leader).filter(x=>vacsFor(x.id).some(a=>activeAbsence(a)&&inRange(date,a.from,a.to))).length;critical=absent>Number(state.leaderSettings.maxAway||0)}
+   else critical=departmentAwayCount(e.department,date)>Number(state.departmentMaxAway?.[e.department]??1);
+   if(v)cls=moveForVacation(v)?'moved-cell':v.status==='Beantragt'?'pending-cell':v.status==='Geplant'?'planned-cell':critical?'critical vacation-entry':'vacation';
+   else if(critical)cls=(cls?cls+' ':'')+'critical-day';
+   h+=`<td class="${cls}" title="${esc(vacationTitle(v,date,leaderMode?e.department:''))}">${v?absenceCode(v):''}</td>`;
+  }h+='</tr>';
+ }
+ $('calendarTable').innerHTML=h+'</tbody>';
+ const holidays=[];for(let d=1;d<=days;d++){const dt=new Date(year,month-1,d),name=holidayName(dt);if(name)holidays.push(`${d}.${month}. ${name}`)}
+ if(leaderMode){let bad=0,maxSeen=0;for(let d=1;d<=days;d++){const dt=new Date(year,month-1,d),away=state.employees.filter(x=>x.leader).filter(x=>vacsFor(x.id).some(v=>activeAbsence(v)&&inRange(dt,v.from,v.to))).length;maxSeen=Math.max(maxSeen,away);if(away>Number(state.leaderSettings.maxAway||0))bad++}$('calendarWarning').innerHTML=`${bad?`<div class="warning warning-danger"><strong>Maximale Leiter-Abwesenheit überschritten:</strong> an ${bad} Tag(en). Erlaubt sind maximal ${state.leaderSettings.maxAway} gleichzeitig abwesende Leitungen.</div>`:`<div class="notice"><strong>Leiterplan:</strong> Maximal ${maxSeen} gleichzeitig abwesend; erlaubt sind ${state.leaderSettings.maxAway}.</div>`}${holidays.length?`<div class="holiday-list"><strong>Feiertage:</strong> ${holidays.map(esc).join(' · ')}</div>`:''}`;renderVacationList('__leaders__')}
+ else {const warnings=deps.map(dep=>{let max=0,bad=0;for(let d=1;d<=days;d++){const away=departmentAwayCount(dep,new Date(year,month-1,d));max=Math.max(max,away);if(away>Number(state.departmentMaxAway?.[dep]??1))bad++}return bad?`${dep}: an ${bad} Tag(en) über Maximum ${state.departmentMaxAway[dep]} (Spitze ${max})`:''}).filter(Boolean);$('calendarWarning').innerHTML=`${warnings.length?`<div class="warning warning-danger"><strong>Zu viele Urlauber:</strong> ${warnings.map(esc).join(' · ')}</div>`:''}${holidays.length?`<div class="holiday-list"><strong>Feiertage:</strong> ${holidays.map(esc).join(' · ')}</div>`:''}`;renderVacationList(choice)}
+};
+
+renderDepartments=function(){
+ $('leaderMinimum').value=state.leaderSettings.maxAway;$('keyLeaderMinimum').value=state.leaderSettings.keyMinimum;
+ $('departmentTable').innerHTML='<thead><tr><th>Abteilung</th><th>Plan-Gruppe</th><th>Max. Urlauber</th><th>Mitarbeiter</th><th>Leiter</th><th>Aktion</th></tr></thead><tbody>'+state.departments.map((d,i)=>{const es=state.employees.filter(e=>e.department===d),max=Number(state.departmentMaxAway?.[d]??1),group=state.departmentGroups?.[d]||'–';return `<tr><td>${esc(d)}</td><td>${esc(group)}</td><td>${max}</td><td>${es.length}</td><td>${esc(es.filter(e=>e.leader).map(e=>e.name+(e.keyLeader?' 🔑':'')).join(', ')||'–')}</td><td><button class="button tiny" onclick="renameDepartment(${i})">Umbenennen</button> <button class="button tiny" onclick="editDepartmentGroup(${i})">Plan-Gruppe</button> <button class="button tiny" onclick="editDepartmentMaximum(${i})">Max. Urlauber</button> <button class="button tiny danger" onclick="deleteDepartment(${i})">Löschen</button></td></tr>`}).join('')+'</tbody>';
+};
+window.editDepartmentMaximum=i=>{const d=state.departments[i],current=Number(state.departmentMaxAway?.[d]??1),value=prompt(`Maximal gleichzeitig abwesende Urlauber für „${d}“:`,current);if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0)return alert('Bitte eine gültige Zahl ab 0 eingeben.');state.departmentMaxAway[d]=Math.floor(n);saveState('Maximale Urlauber geändert',`${d}: ${n}`);renderAll()};
+addDepartment=function(){const name=$('newDepartment').value.trim();if(!name)return alert('Bitte einen Namen eingeben.');if(state.departments.includes(name))return alert('Diese Abteilung existiert bereits.');state.departments.push(name);state.departmentSettings[name]=0;state.departmentMaxAway[name]=Math.max(0,Number($('newDepartmentMin').value||1));state.departmentGroups[name]=$('newDepartmentGroup').value.trim();$('newDepartment').value='';$('newDepartmentGroup').value='';saveState('Abteilung angelegt',name);renderAll()};
+saveLeaderMinimums=function(){state.leaderSettings.maxAway=Math.max(0,Math.floor(Number($('leaderMinimum').value||0)));state.leaderSettings.keyMinimum=Math.max(0,Math.floor(Number($('keyLeaderMinimum').value||0)));saveState('Leiterregeln geändert',`max. ${state.leaderSettings.maxAway} abwesend, mindestens ${state.leaderSettings.keyMinimum} Schlüssel-Leiter anwesend`);renderAll()};
+setTimeout(()=>{renderAll()},0);

@@ -1,54 +1,14 @@
-# Urlaubsplaner Berlin – Version 0.9
+# Urlaubsplaner v1.2
 
-## Neu
-- Datenzentrale für optionale gemeinsame Serverdaten
-- Verbindungstest zum Backend
-- Daten zum Server senden und vom Server laden
-- Erkennung noch nicht synchronisierter lokaler Änderungen
-- Konfliktwarnung vor dem Überschreiben lokaler Daten
-- optionaler automatischer Abgleich nach Änderungen
-- Gerätekennung und letzter Synchronisierungszeitpunkt
-- mitgeliefertes kleines Node.js-Backend im Ordner `backend`
-- automatische Übernahme lokaler Daten aus Version 0.8
+Neu in v1.2:
 
-## GitHub Pages
-Alle Dateien aus dem Hauptordner direkt in das Repository kopieren. Der Ordner `backend` darf mit hochgeladen werden, läuft dort aber nicht. Die Webseite funktioniert weiterhin vollständig im lokalen Modus.
+- Abteilungen werden über die maximale Zahl gleichzeitig abwesender Urlauber gesteuert.
+- Leiterplan mit maximal gleichzeitig abwesenden Leitungen.
+- Rote Markierung nur noch an Tagen, an denen das eingestellte Maximum tatsächlich überschritten wird.
+- Samstag ist ein normaler Arbeitstag.
+- Sonntag wird deutlich dunkler hervorgehoben.
+- Feiertagsnamen erscheinen in der Kalenderüberschrift, im Hinweisbereich und beim Überfahren einer Zelle.
+- Hinweise auf Feiertage bis zu zwei Tage vor Urlaubsbeginn oder nach Urlaubsende erscheinen in der Urlaubsliste.
+- Plan-Gruppen und eigene Maximalwerte je Unterabteilung bleiben erhalten.
 
-## Testzugänge
-- Admin / 1234
-- Marktleitung / 5678
-- Anna Schmidt / 1111
-- Tom Wagner / 2222
-
-## Wichtiger Hinweis
-Die PIN-Anmeldung im GitHub-Pages-Modus ist weiterhin nur eine Demonstration. Erst mit einem produktiven Backend können Anmeldung, Rechte und Daten zentral und sicher umgesetzt werden.
-
-
-## Neu in v1.0
-- Verschobene Urlaube werden im Monats- und Leiterplan rosa mit ↔ dargestellt.
-- Der frühere Reiter „Verschiebungen“ wurde aus der Navigation entfernt; die Informationen bleiben im Plan und Änderungsprotokoll erhalten.
-- Neue Abwesenheitsart „Geplanter Freier Tag“ mit Kürzel G.
-
-
-## Version 1.0
-- Kreidetafel-/graues Marktdesign mit gelben Akzenten
-- Leiterplan als Auswahl „Leiterplan (alle Abteilungen)“ im Monatsplan
-- separate Leiterplan-Lasche entfernt
-- verschobener Urlaub dauerhaft rosa markiert und mit ↔ gekennzeichnet
-
-
-## Neu in Version 1.0
-- Monatswechsel im Monatsplan mit Pfeiltasten
-- deutlich sichtbares Kalender-Symbol
-- aktuelles Datum und Wochentag im Dashboard
-- Urlauber der nächsten vier Wochen mit Name, KW, Abteilung, Zeitraum und Status
-
-
-## Neu in Version 1.0
-
-- Direkter, formatierter Excel-Export (.xlsx) des Monatsplans
-- Farben, Legende, Berliner Feiertage, Wochenenden und Verschiebungsmarkierungen werden übernommen
-- Leiterplan kann ebenfalls als Excel-Datei exportiert werden
-- Querformat, Druckbereich sowie eingefrorene Kopfzeile und Namensspalte
-- CSV-Export bleibt zusätzlich verfügbar
-- Für die Excel-Erstellung wird ExcelJS 4.4.0 über jsDelivr geladen; beim Export ist daher eine Internetverbindung erforderlich.
+Bestehende Daten werden automatisch übernommen. Die bisherigen Mindestbesetzungen werden bei der ersten Übernahme in passende Maximalwerte umgerechnet.
