@@ -1,5 +1,5 @@
 window.DEFAULT_DATA={
-  users:[{name:'Admin',pin:'1234',role:'admin'},{name:'Anna Schmidt',pin:'1111',role:'leader'},{name:'Tom Wagner',pin:'2222',role:'leader'}],
+  users:[{id:1,name:'Admin',pin:'1234',role:'admin',department:'',active:true,lastLogin:''},{id:2,name:'Marktleitung',pin:'5678',role:'management',department:'',active:true,lastLogin:''},{id:3,name:'Anna Schmidt',pin:'1111',role:'leader',department:'Feinkost',active:true,lastLogin:''},{id:4,name:'Tom Wagner',pin:'2222',role:'leader',department:'Kasse',active:true,lastLogin:''}],
   departments:['Feinkost','Kasse','Getränke','Obst & Gemüse','Molkerei','Backshop','Drogerie','Tiefkühl','Lager','Verwaltung'],
   departmentSettings:{'Feinkost':3,'Kasse':3,'Getränke':2,'Obst & Gemüse':2,'Molkerei':2,'Backshop':2,'Drogerie':1,'Tiefkühl':1,'Lager':2,'Verwaltung':1},
   employees:[
@@ -21,6 +21,7 @@ window.DEFAULT_DATA={
     {id:104,employeeId:5,from:'2027-07-21',to:'2027-07-30',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'},
     {id:105,employeeId:7,from:'2027-08-02',to:'2027-08-13',type:'Urlaub',note:'',status:'Genehmigt',scope:'full'}
   ],
+  audit:[{id:301,at:'2026-07-18T08:00:00.000Z',user:'System',action:'Version 0.8 eingerichtet',details:'Benutzerverwaltung und Änderungsprotokoll aktiviert'}],
   moves:[
     {id:201,employeeId:1,oldPeriod:'05.–09.07.2027',newPeriod:'19.–23.07.2027',reason:'Personalmangel',initiator:'Betrieb'},
     {id:202,employeeId:1,oldPeriod:'02.–06.08.2027',newPeriod:'16.–20.08.2027',reason:'Überschneidung',initiator:'Betrieb'},

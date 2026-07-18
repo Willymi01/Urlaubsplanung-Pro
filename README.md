@@ -1,20 +1,25 @@
-# Urlaubsplaner Berlin – Version 0.7
+# Urlaubsplaner Berlin – Version 0.8
 
-Statische GitHub-Pages-Testversion.
+Statische GitHub-Pages-Testversion mit lokaler Speicherung im Browser.
 
-## Neu in Version 0.7
+## Neu in Version 0.8
 
-- Jahresplan je Abteilung mit allen zwölf Monaten
-- Jahreskonto pro Mitarbeiter: Anspruch, Übertrag, geplant und Rest
-- Filter nach Jahr und Freigabestatus
-- Monatsauslastung mit Urlaubstagen und Anzahl betroffener Mitarbeiter
-- Jahresplan als CSV für Excel exportieren
-- optimierte Druck- und PDF-Ansicht im Querformat
-- vorhandene Daten aus Version 0.6 werden automatisch übernommen
+- Benutzerverwaltung mit Rollen: Administrator, Marktleitung, Abteilungsleitung und Stellvertretung
+- Benutzer aktivieren, deaktivieren, bearbeiten und löschen
+- Eigene PIN ändern
+- Letzte Anmeldung anzeigen
+- Abteilungsgebundene Konten vorbereiten
+- Lokales Änderungsprotokoll mit Benutzer, Zeitpunkt, Aktion und Details
+- Änderungsprotokoll als CSV exportieren
+- Datenübernahme aus Version 0.7
 
-## Testzugang
+## Testzugänge
 
-- Name: Admin
-- PIN: 1234
+- Admin / 1234
+- Marktleitung / 5678
+- Anna Schmidt / 1111
+- Tom Wagner / 2222
 
-Alle Dateien direkt in den Hauptordner des GitHub-Repositories laden und vorhandene Dateien überschreiben.
+## Hinweis
+
+GitHub Pages hat kein sicheres Backend. PINs, Rollen und Protokollierung sind in dieser Version nur für Tests auf einem Gerät gedacht. Echte Sicherheit und gemeinsame Daten benötigen die geplante Server- und Datenbankversion.

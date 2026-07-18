@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id),clone=o=>JSON.parse(JSON.stringify(o));
-const STORE='vacationPlannerV07',OLD_STORES=['vacationPlannerV06','vacationPlannerV05','vacationPlannerV04','vacationPlannerV03','vacationPlannerV02'];
+const STORE='vacationPlannerV08',OLD_STORES=['vacationPlannerV07','vacationPlannerV06','vacationPlannerV05','vacationPlannerV04','vacationPlannerV03','vacationPlannerV02'];
 let currentUser=null;
 function normalize(raw){const b=clone(window.DEFAULT_DATA),d=raw&&typeof raw==='object'?raw:{};const departments=Array.isArray(d.departments)&&d.departments.length?d.departments:b.departments;const settings={...(b.departmentSettings||{}),...(d.departmentSettings||{})};departments.forEach(x=>{if(settings[x]==null)settings[x]=2});return{users:Array.isArray(d.users)?d.users:b.users,departments,departmentSettings:settings,employees:(Array.isArray(d.employees)?d.employees:b.employees).map(e=>({...e,carryover:Number(e.carryover||0)})),vacations:(Array.isArray(d.vacations)?d.vacations:b.vacations).map(v=>({...v,status:v.status||'Genehmigt',scope:v.scope||'full'})),moves:Array.isArray(d.moves)?d.moves:b.moves}}
 function loadState(){try{let raw=localStorage.getItem(STORE);if(!raw)for(const k of OLD_STORES){raw=localStorage.getItem(k);if(raw)break}return raw?normalize(JSON.parse(raw)):normalize(window.DEFAULT_DATA)}catch{return normalize(window.DEFAULT_DATA)}}
@@ -104,4 +104,70 @@ function exportBackup(){download(`Urlaubsplaner-Sicherung-${iso(new Date())}.jso
 function importBackup(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{state=normalize(JSON.parse(r.result));saveState();fillLogin();renderAll();$('backupStatus').textContent='Sicherung erfolgreich importiert.'}catch{$('backupStatus').textContent='Ungültige Sicherungsdatei.'}};r.readAsText(file)}
 function exportCsv(){const dep=$('departmentFilter').value,ids=state.employees.filter(e=>e.department===dep).map(e=>e.id),rows=[['Mitarbeiter','Abteilung','Von','Bis','Urlaubstage','Umfang','Art','Status','Notiz']];state.vacations.filter(v=>ids.includes(v.employeeId)).forEach(v=>rows.push([emp(v.employeeId)?.name,dep,v.from,v.to,vacationDays(v),v.scope==='full'?'Ganzer Tag':'Halber Tag',v.type,v.status,v.note]));const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\r\n');download(`Urlaubsplan-${dep}.csv`,csv,'text/csv;charset=utf-8')}
 function resetData(){if(!confirm('Alle lokalen Änderungen löschen und Testdaten wiederherstellen?'))return;state=normalize(window.DEFAULT_DATA);OLD_STORES.forEach(k=>localStorage.removeItem(k));saveState();fillLogin();clearEmployeeForm();renderAll();$('backupStatus').textContent='Testdaten wurden wiederhergestellt.'}
+
+/* Version 0.8: Benutzer, Rollen und Änderungsprotokoll */
+function normalize(raw){
+ const b=clone(window.DEFAULT_DATA),d=raw&&typeof raw==='object'?raw:{};
+ const departments=Array.isArray(d.departments)&&d.departments.length?d.departments:b.departments;
+ const settings={...(b.departmentSettings||{}),...(d.departmentSettings||{})};departments.forEach(x=>{if(settings[x]==null)settings[x]=2});
+ const users=(Array.isArray(d.users)&&d.users.length?d.users:b.users).map((u,i)=>({id:Number(u.id||Date.now()+i),name:u.name||'Benutzer',pin:String(u.pin||'1234'),role:u.role||'leader',department:u.department||'',active:u.active!==false,lastLogin:u.lastLogin||''}));
+ return{users,departments,departmentSettings:settings,employees:(Array.isArray(d.employees)?d.employees:b.employees).map(e=>({...e,carryover:Number(e.carryover||0),active:e.active!==false,entryDate:e.entryDate||'',exitDate:e.exitDate||''})),vacations:(Array.isArray(d.vacations)?d.vacations:b.vacations).map(v=>({...v,status:v.status||'Genehmigt',scope:v.scope||'full',createdBy:v.createdBy||'',updatedBy:v.updatedBy||''})),moves:Array.isArray(d.moves)?d.moves:b.moves,audit:Array.isArray(d.audit)?d.audit:[]}
+}
+function addAudit(action,details=''){
+ if(!state.audit)state.audit=[];
+ state.audit.unshift({id:Date.now()+Math.random(),at:new Date().toISOString(),user:currentUser?.name||'System',action,details});
+ state.audit=state.audit.slice(0,1000);
+}
+function saveState(action='Daten geändert',details=''){
+ addAudit(action,details);localStorage.setItem(STORE,JSON.stringify(state));
+}
+function fillLogin(){
+ const active=state.users.filter(u=>u.active!==false);
+ $('loginName').innerHTML=active.map(u=>`<option>${esc(u.name)}</option>`).join('');
+}
+function roleLabel(r){return({admin:'Administrator',management:'Marktleitung',leader:'Abteilungsleitung',deputy:'Stellvertretung'})[r]||r}
+function login(){
+ const u=state.users.find(x=>x.active!==false&&x.name===$('loginName').value&&x.pin===$('loginPin').value);
+ if(!u){$('loginError').textContent='Name oder PIN ist nicht korrekt oder das Konto ist deaktiviert.';return}
+ currentUser=u;u.lastLogin=new Date().toISOString();addAudit('Anmeldung',roleLabel(u.role));localStorage.setItem(STORE,JSON.stringify(state));
+ $('loginError').textContent='';$('loggedInUser').textContent=`${u.name} · ${roleLabel(u.role)}`;$('loginPage').classList.add('hidden');$('application').classList.remove('hidden');applyPermissions();renderAll()
+}
+function applyPermissions(){
+ document.querySelectorAll('[data-admin-only="true"]').forEach(el=>el.classList.toggle('hidden',currentUser?.role!=='admin'));
+ const dep=currentUser?.department;
+ if(dep&&['leader','deputy'].includes(currentUser.role)){
+  ['departmentFilter','yearDepartmentFilter'].forEach(id=>{if($(id)){$(id).value=dep;$(id).disabled=true}})
+ }else ['departmentFilter','yearDepartmentFilter'].forEach(id=>{if($(id))$(id).disabled=false});
+}
+function renderAll(){fillSelects();applyPermissions();renderDashboard();renderEmployees();renderCalendar();renderYear();renderWeek();renderLeaders();renderHistory();renderDepartments();renderUsers();renderAudit()}
+function bindV08(){
+ if($('saveUser'))$('saveUser').onclick=saveUser;
+ if($('cancelUserEdit'))$('cancelUserEdit').onclick=clearUserForm;
+ if($('changePin'))$('changePin').onclick=changeOwnPin;
+ if($('auditSearch'))$('auditSearch').oninput=renderAudit;
+ if($('exportAudit'))$('exportAudit').onclick=exportAuditCsv;
+}
+function clearUserForm(){['editingUserId','userName','userPin'].forEach(id=>$(id).value='');$('userRole').value='leader';$('userDepartment').value='';$('userActive').checked=true;$('cancelUserEdit').classList.add('hidden');$('saveUser').textContent='Benutzer speichern'}
+function saveUser(){
+ if(currentUser?.role!=='admin')return alert('Nur Administratoren dürfen Benutzer verwalten.');
+ const id=Number($('editingUserId').value),name=$('userName').value.trim(),pin=$('userPin').value.trim(),role=$('userRole').value,department=$('userDepartment').value,active=$('userActive').checked;
+ if(!name)return alert('Bitte einen Namen eingeben.');if(!id&&pin.length<4)return alert('Bitte eine PIN mit mindestens 4 Zeichen eingeben.');
+ if(state.users.some(u=>u.name.toLowerCase()===name.toLowerCase()&&u.id!==id))return alert('Dieser Benutzername existiert bereits.');
+ if(id){const u=state.users.find(x=>x.id===id);if(!u)return;Object.assign(u,{name,role,department,active});if(pin)u.pin=pin;saveState('Benutzer bearbeitet',`${name} · ${roleLabel(role)} · ${active?'aktiv':'deaktiviert'}`)}
+ else{state.users.push({id:Date.now(),name,pin,role,department,active,lastLogin:''});saveState('Benutzer angelegt',`${name} · ${roleLabel(role)}`)}
+ fillLogin();clearUserForm();renderUsers();
+}
+window.editUser=id=>{if(currentUser?.role!=='admin')return;const u=state.users.find(x=>x.id===Number(id));if(!u)return;$('editingUserId').value=u.id;$('userName').value=u.name;$('userPin').value='';$('userRole').value=u.role;$('userDepartment').value=u.department||'';$('userActive').checked=u.active!==false;$('cancelUserEdit').classList.remove('hidden');$('saveUser').textContent='Änderungen speichern'}
+window.deleteUser=id=>{if(currentUser?.role!=='admin')return;const u=state.users.find(x=>x.id===Number(id));if(!u)return;if(u.id===currentUser.id)return alert('Das aktuell angemeldete Konto kann nicht gelöscht werden.');if(state.users.filter(x=>x.role==='admin'&&x.active!==false).length<=1&&u.role==='admin')return alert('Der letzte aktive Administrator kann nicht gelöscht werden.');if(!confirm(`Benutzer „${u.name}“ wirklich löschen?`))return;state.users=state.users.filter(x=>x.id!==u.id);saveState('Benutzer gelöscht',u.name);fillLogin();renderUsers()}
+function renderUsers(){
+ if(!$('userTable'))return;
+ $('userDepartment').innerHTML='<option value="">Alle / keine feste Abteilung</option>'+state.departments.map(d=>`<option>${esc(d)}</option>`).join('');
+ $('userCount').textContent=`${state.users.length} Benutzer`;
+ $('userTable').innerHTML='<thead><tr><th>Name</th><th>Rolle</th><th>Abteilung</th><th>Status</th><th>Letzte Anmeldung</th><th>Aktionen</th></tr></thead><tbody>'+state.users.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(roleLabel(u.role))}</td><td>${esc(u.department||'Alle')}</td><td><span class="badge ${u.active!==false?'approved':'planned'}">${u.active!==false?'Aktiv':'Deaktiviert'}</span></td><td>${u.lastLogin?new Date(u.lastLogin).toLocaleString('de-DE'):'–'}</td><td><button class="button tiny" onclick="editUser(${u.id})">Bearbeiten</button> <button class="button tiny danger" onclick="deleteUser(${u.id})">Löschen</button></td></tr>`).join('')+'</tbody>';
+}
+function changeOwnPin(){const old=$('oldPin').value,newPin=$('newPin').value;if(!currentUser)return;if(old!==currentUser.pin){$('pinStatus').textContent='Die bisherige PIN ist nicht korrekt.';return}if(newPin.length<4){$('pinStatus').textContent='Die neue PIN muss mindestens 4 Zeichen lang sein.';return}currentUser.pin=newPin;saveState('PIN geändert','Eigenes Konto');$('oldPin').value=$('newPin').value='';$('pinStatus').textContent='PIN wurde geändert.'}
+function renderAudit(){if(!$('auditTable'))return;const q=($('auditSearch')?.value||'').toLowerCase(),rows=(state.audit||[]).filter(a=>`${a.user} ${a.action} ${a.details}`.toLowerCase().includes(q));$('auditTable').innerHTML='<thead><tr><th>Zeitpunkt</th><th>Benutzer</th><th>Aktion</th><th>Details</th></tr></thead><tbody>'+rows.map(a=>`<tr><td>${new Date(a.at).toLocaleString('de-DE')}</td><td>${esc(a.user)}</td><td>${esc(a.action)}</td><td>${esc(a.details||'–')}</td></tr>`).join('')+'</tbody>'}
+function exportAuditCsv(){const rows=[['Zeitpunkt','Benutzer','Aktion','Details'],...(state.audit||[]).map(a=>[new Date(a.at).toLocaleString('de-DE'),a.user,a.action,a.details])];const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x??'').replaceAll('"','""')}"`).join(';')).join('\r\n');download(`Aenderungsprotokoll-${iso(new Date())}.csv`,csv,'text/csv;charset=utf-8')}
+const originalBind=bind;bind=function(){originalBind();bindV08()};
+
 init();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.7</title>
+  <title>Urlaubsplaner Berlin · v0.8</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.7 · GitHub Pages</p>
+    <p class="subtitle">Version 0.8 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.7</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.8</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -35,6 +35,8 @@
     <button data-page="employees">Mitarbeiter</button>
     <button data-page="history">Verschiebungen</button>
     <button data-page="departments">Abteilungen</button>
+    <button data-page="users" data-admin-only="true">Benutzer</button>
+    <button data-page="audit" data-admin-only="true">Änderungsprotokoll</button>
     <button data-page="settings">Datensicherung</button>
   </nav>
 
@@ -154,9 +156,35 @@
       </div>
     </section>
 
+
+    <section id="page-users" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading"><div><h2>Benutzer & Berechtigungen</h2><p class="muted">Konten für Admin, Marktleitung, Abteilungsleitung und Stellvertretung verwalten. Die Anmeldung bleibt in dieser GitHub-Pages-Version eine lokale Simulation.</p></div><span id="userCount" class="badge"></span></div>
+        <input id="editingUserId" type="hidden">
+        <div class="form-grid">
+          <div><label for="userName">Name</label><input id="userName" placeholder="Vor- und Nachname"></div>
+          <div><label for="userPin">PIN</label><input id="userPin" type="password" inputmode="numeric" placeholder="mindestens 4 Ziffern"></div>
+          <div><label for="userRole">Rolle</label><select id="userRole"><option value="admin">Administrator</option><option value="management">Marktleitung</option><option value="leader">Abteilungsleitung</option><option value="deputy">Stellvertretung</option></select></div>
+          <div><label for="userDepartment">Abteilung</label><select id="userDepartment"><option value="">Alle / keine feste Abteilung</option></select></div>
+          <div class="checkbox-field"><label><input id="userActive" type="checkbox" checked> Benutzer ist aktiv</label></div>
+        </div>
+        <div class="actions"><button id="saveUser" class="button primary">Benutzer speichern</button><button id="cancelUserEdit" class="button light hidden">Bearbeiten abbrechen</button></div>
+      </div>
+      <div class="panel"><div class="table-wrapper"><table id="userTable"></table></div></div>
+      <div class="panel"><h2>Eigene PIN ändern</h2><div class="toolbar"><div><label for="oldPin">Bisherige PIN</label><input id="oldPin" type="password" inputmode="numeric"></div><div><label for="newPin">Neue PIN</label><input id="newPin" type="password" inputmode="numeric"></div><div><button id="changePin" class="button primary">PIN ändern</button></div></div><div id="pinStatus" class="status"></div></div>
+    </section>
+
+    <section id="page-audit" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading"><div><h2>Änderungsprotokoll</h2><p class="muted">Lokale Nachvollziehbarkeit: Benutzer, Zeitpunkt, Aktion und Details. In der späteren Serverversion wird dieses Protokoll unveränderbar gespeichert.</p></div><button id="exportAudit" class="button light">Protokoll als CSV</button></div>
+        <div class="toolbar"><div><label for="auditSearch">Filtern</label><input id="auditSearch" placeholder="Benutzer, Aktion oder Detail"></div></div>
+        <div class="table-wrapper"><table id="auditTable"></table></div>
+      </div>
+    </section>
+
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 0.7 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 0.8 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>
