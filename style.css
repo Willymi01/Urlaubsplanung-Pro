@@ -15,3 +15,6 @@ main{width:min(1550px,100%);margin:auto;padding:20px}.notice{margin-bottom:18px;
 .badge.planned{background:#e8edf2;color:#475467}
 .pending-cell{background:#fff3cd;font-weight:700}
 .planned-cell{background:#e8edf2;color:#475467;font-weight:700}
+
+/* Version 0.6 */
+.leader-calendar .employee-name{min-width:285px}.leader-calendar small{white-space:normal;line-height:1.35}.leader-calendar td.critical{background:var(--critical);color:#842029}.leader-calendar td.pending-cell{background:#fff3cd}.leader-calendar td.planned-cell{background:#e8edf2}

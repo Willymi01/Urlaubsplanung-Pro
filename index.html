@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0b5d3b">
-  <title>Urlaubsplaner Berlin · v0.5</title>
+  <title>Urlaubsplaner Berlin · v0.6</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 0.5 · GitHub Pages</p>
+    <p class="subtitle">Version 0.6 · GitHub Pages</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -23,7 +23,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.5</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 0.6</small></div>
     <div class="header-right"><span id="loggedInUser"></span><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -77,7 +77,22 @@
       <div class="panel"><div class="panel-heading"><h2>Wochenübersicht</h2><div><label for="weekDate">Woche mit Datum</label><input id="weekDate" type="date"></div></div><div id="weekSummary"></div><div class="table-wrapper"><table id="weekTable"></table></div></div>
     </section>
 
-    <section id="page-leaders" class="page hidden"><div class="panel"><h2>Leiterplan</h2><div class="table-wrapper"><table id="leaderTable"></table></div><div id="leaderWarnings"></div></div></section>
+    <section id="page-leaders" class="page hidden">
+      <div class="panel">
+        <div class="panel-heading">
+          <div><h2>Leiterplan · Monatsübersicht</h2><p class="muted">Alle Abteilungsleitungen in einer gemeinsamen Kalenderansicht. Überschneidungen werden pro Tag hervorgehoben.</p></div>
+          <div><label for="leaderMonthFilter">Monat</label><input id="leaderMonthFilter" type="month"></div>
+        </div>
+        <div id="leaderMonthSummary"></div>
+        <div class="table-wrapper"><table id="leaderCalendar" class="calendar leader-calendar"></table></div>
+        <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · Gelb = beantragt · Rot = mehrere Leiter gleichzeitig abwesend</p>
+      </div>
+      <div class="panel">
+        <div class="panel-heading"><div><h2>Leiter und Vertretungen</h2><p class="muted">Die nächste Abwesenheit und hinterlegte Vertretung je Leitung.</p></div></div>
+        <div class="table-wrapper"><table id="leaderTable"></table></div>
+        <div id="leaderWarnings"></div>
+      </div>
+    </section>
 
     <section id="page-employees" class="page hidden">
       <div class="panel">
@@ -115,7 +130,7 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung</h2><p>Exportiere alle lokalen Daten als JSON-Datei oder stelle sie aus einer früheren Sicherung wieder her.</p><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 0.5 ergänzt Urlaubskonten, halbe Urlaubstage, weitere Abwesenheitsarten, Mindestbesetzung sowie das vollständige Bearbeiten und Löschen von Abteilungen. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 0.6 ergänzt Bearbeitung, Abteilungsverwaltung und Freigabestatus. Diese Version enthält noch keine echte zentrale Datenbank und keine sichere serverseitige Anmeldung. Mehrere Geräte teilen ihre Daten deshalb noch nicht automatisch.</p></div>
     </section>
   </main>
 </div>
