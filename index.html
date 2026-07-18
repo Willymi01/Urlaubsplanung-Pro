@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Urlaubsplaner – Testversion</title>
+
+    <style>
+        :root {
+            --green: #126b42;
+            --green-dark: #0c4d30;
+            --green-light: #dff3e8;
+            --background: #f4f6f8;
+            --panel: #ffffff;
+            --border: #d8dee5;
+            --text: #17202a;
+            --muted: #667085;
+            --warning: #fff3cd;
+            --warning-border: #ffda6a;
+            --danger: #f8d7da;
+            --vacation: #cfe8d8;
+            --weekend: #edf0f2;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: var(--text);
+            background: var(--background);
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .login-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background:
+                linear-gradient(
+                    rgba(11, 77, 47, 0.85),
+                    rgba(11, 77, 47, 0.92)
+                ),
+                linear-gradient(135deg, #1b8054, #082e20);
+        }
+
+        .login-card {
+            width: min(430px, 100%);
+            padding: 30px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .login-card h1 {
+            margin: 0 0 8px;
+            color: var(--green-dark);
+        }
+
+        .subtitle {
+            margin: 0 0 24px;
+            color: var(--muted);
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: 700;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: white;
+        }
+
+        .button {
+            border: 0;
+            border-radius: 10px;
+            padding: 11px 16px;
+        }
+
+        .button-primary {
+            color: white;
+            background: var(--green);
+        }
+
+        .button-primary:hover {
+            background: var(--green-dark);
+        }
+
+        .button-light {
+            color: var(--text);
+            background: #edf0f3;
+        }
+
+        .login-button {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .login-error {
+            min-height: 24px;
+            margin-top: 10px;
+            color: #b42318;
+        }
+
+        .test-data {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #f2f5f7;
+            color: var(--muted);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 14px 22px;
+            color: white;
+            background: var(--green-dark);
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        nav {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 9px 18px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+        }
+
+        nav button.active {
+            color: var(--green-dark);
+            background: var(--green-light);
+            font-weight: 700;
+        }
+
+        main {
+            width: min(1500px, 100%);
+            margin: auto;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .notice {
+            margin-bottom: 18px;
+            padding: 13px;
+            border-left: 5px solid var(--green);
+            border-radius: 8px;
+            background: #eaf7f0;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .metric,
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+        }
+
+        .metric {
+            padding: 17px;
+        }
+
+        .metric span {
+            color: var(--muted);
+        }
+
+        .metric strong {
+            display: block;
+            margin-top: 5px;
+            font-size: 29px;
+        }
+
+        .panel {
+            margin-bottom: 18px;
+            padding: 18px;
+        }
+
+        .warning {
+            margin: 9px 0;
+            padding: 13px;
+            border: 1px solid var(--warning-border);
+            border-radius: 11px;
+            background: var(--warning);
+        }
+
+        .warning-danger {
+            border-color: #f1aeb5;
+            background: var(--danger);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: end;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .toolbar-field {
+            min-width: 170px;
+            flex: 1;
+        }
+
+        .toolbar-field label {
+            margin-top: 0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 13px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            padding-top: 28px;
+        }
+
+        .checkbox-field input {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .table-wrapper {
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th,
+        td {
+            padding: 9px;
+            border: 1px solid var(--border);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #edf0f3;
+        }
+
+        .calendar th,
+        .calendar td {
+            min-width: 38px;
+            text-align: center;
+        }
+
+        .calendar .employee-name {
+            position: sticky;
+            left: 0;
+            min-width: 190px;
+            text-align: left;
+            background: white;
+            z-index: 2;
+        }
+
+        .vacation {
+            background: var(--vacation);
+            font-weight: 700;
+        }
+
+        .weekend {
+            background: var(--weekend);
+        }
+
+        .moved {
+            color: #744210;
+            background: #f4e7ff;
+            text-decoration: line-through;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #e8edf2;
+            font-size: 12px;
+        }
+
+        .leader-badge {
+            color: var(--green-dark);
+            background: var(--green-light);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 580px) {
+            main {
+                padding: 12px;
+            }
+
+            .metrics,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<section id="loginPage" class="login-page">
+    <div class="login-card">
+        <h1>Urlaubsplaner</h1>
+        <p class="subtitle">Testversion für GitHub Pages</p>
+
+        <label for="loginName">Name</label>
+        <select id="loginName">
+            <option>Admin</option>
+            <option>Anna Schmidt</option>
+            <option>Tom Wagner</option>
+        </select>
+
+        <label for="loginPin">PIN</label>
+        <input
+            id="loginPin"
+            type="password"
+            inputmode="numeric"
+            placeholder="PIN eingeben"
+        >
+
+        <button
+            id="loginButton"
+            class="button button-primary login-button"
+        >
+            Anmelden
+        </button>
+
+        <div id="loginError" class="login-error"></div>
+
+        <div class="test-data">
+            Test-PIN: <strong>1234</strong>
+        </div>
+    </div>
+</section>
+
+<div id="application" class="hidden">
+
+    <header>
+        <div class="brand">Urlaubsplaner · Berlin</div>
+
+        <div class="header-right">
+            <span id="loggedInUser">Admin</span>
+
+            <button
+                id="logoutButton"
+                class="button button-light"
+            >
+                Abmelden
+            </button>
+        </div>
+    </header>
+
+    <nav id="navigation">
+        <button class="active" data-page="dashboard">Dashboard</button>
+        <button data-page="calendar">Abteilungsplan</button>
+        <button data-page="leaders">Leiterplan</button>
+        <button data-page="employees">Mitarbeiter</button>
+        <button data-page="history">Verschiebungen</button>
+    </nav>
+
+    <main>
+
+        <section id="page-dashboard" class="page">
+            <div class="notice">
+                Diese Testversion speichert Änderungen nur in diesem
+                Browser. Eine gemeinsame Datenbank wird später ergänzt.
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <span>Abteilungen</span>
+                    <strong>10</strong>
+                </div>
+
+                <div class="metric">
+                    <span>Mitarbeiter</span>
+                    <strong id="employeeCount">0</strong>
+                </div>
+
+                <div class="metric">
+                    <span>Leiter im Urlaub</span>
+                    <strong>2</strong>
+                </div>
+
+                <div class="metric">
+                    <span>Offene Warnungen</span>
+                    <strong>3</strong>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Aktuelle Hinweise</h2>
+
+                <div class="warning warning-danger">
+                    <strong>Feinkost:</strong>
+                    Zwei Mitarbeiter sind gleichzeitig im Urlaub.
+                </div>
+
+                <div class="warning">
+                    <strong>Leiterplan:</strong>
+                    Zwei Abteilungsleiter sind gleichzeitig abwesend.
+                </div>
+
+                <div class="warning">
+                    <strong>Fairness:</strong>
+                    Anna Schmidt hat bereits zwei betrieblich veranlasste
+                    Urlaubsverschiebungen.
+                </div>
+            </div>
+        </section>
+
+        <section id="page-calendar" class="page hidden">
+            <div class="panel">
+                <h2>Abteilungsplan</h2>
+
+                <div class="toolbar">
+                    <div class="toolbar-field">
+                        <label for="departmentFilter">Abteilung</label>
+
+                        <select id="departmentFilter">
+                            <option>Feinkost</option>
+                            <option>Kasse</option>
+                            <option>Getränke</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-field">
+                        <label for="monthFilter">Monat</label>
+
+                        <select id="monthFilter">
+                            <option value="2027-07">Juli 2027</option>
+                            <option value="2027-08">August 2027</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <button
+                            id="showVacationForm"
+                            class="button button-primary"
+                        >
+                            Urlaub eintragen
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    id="vacationForm"
+                    class="panel hidden"
+                    style="background: #f7f9fa;"
+                >
+                    <div class="form-grid">
+                        <div>
+                            <label for="vacationEmployee">Mitarbeiter</label>
+                            <select id="vacationEmployee"></select>
+                        </div>
+
+                        <div>
+                            <label for="vacationFrom">Von</label>
+                            <input
+                                id="vacationFrom"
+                                type="date"
+                                value="2027-07-19"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="vacationTo">Bis</label>
+                            <input
+                                id="vacationTo"
+                                type="date"
+                                value="2027-07-23"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button
+                            id="saveVacation"
+                            class="button button-primary"
+                        >
+                            Speichern
+                        </button>
+
+                        <button
+                            id="cancelVacation"
+                            class="button button-light"
+                        >
+                            Abbrechen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="calendarTable" class="calendar"></table>
+                </div>
+
+                <p class="muted">
+                    Grün = Urlaub · Grau = Wochenende ·
+                    Lila = verschobener Zeitraum
+                </p>
+            </div>
+        </section>
+
+        <section id="page-leaders" class="page hidden">
+            <div class="panel">
+                <h2>Leiterplan</h2>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Abteilung</th>
+                                <th>Vertretung</th>
+                                <th>Urlaub</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>Anna Schmidt</td>
+                                <td>Feinkost</td>
+                                <td>Julia Becker</td>
+                                <td>19.–23.07.2027</td>
+                                <td>
+                                    <span class="badge leader-badge">
+                                        Urlaub
+                                    </span>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Tom Wagner</td>
+                                <td>Kasse</td>
+                                <td>Max Richter</td>
+                                <td>21.–30.07.2027</td>
+                                <td>
+                                    <span class="badge leader-badge">
+                                        Urlaub
+                                    </span>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>Julia Becker</td>
+                                <td>Getränke</td>
+                                <td>Peter Hoffmann</td>
+                                <td>–</td>
+                                <td>
+                                    <span class="badge">Anwesend</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning warning-danger">
+                    <strong>Warnung:</strong>
+                    Vom 21. bis 23. Juli sind zwei Leiter gleichzeitig im
+                    Urlaub.
+                </div>
+            </div>
+        </section>
+
+        <section id="page-employees" class="page hidden">
+            <div class="panel">
+                <h2>Mitarbeiterverwaltung</h2>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="employeeName">Name</label>
+                        <input
+                            id="employeeName"
+                            placeholder="Vor- und Nachname"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="employeeDepartment">Abteilung</label>
+                        <select id="employeeDepartment">
+                            <option>Feinkost</option>
+                            <option>Kasse</option>
+                            <option>Getränke</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="employeeHours">Wochenstunden</label>
+                        <input
+                            id="employeeHours"
+                            type="number"
+                            value="37"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="employeeVacationDays">
+                            Urlaubstage
+                        </label>
+
+                        <input
+                            id="employeeVacationDays"
+                            type="number"
+                            value="36"
+                        >
+                    </div>
+
+                    <div class="checkbox-field">
+                        <label>
+                            <input id="employeeLeader" type="checkbox">
+                            Mitarbeiter ist Leiter
+                        </label>
+                    </div>
+
+                    <div class="checkbox-field">
+                        <button
+                            id="addEmployee"
+                            class="button button-primary"
+                        >
+                            Mitarbeiter hinzufügen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper" style="margin-top: 18px;">
+                    <table id="employeeTable"></table>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-history" class="page hidden">
+            <div class="panel">
+                <h2>Urlaubsverschiebungen</h2>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mitarbeiter</th>
+                                <th>Alter Zeitraum</th>
+                                <th>Neuer Zeitraum</th>
+                                <th>Grund</th>
+                                <th>Veranlasst durch</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>Anna Schmidt</td>
+                                <td>05.–09.07.2027</td>
+                                <td>19.–23.07.2027</td>
+                                <td>Personalmangel</td>
+                                <td>Betrieb</td>
+                            </tr>
+
+                            <tr>
+                                <td>Anna Schmidt</td>
+                                <td>02.–06.08.2027</td>
+                                <td>16.–20.08.2027</td>
+                                <td>Überschneidung</td>
+                                <td>Betrieb</td>
+                            </tr>
+
+                            <tr>
+                                <td>Max Richter</td>
+                                <td>12.–16.07.2027</td>
+                                <td>26.–30.07.2027</td>
+                                <td>Privater Wunsch</td>
+                                <td>Mitarbeiter</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="warning">
+                    <strong>Fairnesshinweis:</strong>
+                    Anna Schmidt hat 2027 bereits zweimal aus betrieblichen
+                    Gründen verschoben.
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+    const defaultEmployees = [
+        {
+            name: "Anna Schmidt",
+            department: "Feinkost",
+            hours: 37,
+            vacationDays: 36,
+            leader: true
+        },
+        {
+            name: "Peter Pfehr",
+            department: "Feinkost",
+            hours: 37,
+            vacationDays: 36,
+            leader: false
+        },
+        {
+            name: "Maria Guhra",
+            department: "Feinkost",
+            hours: 37,
+            vacationDays: 36,
+            leader: false
+        },
+        {
+            name: "Jan Kullick",
+            department: "Feinkost",
+            hours: 37,
+            vacationDays: 36,
+            leader: false
+        },
+        {
+            name: "Tom Wagner",
+            department: "Kasse",
+            hours: 37,
+            vacationDays: 36,
+            leader: true
+        },
+        {
+            name: "Max Richter",
+            department: "Kasse",
+            hours: 30,
+            vacationDays: 30,
+            leader: false
+        },
+        {
+            name: "Julia Becker",
+            department: "Getränke",
+            hours: 37,
+            vacationDays: 36,
+            leader: true
+        },
+        {
+            name: "Peter Hoffmann",
+            department: "Getränke",
+            hours: 37,
+            vacationDays: 36,
+            leader: false
+        }
+    ];
+
+    let employees = JSON.parse(
+        localStorage.getItem("vacationPlannerEmployees")
+    ) || defaultEmployees;
+
+    let vacations = JSON.parse(
+        localStorage.getItem("vacationPlannerVacations")
+    ) || [];
+
+    const loginPage = document.getElementById("loginPage");
+    const application = document.getElementById("application");
+
+    document
+        .getElementById("loginButton")
+        .addEventListener("click", login);
+
+    document
+        .getElementById("loginPin")
+        .addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                login();
+            }
+        });
+
+    function login() {
+        const pin = document.getElementById("loginPin").value;
+        const name = document.getElementById("loginName").value;
+        const error = document.getElementById("loginError");
+
+        if (pin !== "1234") {
+            error.textContent = "Die Test-PIN ist nicht korrekt.";
+            return;
+        }
+
+        error.textContent = "";
+        document.getElementById("loggedInUser").textContent = name;
+
+        loginPage.classList.add("hidden");
+        application.classList.remove("hidden");
+
+        renderAll();
+    }
+
+    document
+        .getElementById("logoutButton")
+        .addEventListener("click", function () {
+            application.classList.add("hidden");
+            loginPage.classList.remove("hidden");
+            document.getElementById("loginPin").value = "";
+        });
+
+    document
+        .getElementById("navigation")
+        .addEventListener("click", function (event) {
+            const pageName = event.target.dataset.page;
+
+            if (!pageName) {
+                return;
+            }
+
+            document
+                .querySelectorAll("#navigation button")
+                .forEach(function (button) {
+                    button.classList.toggle(
+                        "active",
+                        button === event.target
+                    );
+                });
+
+            document
+                .querySelectorAll(".page")
+                .forEach(function (page) {
+                    page.classList.add("hidden");
+                });
+
+            document
+                .getElementById("page-" + pageName)
+                .classList.remove("hidden");
+
+            renderAll();
+        });
+
+    document
+        .getElementById("departmentFilter")
+        .addEventListener("change", renderCalendar);
+
+    document
+        .getElementById("monthFilter")
+        .addEventListener("change", renderCalendar);
+
+    document
+        .getElementById("showVacationForm")
+        .addEventListener("click", function () {
+            document
+                .getElementById("vacationForm")
+                .classList.remove("hidden");
+        });
+
+    document
+        .getElementById("cancelVacation")
+        .addEventListener("click", function () {
+            document
+                .getElementById("vacationForm")
+                .classList.add("hidden");
+        });
+
+    document
+        .getElementById("saveVacation")
+        .addEventListener("click", function () {
+            const employee =
+                document.getElementById("vacationEmployee").value;
+
+            const from =
+                document.getElementById("vacationFrom").value;
+
+            const to =
+                document.getElementById("vacationTo").value;
+
+            if (!employee || !from || !to) {
+                alert("Bitte alle Urlaubsdaten ausfüllen.");
+                return;
+            }
+
+            if (new Date(to) < new Date(from)) {
+                alert("Das Enddatum muss nach dem Startdatum liegen.");
+                return;
+            }
+
+            vacations.push({
+                employee: employee,
+                from: from,
+                to: to
+            });
+
+            localStorage.setItem(
+                "vacationPlannerVacations",
+                JSON.stringify(vacations)
+            );
+
+            document
+                .getElementById("vacationForm")
+                .classList.add("hidden");
+
+            renderCalendar();
+        });
+
+    document
+        .getElementById("addEmployee")
+        .addEventListener("click", function () {
+            const name =
+                document.getElementById("employeeName").value.trim();
+
+            if (!name) {
+                alert("Bitte einen Namen eingeben.");
+                return;
+            }
+
+            employees.push({
+                name: name,
+                department:
+                    document.getElementById(
+                        "employeeDepartment"
+                    ).value,
+                hours:
+                    Number(
+                        document.getElementById(
+                            "employeeHours"
+                        ).value
+                    ),
+                vacationDays:
+                    Number(
+                        document.getElementById(
+                            "employeeVacationDays"
+                        ).value
+                    ),
+                leader:
+                    document.getElementById(
+                        "employeeLeader"
+                    ).checked
+            });
+
+            localStorage.setItem(
+                "vacationPlannerEmployees",
+                JSON.stringify(employees)
+            );
+
+            document.getElementById("employeeName").value = "";
+            document.getElementById("employeeLeader").checked = false;
+
+            renderAll();
+        });
+
+    function renderAll() {
+        renderEmployees();
+        renderCalendar();
+    }
+
+    function renderEmployees() {
+        document.getElementById("employeeCount").textContent =
+            employees.length;
+
+        const table = document.getElementById("employeeTable");
+
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Abteilung</th>
+                    <th>Wochenstunden</th>
+                    <th>Urlaubstage</th>
+                    <th>Leiter</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                ${employees.map(function (employee) {
+                    return `
+                        <tr>
+                            <td>${escapeHtml(employee.name)}</td>
+                            <td>${escapeHtml(employee.department)}</td>
+                            <td>${employee.hours}</td>
+                            <td>${employee.vacationDays}</td>
+                            <td>${employee.leader ? "Ja" : "Nein"}</td>
+                        </tr>
+                    `;
+                }).join("")}
+            </tbody>
+        `;
+    }
+
+    function renderCalendar() {
+        const department =
+            document.getElementById("departmentFilter").value;
+
+        const monthValue =
+            document.getElementById("monthFilter").value;
+
+        const parts = monthValue.split("-");
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+
+        const employeesInDepartment = employees.filter(
+            function (employee) {
+                return employee.department === department;
+            }
+        );
+
+        const employeeSelect =
+            document.getElementById("vacationEmployee");
+
+        employeeSelect.innerHTML = employeesInDepartment
+            .map(function (employee) {
+                return `
+                    <option value="${escapeHtml(employee.name)}">
+                        ${escapeHtml(employee.name)}
+                    </option>
+                `;
+            })
+            .join("");
+
+        const dayCount = new Date(year, month, 0).getDate();
+
+        let tableHtml = `
+            <thead>
+                <tr>
+                    <th class="employee-name">Mitarbeiter</th>
+        `;
+
+        for (let day = 1; day <= dayCount; day++) {
+            tableHtml += `<th>${day}</th>`;
+        }
+
+        tableHtml += `
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        employeesInDepartment.forEach(function (employee) {
+            tableHtml += `
+                <tr>
+                    <td class="employee-name">
+                        ${escapeHtml(employee.name)}
+                        ${
+                            employee.leader
+                                ? '<span class="badge leader-badge">Leiter</span>'
+                                : ""
+                        }
+                    </td>
+            `;
+
+            for (let day = 1; day <= dayCount; day++) {
+                const date = new Date(year, month - 1, day);
+                const weekday = date.getDay();
+
+                let className =
+                    weekday === 0 || weekday === 6
+                        ? "weekend"
+                        : "";
+
+                let content = "";
+
+                if (
+                    employee.name === "Anna Schmidt" &&
+                    year === 2027 &&
+                    month === 7 &&
+                    day >= 5 &&
+                    day <= 9
+                ) {
+                    className = "moved";
+                    content = "↪";
+                }
+
+                if (
+                    isExampleVacation(
+                        employee.name,
+                        year,
+                        month,
+                        day
+                    ) ||
+                    isSavedVacation(
+                        employee.name,
+                        date
+                    )
+                ) {
+                    className = "vacation";
+                    content = "U";
+                }
+
+                tableHtml += `
+                    <td class="${className}">
+                        ${content}
+                    </td>
+                `;
+            }
+
+            tableHtml += "</tr>";
+        });
+
+        tableHtml += "</tbody>";
+
+        document.getElementById("calendarTable").innerHTML =
+            tableHtml;
+    }
+
+    function isExampleVacation(name, year, month, day) {
+        if (year !== 2027 || month !== 7) {
+            return false;
+        }
+
+        const exampleVacations = {
+            "Anna Schmidt": [19, 20, 21, 22, 23],
+            "Peter Pfehr": [12, 13, 14, 15, 16],
+            "Maria Guhra": [19, 20, 21, 22, 23],
+            "Tom Wagner": [
+                21, 22, 23, 24, 25,
+                26, 27, 28, 29, 30
+            ]
+        };
+
+        return (
+            exampleVacations[name] &&
+            exampleVacations[name].includes(day)
+        );
+    }
+
+    function isSavedVacation(employeeName, date) {
+        return vacations.some(function (vacation) {
+            if (vacation.employee !== employeeName) {
+                return false;
+            }
+
+            const start = createLocalDate(vacation.from);
+            const end = createLocalDate(vacation.to);
+
+            return date >= start && date <= end;
+        });
+    }
+
+    function createLocalDate(value) {
+        const parts = value.split("-");
+
+        return new Date(
+            Number(parts[0]),
+            Number(parts[1]) - 1,
+            Number(parts[2])
+        );
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+</script>
+
+</body>
+</html>
