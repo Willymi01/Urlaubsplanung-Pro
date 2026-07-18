@@ -1385,3 +1385,166 @@ setTimeout(()=>{if($('exportPdf'))$('exportPdf').onclick=exportMonthPdf;fillSele
 
  requestAnimationFrame(()=>{fillSelects();renderAll();requestAnimationFrame(renderCalendar)});
 })();
+
+/* Version 2.1: stabile Plan-Gruppen, Rollenfreigabe und Urlaubsaktionen */
+(()=>{
+ const PLAN_GROUP_STORE='vacationPlannerPlanGroupsV21';
+ const canDecideVacation=()=>['admin','management'].includes(currentUser?.role);
+ const v21Id=()=>`pg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,9)}`;
+ const v21Norm=value=>String(value||'').trim().toLocaleLowerCase('de-DE').replace(/\s+/g,' ');
+
+ function readPlanGroupBackup(){
+  try{return JSON.parse(localStorage.getItem(PLAN_GROUP_STORE)||'{}')}catch{return{}}
+ }
+ function writePlanGroupBackup(){
+  localStorage.setItem(PLAN_GROUP_STORE,JSON.stringify({
+   planGroups:Array.isArray(state.planGroups)?state.planGroups:[],
+   departmentGroupIds:state.departmentGroupIds||{},
+   departmentGroups:state.departmentGroups||{},
+   planGroupMaxAway:state.planGroupMaxAway||{}
+  }));
+ }
+ function mergePlanGroupBackup(){
+  const backup=readPlanGroupBackup();
+  state.planGroups=Array.isArray(state.planGroups)?state.planGroups:[];
+  if(Array.isArray(backup.planGroups)){
+   for(const incoming of backup.planGroups){
+    if(!incoming?.name)continue;
+    let group=state.planGroups.find(item=>String(item.id)===String(incoming.id)||v21Norm(item.name)===v21Norm(incoming.name));
+    if(group)Object.assign(group,{name:String(incoming.name).trim(),maxAway:Math.max(0,Number(incoming.maxAway??group.maxAway??2))});
+    else state.planGroups.push({id:String(incoming.id||v21Id()),name:String(incoming.name).trim(),maxAway:Math.max(0,Number(incoming.maxAway??2))});
+   }
+  }
+  state.departmentGroupIds={...(backup.departmentGroupIds||{}),...(state.departmentGroupIds||{})};
+  state.departmentGroups={...(backup.departmentGroups||{}),...(state.departmentGroups||{})};
+  state.planGroupMaxAway={...(backup.planGroupMaxAway||{}),...(state.planGroupMaxAway||{})};
+  // IDs und sichtbare Namen konsistent halten.
+  for(const department of state.departments||[]){
+   let id=String(state.departmentGroupIds[department]||'');
+   let group=state.planGroups.find(item=>String(item.id)===id);
+   if(!group){
+    const legacy=String(state.departmentGroups[department]||'').trim();
+    group=legacy?state.planGroups.find(item=>v21Norm(item.name)===v21Norm(legacy)):null;
+    id=group?String(group.id):'';
+   }
+   state.departmentGroupIds[department]=id;
+   state.departmentGroups[department]=group?.name||'';
+  }
+  writePlanGroupBackup();
+  localStorage.setItem(STORE,JSON.stringify(state));
+ }
+ mergePlanGroupBackup();
+
+ // Jede normale Speicherung sichert die Plan-Gruppen zusätzlich separat.
+ const saveStateBeforeV21=saveState;
+ saveState=function(action='Daten geändert',details=''){
+  const result=saveStateBeforeV21(action,details);
+  writePlanGroupBackup();
+  return result;
+ };
+
+ function createPlanGroupV21(){
+  const name=$('standalonePlanGroupName')?.value.trim();
+  const maxAway=Math.max(0,Math.floor(Number($('standalonePlanGroupMax')?.value||2)));
+  if(!name)return alert('Bitte einen Namen für die Plan-Gruppe eingeben.');
+  if((state.planGroups||[]).some(group=>v21Norm(group.name)===v21Norm(name)))return alert('Diese Plan-Gruppe existiert bereits.');
+  state.planGroups.push({id:v21Id(),name,maxAway});
+  state.planGroupMaxAway=state.planGroupMaxAway||{};
+  state.planGroupMaxAway[name]=maxAway;
+  writePlanGroupBackup();
+  saveState('Plan-Gruppe angelegt',`${name} · Maximum ${maxAway}`);
+  $('standalonePlanGroupName').value='';
+  fillSelects();renderDepartments();renderAll();
+  alert(`Die Plan-Gruppe „${name}“ wurde gespeichert.`);
+ }
+ const oldCreate=$('createPlanGroup');
+ if(oldCreate){
+  const fresh=oldCreate.cloneNode(true);oldCreate.replaceWith(fresh);fresh.addEventListener('click',createPlanGroupV21);
+ }
+
+ // Auswahlfelder nach jeder Darstellung erneut aus dem dauerhaften Gruppenbestand füllen.
+ const fillSelectsBeforeV21=fillSelects;
+ fillSelects=function(){
+  mergePlanGroupBackup();
+  fillSelectsBeforeV21();
+  const options='<option value="">Keine Plan-Gruppe</option>'+(state.planGroups||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de')).map(group=>`<option value="${esc(group.id)}">${esc(group.name)}</option>`).join('');
+  for(const id of ['employeePlanGroup','newDepartmentGroup']){
+   const select=$(id);if(!select)continue;const current=select.value;select.innerHTML=options;if([...select.options].some(option=>option.value===current))select.value=current;
+  }
+ };
+
+ function vacationsForChoice(choice){
+  const group=typeof groupFromChoice==='function'?groupFromChoice(choice):null;
+  let employees=[];
+  if(choice==='__leaders__')employees=state.employees.filter(employee=>employee.leader);
+  else if(group){
+   const [year,month]=($('monthFilter')?.value||'').split('-').map(Number);
+   employees=state.employees.filter(employee=>typeof employeeInGroupDuringMonth==='function'?employeeInGroupDuringMonth(employee,group,year,month):String(employee.planGroupId||'')===String(group.id));
+  }else employees=typeof employeesForSelection==='function'?employeesForSelection(choice):state.employees.filter(employee=>employee.department===choice);
+  const ids=new Set(employees.map(employee=>Number(employee.id)));
+  return state.vacations.filter(vacation=>ids.has(Number(vacation.employeeId))).sort((a,b)=>localDate(a.from)-localDate(b.from));
+ }
+
+ // Die Liste wird vollständig neu erzeugt, damit Aktionen immer dem richtigen Urlaub zugeordnet sind.
+ renderVacationList=function(choice){
+  const rows=vacationsForChoice(choice);
+  const decide=canDecideVacation();
+  $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(vacation=>{
+   const move=moveForVacation(vacation);
+   const holidayHints=typeof nearbyHolidayWarnings==='function'?[...nearbyHolidayWarnings(vacation),...(typeof bridgeWarnings==='function'?bridgeWarnings(vacation):[])]:[];
+   const hint=move?`↔ Verschoben von ${move.oldPeriod}; ${move.reason||'ohne Grundangabe'}`:(holidayHints.length?`⚠ ${holidayHints.join('; ')}`:(vacation.note||'–'));
+   let actions=`<button class="button tiny" onclick="editVacation(${vacation.id})">Verschieben/Bearbeiten</button>`;
+   if(decide&&vacation.status==='Beantragt')actions+=` <button class="button tiny primary" onclick="approveVacation(${vacation.id})">Genehmigen</button> <button class="button tiny reject" onclick="rejectVacation(${vacation.id})">Ablehnen</button>`;
+   else if(decide&&vacation.status==='Genehmigt')actions+=` <button class="button tiny reject" onclick="rejectVacation(${vacation.id})">Ablehnen</button>`;
+   actions+=` <button class="button tiny danger" onclick="deleteVacation(${vacation.id})">Löschen</button>`;
+   return `<tr class="${vacation.status==='Abgelehnt'?'rejected-row':''}"><td>${esc(emp(vacation.employeeId)?.name||'Unbekannt')}</td><td>${period(vacation.from,vacation.to)}</td><td>${vacationDays(vacation)}</td><td>${vacation.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(vacation.type)}</td><td>${statusBadge(vacation.status)}</td><td>${esc(hint)}</td><td>${actions}</td></tr>`;
+  }).join('')+'</tbody>';
+ };
+
+ window.approveVacation=function(id){
+  if(!canDecideVacation())return alert('Nur Administratoren und die Marktleitung dürfen Urlaube genehmigen.');
+  const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return;
+  vacation.status='Genehmigt';vacation.note=String(vacation.note||'').replace(/^Muss verschoben werden:?\s*/i,'');
+  saveState('Urlaub genehmigt',`${emp(vacation.employeeId)?.name||''} · ${period(vacation.from,vacation.to)}`);renderAll();
+ };
+ window.rejectVacation=function(id){
+  if(!canDecideVacation())return alert('Nur Administratoren und die Marktleitung dürfen Urlaube ablehnen.');
+  const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return;
+  const reason=prompt('Grund für die Ablehnung / erforderliche Verschiebung:','Überschneidung oder Urlauber-Limit');if(reason===null)return;
+  vacation.status='Abgelehnt';vacation.note=`Muss verschoben werden${reason.trim()?': '+reason.trim():''}`;
+  saveState('Urlaub abgelehnt',`${emp(vacation.employeeId)?.name||''} · ${period(vacation.from,vacation.to)} · ${reason||'ohne Grund'}`);renderAll();
+ };
+
+ // Robuste Bearbeitung: Auswahl setzen, Mitarbeiteroption sicher ergänzen und Formular sichtbar machen.
+ window.editVacation=function(id){
+  const vacation=state.vacations.find(item=>Number(item.id)===Number(id));if(!vacation)return alert('Der Urlaubseintrag wurde nicht gefunden.');
+  const employee=emp(vacation.employeeId);if(!employee)return alert('Der zugehörige Mitarbeiter wurde nicht gefunden.');
+  let department=employee.department;
+  if(typeof departmentAt==='function')department=departmentAt(employee,vacation.from)||department;
+  const group=typeof groupForDepartment==='function'?groupForDepartment(department):null;
+  const preferred=group?`__groupid__:${group.id}`:department;
+  fillSelects();
+  const filter=$('departmentFilter');
+  if(filter){
+   const candidates=[preferred,group?`__group__:${group.name}`:'',department].filter(Boolean);
+   const found=candidates.find(value=>[...filter.options].some(option=>option.value===value));
+   if(found)filter.value=found;
+  }
+  renderCalendar();
+  const employeeSelect=$('vacationEmployee');
+  if(employeeSelect&&![...employeeSelect.options].some(option=>Number(option.value)===Number(employee.id))){
+   const option=document.createElement('option');option.value=employee.id;option.textContent=employee.name;employeeSelect.appendChild(option);
+  }
+  if(employeeSelect)employeeSelect.value=String(employee.id);
+  $('editingVacationId').value=String(vacation.id);
+  $('vacationFrom').value=vacation.from;$('vacationTo').value=vacation.to;$('vacationType').value=vacation.type;$('vacationScope').value=vacation.scope||'full';$('vacationStatus').value=vacation.status||'Beantragt';$('vacationNote').value=vacation.note||'';
+  $('vacationFormTitle').textContent='Urlaub bearbeiten oder verschieben';$('vacationForm').classList.remove('hidden');
+  requestAnimationFrame(()=>$('vacationForm').scrollIntoView({behavior:'smooth',block:'start'}));
+ };
+
+ // Monatsplan nach Rollenwechsel/Navigation zuverlässig aktualisieren.
+ const renderAllBeforeV21=renderAll;
+ renderAll=function(){mergePlanGroupBackup();renderAllBeforeV21();if($('departmentFilter'))renderVacationList($('departmentFilter').value)};
+
+ mergePlanGroupBackup();fillSelects();renderAll();
+})();
