@@ -1,0 +1,8 @@
+Urlaubsplaner 5.7
+
+- Abteilungs-Auswahl wird vor dem Öffnen vollständig vorbereitet.
+- Kalender wird erst nach dem Schließen der Auswahl aktualisiert.
+- Mitarbeiter können mit einem Stichtag die Abteilung wechseln.
+- Monatsplan listet Mitarbeiter vor und nach dem Stichtag in der jeweils gültigen Abteilung.
+- Frühere Monate und Jahre bleiben korrekt erhalten.
+- Jahresbezogene Besetzungswarnungen berücksichtigen Abteilungswechsel taggenau.

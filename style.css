@@ -187,3 +187,12 @@ body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
 .planning-year-control select{width:auto;min-width:86px;padding:8px 10px;border-color:#6a706d;background:#171a19;color:#fff;font-weight:800}
 .planning-year-control .year-arrow{padding:7px 11px;min-width:36px;font-size:20px;line-height:1}
 @media(max-width:850px){header{align-items:flex-start}.planning-year-control{order:3;width:100%;justify-content:center}}
+
+/* Version 5.7: flüssiges Abteilungsmenü und datumsgenaue Abteilungswechsel */
+#departmentFilter{background-color:#202422;color:#fff;contain:layout paint;transform:translateZ(0)}
+#departmentFilter option{background:#202422;color:#fff}
+#page-calendar .toolbar{contain:layout style}
+.calendar-rendering #calendarTable{opacity:.96}
+.transfer-inactive{background:#242826!important;color:#69716d!important;background-image:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(255,255,255,.025) 6px,rgba(255,255,255,.025) 12px)!important}
+.employee-transfer-note{display:block;margin-top:3px;color:var(--muted);font-size:.78rem;white-space:normal}
+#employeeTransferDateField small{display:block;margin-top:6px;line-height:1.25}

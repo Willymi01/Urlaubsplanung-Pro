@@ -1,12 +1,12 @@
-const CACHE='urlaubsplaner-v5.6.0-static';
+const CACHE='urlaubsplaner-v5.7.0-static';
 const OFFLINE='./index.html';
 const ASSETS=[
  './',
  './index.html',
- './app.js?v=5.6.0',
- './style.css?v=5.6.0',
- './data/default-data.js?v=5.6.0',
- './core/storage.js?v=5.6.0',
+ './app.js?v=5.7.0',
+ './style.css?v=5.7.0',
+ './data/default-data.js?v=5.7.0',
+ './core/storage.js?v=5.7.0',
  './manifest.webmanifest',
  './icons/icon-192.png',
  './icons/icon-512.png'

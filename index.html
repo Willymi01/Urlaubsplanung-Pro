@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=5.6.0">
+  <link rel="stylesheet" href="style.css?v=5.7.0">
 </head>
 <body>
 <section id="loginPage" class="login-page">
@@ -148,6 +148,8 @@
         <div class="form-grid">
           <div><label for="employeeName">Name</label><input id="employeeName" placeholder="Vor- und Nachname"></div>
           <div><label for="employeeDepartment">Abteilung</label><select id="employeeDepartment"></select></div>
+          <div id="employeeTransferDepartmentField" class="hidden"><label for="employeeTransferDepartment">Neue Abteilung ab Stichtag</label><select id="employeeTransferDepartment"></select></div>
+          <div id="employeeTransferDateField" class="hidden"><label for="employeeTransferDate">Abteilungswechsel ab</label><input id="employeeTransferDate" type="date"><small class="muted">Ab diesem Tag erscheint der Mitarbeiter in der neuen Abteilung. Frühere Monate bleiben unverändert.</small></div>
           <div><label for="employeeHours">Wochenstunden</label><input id="employeeHours" type="number" min="1" max="60" value="37"></div>
           <div><label for="employeeVacationDays">Jahresurlaub</label><input id="employeeVacationDays" type="number" min="0" max="60" value="36"></div>
           <div><label for="employeeCarryover">Resturlaub Vorjahr</label><input id="employeeCarryover" type="number" min="0" max="60" step="0.5" value="0"></div>
@@ -244,11 +246,11 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung & Updates</h2><p>Deine Arbeitsdaten liegen update-sicher unter einem festen Speicherschlüssel im Browser. Neue Programmdateien überschreiben Mitarbeiter, Urlaube, Abteilungen und Plan-Gruppen nicht.</p><div class="storage-info"><strong>Speicher:</strong> <code>urlaubsplaner.data</code><br><span id="storageInfo">Wird geladen …</span></div><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 5.5 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 5.7 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
     </section>
   </main>
 </div>
-<script src="core/storage.js?v=5.6.0"></script><script src="data/default-data.js?v=5.6.0"></script><script src="app.js?v=5.6.0"></script>
+<script src="core/storage.js?v=5.7.0"></script><script src="data/default-data.js?v=5.7.0"></script><script src="app.js?v=5.7.0"></script>
 <script>
 if ('serviceWorker' in navigator) {
  window.addEventListener('load', async () => {
