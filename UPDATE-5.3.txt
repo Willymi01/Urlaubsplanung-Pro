@@ -1,0 +1,7 @@
+Urlaubsplaner Version 5.3
+
+- Im Dashboard steht „Urlauber der nächsten 4 Wochen“ jetzt vor „Urlaubsstand nach Abteilung“.
+- Die Liste im Monatsplan zeigt nur noch Einträge, die den aktuell gewählten Monat berühren.
+- Monatsname und Anzahl der gefundenen Einträge werden oberhalb der Liste angezeigt.
+- Bei einem leeren Monat erscheint eine klare Leerzustandsmeldung.
+- AutoSync und die Kalender-Markierungen aus Version 5.2 bleiben unverändert erhalten.

@@ -15,7 +15,7 @@
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 5.2 · GitHub Pages + Supabase</p>
+    <p class="subtitle">Version 5.3 · GitHub Pages + Supabase</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -26,7 +26,7 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 5.2 · Supabase</small></div>
+    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 5.3 · Supabase</small></div>
     <div class="header-right"><div id="globalSyncLamp" class="sync-lamp sync-lamp-local" title="Synchronisationsstatus"><span class="sync-lamp-dot"></span><span id="globalSyncLampText">Lokal</span></div><span id="loggedInUser"></span><button id="installAppButton" class="button primary hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -53,6 +53,7 @@
         <article class="metric date-metric"><span>Heute</span><strong id="dashboardDate">–</strong><small id="dashboardWeekday"></small></article>
       </div>
       <div class="panel"><div class="panel-heading"><h2>Aktuelle Hinweise</h2><span id="todayLabel" class="badge"></span></div><div id="warnings"></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlauber der nächsten 4 Wochen</h2><p class="muted">Laufende und kommende Urlaube bis einschließlich 28 Tage ab heute.</p></div></div><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
       <div class="panel">
         <div class="panel-heading">
           <div>
@@ -63,7 +64,6 @@
         </div>
         <div class="table-wrapper"><table id="departmentVacationSummary"></table></div>
       </div>
-      <div class="panel"><div class="panel-heading"><div><h2>Urlauber der nächsten 4 Wochen</h2><p class="muted">Laufende und kommende Urlaube bis einschließlich 28 Tage ab heute.</p></div></div><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
     </section>
 
     <section id="page-calendar" class="page hidden">
@@ -86,7 +86,7 @@
         <div class="table-wrapper"><table id="calendarTable" class="calendar"></table></div>
         <p class="muted">U = Urlaub · S = Sonderurlaub · F = Fortbildung · K = Krankheit · G = Geplanter Freier Tag · Rosa = verschobener Urlaub · Dunkelgrau = Sonntag · Gold/Ocker ★ = Berliner Feiertag · Rot = kritische Besetzung</p>
       </div>
-      <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge der gewählten Abteilung</h2><p class="muted">Verschobene Einträge werden im Plan rosa mit ↔ markiert. Die Details stehen direkt im Hinweis und bleiben im Änderungsprotokoll erhalten.</p></div></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlaubseinträge im angezeigten Monat</h2><p class="muted">Es werden nur Einträge angezeigt, die den gewählten Monat berühren. Verschobene Einträge sind im Plan rosa mit ↔ markiert.</p></div></div><div class="list-summary"><span id="vacationListMonth" class="badge"></span><span id="vacationListCount" class="muted"></span></div><div class="table-wrapper"><table id="vacationList"></table></div></div>
     </section>
 
 
@@ -238,7 +238,7 @@
 
     <section id="page-settings" class="page hidden">
       <div class="panel"><h2>Datensicherung & Updates</h2><p>Deine Arbeitsdaten liegen update-sicher unter einem festen Speicherschlüssel im Browser. Neue Programmdateien überschreiben Mitarbeiter, Urlaube, Abteilungen und Plan-Gruppen nicht.</p><div class="storage-info"><strong>Speicher:</strong> <code>urlaubsplaner.data</code><br><span id="storageInfo">Wird geladen …</span></div><div class="actions"><button id="backupExport" class="button primary">Sicherung exportieren</button><label class="button light file-button">Sicherung importieren<input id="backupImport" type="file" accept="application/json"></label><button id="resetData" class="button danger">Testdaten zurücksetzen</button></div><div id="backupStatus" class="status"></div></div>
-      <div class="panel"><h2>Hinweise</h2><p>Version 5.2 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
+      <div class="panel"><h2>Hinweise</h2><p>Version 5.3 ist als installierbare PWA vorbereitet. Der PDF-Export enthält jetzt alle Texte und Grenzwertwarnungen erscheinen erst bei einer echten Überschreitung. Programm-Updates kommen über GitHub Pages; Mitarbeiter, Urlaube, Plan-Gruppen, Grenzwerte und Einstellungen liegen zentral in Supabase und zusätzlich lokal als Sicherheitskopie.</p></div>
     </section>
   </main>
 </div>

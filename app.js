@@ -984,7 +984,7 @@ setTimeout(()=>renderCalendar(),0);
 
 
 /* Version 4.6: automatische Supabase-Synchronisierung mit sicherem App-Start */
-const APP_VERSION='5.2.0';
+const APP_VERSION='5.3.0';
 let autoSyncTimer=null;
 let autoPushTimer=null;
 let autoSyncBusy=false;
@@ -1220,3 +1220,45 @@ const calendarObserverV52=new MutationObserver(()=>requestAnimationFrame(decorat
 if($('calendarTable'))calendarObserverV52.observe($('calendarTable'),{childList:true,subtree:true});
 window.addEventListener('online',bootAutomaticSync);
 setTimeout(()=>{decorateCalendarSpecialDaysV52();bootAutomaticSync()},100);
+
+
+/* Version 5.3: Dashboard-Reihenfolge und monatsbezogene Urlaubsliste */
+renderVacationList=function(choice){
+ const monthValue=$('monthFilter')?.value;
+ const fallback=new Date();
+ const [year,month]=monthValue?monthValue.split('-').map(Number):[fallback.getFullYear(),fallback.getMonth()+1];
+ const monthStart=new Date(year,month-1,1),monthEnd=new Date(year,month,0,23,59,59,999);
+ const deps=selectedDepartments(choice);
+ const employees=choice==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department));
+ const ids=new Set(employees.map(e=>Number(e.id)));
+ const rows=state.vacations
+  .filter(v=>ids.has(Number(v.employeeId))&&localDate(v.from)<=monthEnd&&localDate(v.to)>=monthStart)
+  .sort((a,b)=>localDate(a.from)-localDate(b.from)||String(emp(a.employeeId)?.name||'').localeCompare(String(emp(b.employeeId)?.name||''),'de'));
+ const monthLabel=monthStart.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+ if($('vacationListMonth'))$('vacationListMonth').textContent=monthLabel;
+ if($('vacationListCount'))$('vacationListCount').textContent=`${rows.length} Eintrag${rows.length===1?'':'e'}`;
+ const head='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead>';
+ if(!rows.length){
+  $('vacationList').innerHTML=head+`<tbody><tr><td colspan="8" class="empty-state">Keine Urlaubseinträge für ${esc(monthLabel)} in der gewählten Abteilung.</td></tr></tbody>`;
+  return;
+ }
+ $('vacationList').innerHTML=head+'<tbody>'+rows.map(v=>{
+  const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw];
+  const hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.status==='Abgelehnt'?`Abgelehnt: ${v.rejectionReason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–')));
+  const actions=[];
+  if(canMoveVacation(v))actions.push(`<button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button>`);
+  if(v.status==='Beantragt'&&canApproveOrReject())actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);
+  if((v.status==='Beantragt'||v.status==='Genehmigt')&&canApproveOrReject())actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`);
+  if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);
+  return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`;
+ }).join('')+'</tbody>';
+};
+const renderCalendarV53Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV53Base();
+ const choice=$('departmentFilter')?.value||state.departments[0];
+ renderVacationList(choice);
+};
+if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
+if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()};
+setTimeout(()=>renderCalendar(),0);
