@@ -151,3 +151,12 @@ body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
 /* Version 5.3: kompakte Monatsliste */
 .list-summary{display:flex;align-items:center;gap:.75rem;justify-content:flex-end;margin:.25rem 0 .65rem}
 .empty-state{text-align:center;padding:1.4rem!important;color:var(--muted)}
+
+
+/* Version 5.4: Dashboard-Sprung und flüssigere Bedienung */
+.v54-warning-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.v54-warning-row>span{min-width:0;flex:1}
+.v54-jump-button{white-space:nowrap;flex:0 0 auto}
+.v54-jump-highlight{outline:3px solid #f3cf21!important;outline-offset:-3px;animation:v54JumpPulse .8s ease-in-out 3}
+@keyframes v54JumpPulse{0%,100%{filter:none}50%{filter:brightness(1.35)}}
+@media(max-width:760px){.v54-warning-row{align-items:stretch;flex-direction:column}.v54-jump-button{align-self:flex-start}}

@@ -1,0 +1,7 @@
+Urlaubsplaner Version 5.4
+
+- Dashboard-Hinweise besitzen jetzt „Im Monatsplan anzeigen“.
+- Sprung setzt Abteilung und Monat automatisch und markiert den betroffenen Eintrag bzw. Tag.
+- Supabase-Abfrage von 8 auf 30 Sekunden reduziert.
+- AutoSync-Wächter von 5 auf 15 Sekunden reduziert und greift erst nach 45 Sekunden ohne Prüfung ein.
+- Sofort-Sync nach Änderungen sowie Prüfung bei Fokus/Online bleiben aktiv.

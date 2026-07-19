@@ -166,7 +166,7 @@ function clearEmployeeForm(){$('editingEmployeeId').value='';$('employeeName').v
 window.deleteEmployee=id=>{if(!confirm('Mitarbeiter und zugehörige Urlaube wirklich löschen?'))return;state.employees=state.employees.filter(e=>e.id!==id);state.vacations=state.vacations.filter(v=>v.employeeId!==id);state.moves=state.moves.filter(m=>m.employeeId!==id);saveState();renderAll()}
 function countDepartmentAbsence(dep,date){const ids=state.employees.filter(e=>e.department===dep).map(e=>e.id);return state.vacations.filter(v=>ids.includes(v.employeeId)&&v.status!=='Geplant'&&inRange(date,v.from,v.to)).length}
 function renderCalendar(){const dep=$('departmentFilter').value||state.departments[0],leaderMode=dep==='__leaders__',parts=$('monthFilter').value.split('-').map(Number),year=parts[0],month=parts[1],emps=leaderMode?state.employees.filter(e=>e.leader):state.employees.filter(e=>e.department===dep),days=new Date(year,month,0).getDate();$('vacationEmployee').innerHTML=emps.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');let h='<thead><tr><th class="employee-name">Mitarbeiter</th>';for(let d=1;d<=days;d++)h+=`<th>${d}</th>`;h+='</tr></thead><tbody>';for(const e of emps){h+=`<tr><td class="employee-name"><strong>${esc(e.name)}</strong>${leaderMode?`<br><small>${esc(e.department)} · Vertretung: ${esc(e.substitute||'Keine')}</small>`:e.leader?' <span class="badge leader-badge">Leiter</span>':''}</td>`;for(let d=1;d<=days;d++){const date=new Date(year,month-1,d),v=vacsFor(e.id).find(x=>inRange(date,x.from,x.to)&&isDisplayAbsenceDay(x,date)),overlap=leaderMode?emps.filter(l=>vacsFor(l.id).some(x=>x.status!=='Geplant'&&inRange(date,x.from,x.to))).length:countDepartmentAbsence(dep,date);let cls=[0,6].includes(date.getDay())?'weekend':'';if(holidayName(date))cls='holiday';if(v)cls=moveForVacation(v)?'moved-cell':v.status==='Beantragt'?'pending-cell':v.status==='Geplant'?'planned-cell':overlap>=3?'critical':'vacation';const code=v?absenceCode(v):'';h+=`<td class="${cls}" title="${esc(vacationTitle(v,date,leaderMode?e.department:''))}">${code}</td>`}h+='</tr>'}$('calendarTable').innerHTML=h+'</tbody>';if(leaderMode){let max=0;for(let d=1;d<=days;d++){const date=new Date(year,month-1,d);max=Math.max(max,emps.filter(l=>vacsFor(l.id).some(x=>x.status!=='Geplant'&&inRange(date,x.from,x.to))).length)}$('calendarWarning').innerHTML=max>=2?`<div class="warning warning-danger"><strong>Leiterüberschneidung:</strong> Bis zu ${max} Leitungen sind gleichzeitig abwesend.</div>`:'<div class="notice"><strong>Leiterbesetzung:</strong> Keine kritischen Überschneidungen im gewählten Monat.</div>';renderVacationList('__leaders__')}else{const m=maxOverlapForDepartment(dep),min=Number(state.departmentSettings?.[dep]??2),total=emps.length,available=total-m,critical=available<min;$('calendarWarning').innerHTML=critical?`<div class="warning warning-danger"><strong>Mindestbesetzung unterschritten:</strong> Bei maximal ${m} Abwesenden bleiben nur ${available} von ${total} Mitarbeitenden verfügbar. Eingestellt sind mindestens ${min}.</div>`:m>=2?`<div class="warning"><strong>Besetzungshinweis:</strong> Bis zu ${m} Mitarbeiter gleichzeitig abwesend; Mindestbesetzung ${min} bleibt erfüllt.</div>`:'';renderVacationList(dep)}}
-function renderVacationList(dep){const ids=(dep==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>e.department===dep)).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));$('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),bw=bridgeWarnings(v).join(', '),hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(bw||v.note||'–');return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td>${esc(hint)}</td><td><button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button> ${v.status==='Beantragt'?`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`:''} <button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button></td></tr>`}).join('')+'</tbody>'}
+function renderVacationList(dep){const ids=(dep==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>e.department===dep)).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));$('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),bw=bridgeWarnings(v).join(', '),hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(bw||v.note||'–');return `<tr data-vacation-id="${v.id}"><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td>${esc(hint)}</td><td><button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button> ${v.status==='Beantragt'?`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`:''} <button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button></td></tr>`}).join('')+'</tbody>'}
 function openNewVacation(){$('editingVacationId').value='';$('vacationFormTitle').textContent='Neuen Urlaub eintragen';$('vacationType').value='Urlaub';$('vacationScope').value='full';$('vacationStatus').value='Beantragt';$('vacationNote').value='';$('vacationForm').classList.remove('hidden')}
 function closeVacationForm(){$('vacationForm').classList.add('hidden');$('editingVacationId').value=''}
 function saveVacation(){const id=Number($('editingVacationId').value),employeeId=Number($('vacationEmployee').value),from=$('vacationFrom').value,to=$('vacationTo').value,type=$('vacationType').value,scope=$('vacationScope').value,status=$('vacationStatus').value,note=$('vacationNote').value.trim();if(!employeeId||!from||!to)return alert('Bitte Mitarbeiter und Zeitraum auswählen.');if(localDate(to)<localDate(from))return alert('Das Enddatum liegt vor dem Startdatum.');const e=emp(employeeId),conflicts=state.vacations.filter(v=>v.id!==id&&emp(v.employeeId)?.department===e.department&&v.status!=='Geplant'&&!(localDate(v.to)<localDate(from)||localDate(v.from)>localDate(to)));if(conflicts.length>=2&&!confirm(`Warnung: In ${e.department} gibt es bereits ${conflicts.length} überschneidende Einträge. Trotzdem speichern?`))return;if(id){const v=state.vacations.find(x=>x.id===id);const old=period(v.from,v.to),changed=v.from!==from||v.to!==to;Object.assign(v,{employeeId,from,to,type,scope,status,note});if(changed){const reason=prompt('Grund für die Verschiebung:','Personelle Abstimmung')||'Nicht angegeben';const initiator=confirm('Wurde die Verschiebung vom Betrieb veranlasst?\nOK = Betrieb, Abbrechen = Mitarbeiter')?'Betrieb':'Mitarbeiter';const move={id:Date.now(),vacationId:v.id,employeeId,oldPeriod:old,newPeriod:period(from,to),reason,initiator};state.moves.push(move);v.moved=true;v.moveInfo=move}}else state.vacations.push({id:Date.now(),employeeId,from,to,type,scope,status,note});saveState();closeVacationForm();renderAll()}
@@ -534,7 +534,7 @@ vacationTitle=function(v,date,extra=''){
 
 renderVacationList=function(choice){
  const deps=selectedDepartments(choice),ids=(choice==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));
- $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–'));return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td><button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button> ${v.status==='Beantragt'?`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`:''} <button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button></td></tr>`}).join('')+'</tbody>';
+ $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–'));return `<tr data-vacation-id="${v.id}"><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td><button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button> ${v.status==='Beantragt'?`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`:''} <button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button></td></tr>`}).join('')+'</tbody>';
 };
 
 renderCalendar=function(){
@@ -820,7 +820,7 @@ const deleteVacationV15Base=window.deleteVacation;
 window.deleteVacation=function(id){const v=state.vacations.find(x=>x.id===Number(id));if(!canDeleteVacation(v))return alert('Diesen Urlaub darfst du nicht löschen.');deleteVacationV15Base(id)};
 renderVacationList=function(choice){
  const deps=selectedDepartments(choice),ids=(choice==='__leaders__'?state.employees.filter(e=>e.leader):state.employees.filter(e=>deps.includes(e.department))).map(e=>e.id),rows=state.vacations.filter(v=>ids.includes(v.employeeId)).sort((a,b)=>localDate(a.from)-localDate(b.from));
- $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.status==='Abgelehnt'?`Abgelehnt: ${v.rejectionReason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–')));const actions=[];if(canMoveVacation(v))actions.push(`<button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button>`);if(v.status==='Beantragt'&&canApproveOrReject())actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);if((v.status==='Beantragt'||v.status==='Genehmigt')&&canApproveOrReject())actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`);if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`}).join('')+'</tbody>';
+ $('vacationList').innerHTML='<thead><tr><th>Mitarbeiter</th><th>Zeitraum</th><th>Tage</th><th>Umfang</th><th>Art</th><th>Status</th><th>Hinweis</th><th>Aktion</th></tr></thead><tbody>'+rows.map(v=>{const m=moveForVacation(v),near=nearbyHolidayWarnings(v),bw=bridgeWarnings(v),holidayHint=[...near,...bw],hint=m?`↔ Verschoben von ${m.oldPeriod}; ${m.reason||'ohne Grundangabe'}`:(v.status==='Abgelehnt'?`Abgelehnt: ${v.rejectionReason||'ohne Grundangabe'}`:(holidayHint.length?`⚠ ${holidayHint.join('; ')}`:(v.note||'–')));const actions=[];if(canMoveVacation(v))actions.push(`<button class="button tiny" onclick="editVacation(${v.id})">Verschieben/Bearbeiten</button>`);if(v.status==='Beantragt'&&canApproveOrReject())actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);if((v.status==='Beantragt'||v.status==='Genehmigt')&&canApproveOrReject())actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`);if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);return `<tr data-vacation-id="${v.id}"><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`}).join('')+'</tbody>';
 };
 const statusBadgeV15Base=statusBadge;
 statusBadge=function(s){if(s==='Abgelehnt')return '<span class="badge rejected">Abgelehnt</span>';return statusBadgeV15Base(s)};
@@ -984,7 +984,7 @@ setTimeout(()=>renderCalendar(),0);
 
 
 /* Version 4.6: automatische Supabase-Synchronisierung mit sicherem App-Start */
-const APP_VERSION='5.3.0';
+const APP_VERSION='5.4.0';
 let autoSyncTimer=null;
 let autoPushTimer=null;
 let autoSyncBusy=false;
@@ -1123,7 +1123,7 @@ function startAutomaticSync(){
  saveSyncConfig();
  if($('syncAuto'))$('syncAuto').checked=true;
  setTimeout(()=>automaticPull({startup:true}),250);
- autoSyncTimer=setInterval(()=>automaticPull(),8000);
+ autoSyncTimer=setInterval(()=>automaticPull(),30000);
 }
 
 const saveSyncSettingsBaseV46=saveSyncSettings;
@@ -1170,8 +1170,8 @@ else window.addEventListener('load',bootAutomaticSync,{once:true});
 [250,1000,2500,5000,9000].forEach(delay=>setTimeout(bootAutomaticSync,delay));
 setInterval(()=>{
  bootAutomaticSync();
- if(cloudConfigured()&&!autoSyncBusy&&Date.now()-autoSyncLastCheck>12000)automaticPull({startup:!initialCloudLoadDone});
-},5000);
+ if(cloudConfigured()&&!autoSyncBusy&&Date.now()-autoSyncLastCheck>45000)automaticPull({startup:!initialCloudLoadDone});
+},15000);
 
 /* Version 4.6: PDF-Fix, eindeutige Grenzwerte und wiederhergestelltes AutoSync */
 
@@ -1250,7 +1250,7 @@ renderVacationList=function(choice){
   if(v.status==='Beantragt'&&canApproveOrReject())actions.push(`<button class="button tiny primary" onclick="approveVacation(${v.id})">Genehmigen</button>`);
   if((v.status==='Beantragt'||v.status==='Genehmigt')&&canApproveOrReject())actions.push(`<button class="button tiny danger" onclick="rejectVacation(${v.id})">Ablehnen</button>`);
   if(canDeleteVacation(v))actions.push(`<button class="button tiny danger" onclick="deleteVacation(${v.id})">Löschen</button>`);
-  return `<tr><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`;
+  return `<tr data-vacation-id="${v.id}"><td>${esc(emp(v.employeeId)?.name)}</td><td>${period(v.from,v.to)}</td><td>${vacationDays(v)}</td><td>${v.scope==='full'?'Ganzer Tag':'Halber Tag'}</td><td>${esc(v.type)}</td><td>${statusBadge(v.status)}</td><td class="${holidayHint.length?'holiday-hint':''}">${esc(hint)}</td><td>${actions.join(' ')||'<span class="muted">Nur Ansicht</span>'}</td></tr>`;
  }).join('')+'</tbody>';
 };
 const renderCalendarV53Base=renderCalendar;
@@ -1262,3 +1262,65 @@ renderCalendar=function(){
 if($('departmentFilter'))$('departmentFilter').onchange=()=>renderCalendar();
 if($('monthFilter'))$('monthFilter').onchange=()=>{if($('leaderMonthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;renderCalendar()};
 setTimeout(()=>renderCalendar(),0);
+
+
+/* Version 5.4: Dashboard-Sprungziele und ruhigere Synchronisierung */
+function openAppPageV54(page){
+ document.querySelectorAll('#navigation button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+ document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
+ const target=$('page-'+page);if(target)target.classList.remove('hidden');
+}
+function monthValueFromDateV54(value){
+ const d=typeof value==='string'?localDate(value):value;
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function peakDateV54(employeeIds,allowed){
+ const ids=new Set(employeeIds.map(Number));
+ const relevant=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&v.status!=='Geplant');
+ const dates=allDates(relevant).sort((a,b)=>a-b);
+ for(const date of dates){
+  const count=relevant.filter(v=>inRange(date,v.from,v.to)&&isDisplayAbsenceDay(v,date)).length;
+  if(count>allowed)return date;
+ }
+ return dates[0]||new Date();
+}
+window.jumpToMonthPlanV54=function({department,date,vacationId,day}={}){
+ openAppPageV54('calendar');
+ if(department&&$('departmentFilter'))$('departmentFilter').value=department;
+ if(date&&$('monthFilter'))$('monthFilter').value=monthValueFromDateV54(date);
+ if($('leaderMonthFilter')&&$('monthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;
+ renderCalendar();
+ requestAnimationFrame(()=>{
+  const panel=$('page-calendar');
+  panel?.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>{
+   let target=null;
+   if(vacationId)target=document.querySelector(`#vacationList tr[data-vacation-id="${vacationId}"]`);
+   if(!target&&day){
+    const header=[...document.querySelectorAll('#calendarTable thead th')].find((th,i)=>i===Number(day));
+    target=header||null;
+   }
+   if(target){target.classList.add('v54-jump-highlight');target.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>target.classList.remove('v54-jump-highlight'),2600)}
+  },180);
+ });
+};
+const renderDashboardV54Base=renderDashboard;
+renderDashboard=function(){
+ renderDashboardV54Base();
+ const warningBox=$('warnings');if(!warningBox)return;
+ const cards=[];
+ const pendingRows=state.vacations.filter(v=>v.status==='Beantragt').sort((a,b)=>localDate(a.from)-localDate(b.from));
+ if(pendingRows.length){
+  const first=pendingRows[0],e=emp(first.employeeId);
+  cards.push(`<div class="warning v54-warning-row"><span><strong>Freigaben:</strong> ${pendingRows.length} Urlaubsantrag${pendingRows.length===1?'':'träge'} wartet${pendingRows.length===1?'':'en'} auf Entscheidung.</span><button class="button tiny v54-jump-button" onclick='jumpToMonthPlanV54(${JSON.stringify({department:e?.department||state.departments[0],date:first.from,vacationId:first.id})})'>Im Monatsplan anzeigen</button></div>`);
+ }
+ state.departments.forEach(dep=>{
+  const allowed=Number(state.departmentMaxAway?.[dep]??1),ids=state.employees.filter(e=>e.department===dep).map(e=>e.id),date=peakDateV54(ids,allowed);
+  const peak=maxOverlapForDepartment(dep);
+  if(peak>allowed)cards.push(`<div class="warning warning-danger v54-warning-row"><span><strong>${esc(dep)} – Grenze überschritten:</strong> Bis zu ${peak} Personen gleichzeitig abwesend. Zulässig sind ${allowed}; die Warnung beginnt bei ${allowed+1}.</span><button class="button tiny v54-jump-button" onclick='jumpToMonthPlanV54(${JSON.stringify({department:dep,date:iso(date),day:date.getDate()})})'>Im Monatsplan anzeigen</button></div>`);
+ });
+ const leaderAllowed=Number(state.leaderSettings?.maxAway??1),leaderIds=state.employees.filter(e=>e.leader).map(e=>e.id),leaderPeak=leaderOverlapCount();
+ if(leaderPeak>leaderAllowed){const date=peakDateV54(leaderIds,leaderAllowed);cards.push(`<div class="warning warning-danger v54-warning-row"><span><strong>Leiterplan – Grenze überschritten:</strong> Bis zu ${leaderPeak} Leitungen gleichzeitig abwesend. Zulässig sind ${leaderAllowed}; die Warnung beginnt bei ${leaderAllowed+1}.</span><button class="button tiny v54-jump-button" onclick='jumpToMonthPlanV54(${JSON.stringify({department:'__leaders__',date:iso(date),day:date.getDate()})})'>Im Monatsplan anzeigen</button></div>`)}
+ warningBox.innerHTML=cards.join('')||'<div class="capacity-ok"><strong>Alles in Ordnung:</strong> Keine eingestellte Abwesenheitsgrenze ist überschritten.</div>';
+};
+setTimeout(()=>renderDashboard(),0);

@@ -1,4 +1,4 @@
-const CACHE='urlaubsplaner-v5.3.0-static';
+const CACHE='urlaubsplaner-v5.4.0-static';
 const OFFLINE='./index.html';
 const ASSETS=[
  './',
