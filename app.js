@@ -1324,3 +1324,126 @@ renderDashboard=function(){
  warningBox.innerHTML=cards.join('')||'<div class="capacity-ok"><strong>Alles in Ordnung:</strong> Keine eingestellte Abwesenheitsgrenze ist überschritten.</div>';
 };
 setTimeout(()=>renderDashboard(),0);
+
+
+/* Version 5.5: aufklappbare Detailhinweise und flüssigere Navigation */
+const collapsedDepartmentsV55=new Set();
+
+function renderPageOnlyV55(page){
+ switch(page){
+  case 'dashboard': renderDashboard(); break;
+  case 'calendar': fillSelects(); renderCalendar(); break;
+  case 'year': fillSelects(); renderYear(); break;
+  case 'week': renderWeek(); break;
+  case 'employees': fillSelects(); renderEmployees(); break;
+  case 'departments': fillSelects(); renderDepartments(); break;
+  case 'users': fillSelects(); renderUsers(); break;
+  case 'audit': renderAudit(); break;
+  case 'sync': renderSync(); updateStorageInfo(); break;
+  case 'settings': updateStorageInfo(); break;
+  default: renderDashboard();
+ }
+}
+
+function installFastNavigationV55(){
+ const nav=$('navigation');if(!nav)return;
+ nav.onclick=e=>{
+  const button=e.target.closest('button[data-page]');if(!button)return;
+  const page=button.dataset.page;
+  document.querySelectorAll('#navigation button').forEach(b=>b.classList.toggle('active',b===button));
+  document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));
+  $('page-'+page)?.classList.remove('hidden');
+  requestAnimationFrame(()=>renderPageOnlyV55(page));
+ };
+}
+
+function decorateGroupRowsV55(){
+ const table=$('calendarTable');if(!table)return;
+ const choice=$('departmentFilter')?.value||'';
+ if(!String(choice).startsWith('__group__:'))return;
+ let department='';
+ [...table.querySelectorAll('tbody tr')].forEach(row=>{
+  if(row.classList.contains('department-separator')){
+   department=row.querySelector('strong')?.textContent?.trim()||'';
+   row.dataset.department=department;
+   const cell=row.cells[0];
+   if(cell&&!cell.querySelector('.v55-department-toggle')){
+    const button=document.createElement('button');
+    button.type='button';button.className='v55-department-toggle';
+    button.setAttribute('aria-expanded',String(!collapsedDepartmentsV55.has(department)));
+    button.innerHTML=`<span class="v55-toggle-icon">${collapsedDepartmentsV55.has(department)?'▶':'▼'}</span> <span>Bereich ${esc(department)}</span>`;
+    button.onclick=event=>{
+     event.stopPropagation();
+     if(collapsedDepartmentsV55.has(department))collapsedDepartmentsV55.delete(department);else collapsedDepartmentsV55.add(department);
+     applyGroupCollapseV55();
+    };
+    cell.prepend(button);
+   }
+  }else if(department){row.dataset.department=department}
+ });
+ applyGroupCollapseV55();
+}
+
+function applyGroupCollapseV55(){
+ const table=$('calendarTable');if(!table)return;
+ [...table.querySelectorAll('tbody tr')].forEach(row=>{
+  const dep=row.dataset.department;if(!dep)return;
+  if(row.classList.contains('department-separator')){
+   const collapsed=collapsedDepartmentsV55.has(dep);
+   const button=row.querySelector('.v55-department-toggle');
+   if(button){button.setAttribute('aria-expanded',String(!collapsed));button.querySelector('.v55-toggle-icon').textContent=collapsed?'▶':'▼'}
+  }else row.classList.toggle('v55-collapsed-row',collapsedDepartmentsV55.has(dep));
+ });
+}
+
+const renderCalendarV55Base=renderCalendar;
+renderCalendar=function(){
+ renderCalendarV55Base();
+ requestAnimationFrame(()=>{decorateGroupRowsV55();decorateCalendarSpecialDaysV52?.()});
+};
+
+function datesOverLimitV55(employeeIds,allowed){
+ const ids=new Set(employeeIds.map(Number));
+ const relevant=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&activeAbsence(v));
+ if(!relevant.length)return[];
+ const min=new Date(Math.min(...relevant.map(v=>localDate(v.from).getTime()))),max=new Date(Math.max(...relevant.map(v=>localDate(v.to).getTime()))),out=[];
+ for(let date=new Date(min);date<=max;date.setDate(date.getDate()+1)){
+  const entries=relevant.filter(v=>inRange(date,v.from,v.to)&&isDisplayAbsenceDay(v,date));
+  if(entries.length>allowed)out.push({date:new Date(date),entries});
+ }
+ return out;
+}
+
+function warningDetailsV55(title,summary,items,danger=false){
+ const details=items.map((item,index)=>{
+  const payload=JSON.stringify(item.jump).replace(/'/g,'&#39;');
+  return `<div class="v55-warning-detail"><div><strong>${esc(item.title)}</strong>${item.text?`<small>${esc(item.text)}</small>`:''}</div><button class="button tiny" onclick='jumpToMonthPlanV54(${payload})'>Im Monatsplan anzeigen</button></div>`;
+ }).join('');
+ return `<details class="warning ${danger?'warning-danger':''} v55-warning-details"><summary><span><strong>${esc(title)}</strong> ${esc(summary)}</span><span class="v55-details-count">${items.length} Detail${items.length===1?'':'s'}</span></summary><div class="v55-warning-detail-list">${details}</div></details>`;
+}
+
+const renderDashboardV55Base=renderDashboard;
+renderDashboard=function(){
+ renderDashboardV55Base();
+ const box=$('warnings');if(!box)return;
+ const cards=[];
+ const pending=state.vacations.filter(v=>v.status==='Beantragt').sort((a,b)=>localDate(a.from)-localDate(b.from));
+ if(pending.length){
+  cards.push(warningDetailsV55('Freigaben:',`${pending.length} Urlaubsantrag${pending.length===1?'':'träge'} wartet${pending.length===1?'':'en'} auf Entscheidung.`,pending.map(v=>{const e=emp(v.employeeId);return{title:e?.name||'Unbekannt',text:`${e?.department||''} · ${period(v.from,v.to)}`,jump:{department:e?.department||state.departments[0],date:v.from,vacationId:v.id}}}),false));
+ }
+ state.departments.forEach(dep=>{
+  const allowed=Number(state.departmentMaxAway?.[dep]??1),ids=state.employees.filter(e=>e.department===dep).map(e=>e.id),days=datesOverLimitV55(ids,allowed);
+  if(days.length){
+   const peak=Math.max(...days.map(x=>x.entries.length));
+   cards.push(warningDetailsV55(`${dep} – Grenze überschritten:`,`Bis zu ${peak} Personen gleichzeitig abwesend. Zulässig sind ${allowed}.`,days.slice(0,31).map(x=>({title:x.date.toLocaleDateString('de-DE'),text:x.entries.map(v=>emp(v.employeeId)?.name||'Unbekannt').join(', '),jump:{department:dep,date:iso(x.date),day:x.date.getDate()}})),true));
+  }
+ });
+ const leaderAllowed=Number(state.leaderSettings?.maxAway??1),leaderIds=state.employees.filter(e=>e.leader).map(e=>e.id),leaderDays=datesOverLimitV55(leaderIds,leaderAllowed);
+ if(leaderDays.length){
+  const peak=Math.max(...leaderDays.map(x=>x.entries.length));
+  cards.push(warningDetailsV55('Leiterplan – Grenze überschritten:',`Bis zu ${peak} Leitungen gleichzeitig abwesend. Zulässig sind ${leaderAllowed}.`,leaderDays.slice(0,31).map(x=>({title:x.date.toLocaleDateString('de-DE'),text:x.entries.map(v=>emp(v.employeeId)?.name||'Unbekannt').join(', '),jump:{department:'__leaders__',date:iso(x.date),day:x.date.getDate()}})),true));
+ }
+ box.innerHTML=cards.join('')||'<div class="capacity-ok"><strong>Alles in Ordnung:</strong> Keine eingestellte Abwesenheitsgrenze ist überschritten.</div>';
+};
+
+setTimeout(()=>{installFastNavigationV55();renderDashboard();},0);

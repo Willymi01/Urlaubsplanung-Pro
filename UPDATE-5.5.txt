@@ -1,0 +1,12 @@
+URLAUBSPLANER 5.5
+
+Neu:
+- Dashboard-Hinweise sind aufklappbar.
+- Jeder offene Antrag hat ein eigenes Sprungziel.
+- Jeder Tag mit Grenzüberschreitung hat ein eigenes Sprungziel.
+- Plan-Gruppen-Abteilungen lassen sich im Monatsplan ohne Neuberechnung ein-/ausklappen.
+- Laschenwechsel rendert nur noch die gewählte Ansicht statt der gesamten App.
+- AutoSync und Kalenderdarstellung aus 5.4 bleiben erhalten.
+
+Installation:
+Alle Dateien hochladen, vorhandene ersetzen, GitHub Pages abwarten und Strg+F5 drücken.
