@@ -178,3 +178,12 @@ body.dark .capacity-ok{background:#23372a;border-color:#4f8d61;color:#e8f6ec}
 .v55-collapsed-row{display:none!important}
 .page.hidden{display:none!important}
 @media(max-width:700px){.v55-warning-detail{align-items:flex-start;flex-direction:column}.v55-warning-detail .button{width:100%}.v55-warning-details>summary{align-items:flex-start}.v55-details-count{font-size:.75rem}}
+
+
+/* Version 5.6: globales Planungsjahr */
+.brand-area{min-width:210px}
+.planning-year-control{display:flex;align-items:center;gap:7px;padding:5px 8px;border:1px solid #59605d;border-radius:12px;background:#262a28}
+.planning-year-control label{margin:0;color:#f2f3f2;font-size:.83rem;white-space:nowrap}
+.planning-year-control select{width:auto;min-width:86px;padding:8px 10px;border-color:#6a706d;background:#171a19;color:#fff;font-weight:800}
+.planning-year-control .year-arrow{padding:7px 11px;min-width:36px;font-size:20px;line-height:1}
+@media(max-width:850px){header{align-items:flex-start}.planning-year-control{order:3;width:100%;justify-content:center}}

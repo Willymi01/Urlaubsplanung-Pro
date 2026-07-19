@@ -1447,3 +1447,181 @@ renderDashboard=function(){
 };
 
 setTimeout(()=>{installFastNavigationV55();renderDashboard();},0);
+
+
+
+/* Version 5.6: globales Planungsjahr und jahresbezogenes Dashboard */
+const PLANNING_YEAR_KEY='urlaubsplaner.planningYear';
+
+function availablePlanningYearsV56(){
+ const current=new Date().getFullYear();
+ const years=new Set([current-1,current,current+1,current+2]);
+ state.vacations.forEach(v=>{
+  const a=localDate(v.from).getFullYear(),b=localDate(v.to).getFullYear();
+  for(let y=a;y<=b;y++)years.add(y);
+ });
+ return [...years].sort((a,b)=>a-b);
+}
+
+function getPlanningYearV56(){
+ const stored=Number(localStorage.getItem(PLANNING_YEAR_KEY));
+ return Number.isInteger(stored)&&stored>=2020&&stored<=2100?stored:new Date().getFullYear();
+}
+
+function populatePlanningYearV56(){
+ const select=$('planningYear');if(!select)return;
+ const selected=getPlanningYearV56(),years=availablePlanningYearsV56();
+ if(!years.includes(selected))years.push(selected);
+ years.sort((a,b)=>a-b);
+ select.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+ select.value=String(selected);
+}
+
+function selectedPageV56(){
+ return document.querySelector('#navigation button.active')?.dataset.page||'dashboard';
+}
+
+function clampDateToYearV56(value,year){
+ const d=value?localDate(value):new Date(year,0,1);
+ const month=d.getMonth(),day=d.getDate();
+ const candidate=new Date(year,month,day);
+ if(candidate.getMonth()!==month)return iso(new Date(year,month+1,0));
+ return iso(candidate);
+}
+
+function setPlanningYearV56(year,{render=true}={}){
+ year=Math.max(2020,Math.min(2100,Number(year)||new Date().getFullYear()));
+ localStorage.setItem(PLANNING_YEAR_KEY,String(year));
+ populatePlanningYearV56();
+
+ if($('monthFilter')){
+  const current=$('monthFilter').value||`${year}-01`;
+  const month=String(Number(current.split('-')[1])||1).padStart(2,'0');
+  $('monthFilter').value=`${year}-${month}`;
+ }
+ if($('leaderMonthFilter')&&$('monthFilter'))$('leaderMonthFilter').value=$('monthFilter').value;
+ if($('yearFilter'))$('yearFilter').value=year;
+ if($('weekDate'))$('weekDate').value=clampDateToYearV56($('weekDate').value,year);
+
+ if(render){
+  const page=selectedPageV56();
+  if(typeof renderPageOnlyV55==='function')renderPageOnlyV55(page);
+  else renderAll();
+ }
+}
+
+function vacationOverlapsYearV56(v,year){
+ return localDate(v.from)<=new Date(year,11,31,23,59,59,999)&&localDate(v.to)>=new Date(year,0,1);
+}
+
+function dashboardWindowV56(year){
+ const today=new Date(),currentYear=today.getFullYear();
+ const start=year===currentYear?new Date(today.getFullYear(),today.getMonth(),today.getDate()):new Date(year,0,1);
+ const end=new Date(start);end.setDate(end.getDate()+28);
+ const yearEnd=new Date(year,11,31,23,59,59,999);
+ if(end>yearEnd)end.setTime(yearEnd.getTime());
+ return{start,end};
+}
+
+function departmentPeakDaysInYearV56(dep,year,allowed){
+ const ids=new Set(state.employees.filter(e=>e.department===dep).map(e=>Number(e.id)));
+ const relevant=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&activeAbsence(v)&&vacationOverlapsYearV56(v,year));
+ const out=[];
+ for(let date=new Date(year,0,1),end=new Date(year,11,31);date<=end;date.setDate(date.getDate()+1)){
+  const entries=relevant.filter(v=>inRange(date,v.from,v.to)&&isDisplayAbsenceDay(v,date));
+  if(entries.length>allowed)out.push({date:new Date(date),entries});
+ }
+ return out;
+}
+
+function leaderPeakDaysInYearV56(year,allowed){
+ const ids=new Set(state.employees.filter(e=>e.leader).map(e=>Number(e.id)));
+ const relevant=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&activeAbsence(v)&&vacationOverlapsYearV56(v,year));
+ const out=[];
+ for(let date=new Date(year,0,1),end=new Date(year,11,31);date<=end;date.setDate(date.getDate()+1)){
+  const entries=relevant.filter(v=>inRange(date,v.from,v.to)&&isDisplayAbsenceDay(v,date));
+  if(entries.length>allowed)out.push({date:new Date(date),entries});
+ }
+ return out;
+}
+
+renderDepartmentVacationSummary=function(){
+ const table=$('departmentVacationSummary');if(!table)return;
+ const year=getPlanningYearV56();
+ if($('departmentVacationYear'))$('departmentVacationYear').textContent=String(year);
+ const n=value=>Number(value||0).toLocaleString('de-DE',{maximumFractionDigits:1});
+
+ const rows=state.departments.map(department=>{
+  const employees=state.employees.filter(e=>e.department===department&&e.active!==false);
+  const ids=new Set(employees.map(e=>Number(e.id)));
+  const entitlement=employees.reduce((sum,e)=>sum+Number(e.vacationDays||0)+Number(e.carryover||0),0);
+  const vacations=state.vacations.filter(v=>ids.has(Number(v.employeeId))&&v.type==='Urlaub'&&vacationOverlapsYearV56(v,year));
+  const days=status=>vacations.filter(v=>v.status===status).reduce((sum,v)=>sum+vacationDaysInYear(v,year),0);
+  const approved=days('Genehmigt'),pending=days('Beantragt'),planned=days('Geplant'),rejected=days('Abgelehnt');
+  return{department,employees:employees.length,entitlement,approved,pending,planned,rejected,unplanned:Math.max(0,entitlement-approved-pending-planned)};
+ });
+
+ const total=rows.reduce((a,r)=>{
+  Object.keys(a).forEach(k=>a[k]+=r[k]||0);return a;
+ },{employees:0,entitlement:0,unplanned:0,pending:0,approved:0,rejected:0,planned:0});
+
+ table.innerHTML=`<thead><tr><th>Abteilung</th><th>Mitarbeiter</th><th>Gesamtanspruch</th><th>Noch nicht verplant</th><th>Noch nicht bestätigt</th><th>Genehmigt</th><th>Abgelehnt</th><th>Geplant</th></tr></thead><tbody>
+ ${rows.map(r=>`<tr><td><strong>${esc(r.department)}</strong></td><td>${r.employees}</td><td>${n(r.entitlement)}</td><td class="summary-unplanned">${n(r.unplanned)}</td><td class="summary-pending">${n(r.pending)}</td><td class="summary-approved">${n(r.approved)}</td><td class="summary-rejected">${n(r.rejected)}</td><td class="summary-planned">${n(r.planned)}</td></tr>`).join('')}
+ <tr class="summary-total"><td><strong>Gesamt</strong></td><td>${total.employees}</td><td>${n(total.entitlement)}</td><td>${n(total.unplanned)}</td><td>${n(total.pending)}</td><td>${n(total.approved)}</td><td>${n(total.rejected)}</td><td>${n(total.planned)}</td></tr>
+ </tbody>`;
+};
+
+renderDashboard=function(){
+ const year=getPlanningYearV56(),today=new Date(),windowRange=dashboardWindowV56(year);
+ $('departmentCount').textContent=state.departments.length;
+ $('employeeCount').textContent=state.employees.length;
+ $('leaderCount').textContent=state.employees.filter(e=>e.leader).length;
+ $('plannedDays').textContent=state.vacations.filter(v=>v.status==='Genehmigt'&&countsAgainstVacation(v)&&vacationOverlapsYearV56(v,year)).reduce((s,v)=>s+vacationDaysInYear(v,year),0);
+ const dateText=today.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+ $('todayLabel').textContent=`Planungsjahr ${year}`;
+ if($('dashboardDate'))$('dashboardDate').textContent=dateText;
+ if($('dashboardWeekday'))$('dashboardWeekday').textContent=today.toLocaleDateString('de-DE',{weekday:'long'});
+
+ const cards=[];
+ const pending=state.vacations.filter(v=>v.status==='Beantragt'&&vacationOverlapsYearV56(v,year)).sort((a,b)=>localDate(a.from)-localDate(b.from));
+ if(pending.length){
+  cards.push(warningDetailsV55('Freigaben:',`${pending.length} Urlaubsantrag${pending.length===1?'':'träge'} im Planungsjahr ${year} wartet${pending.length===1?'':'en'} auf Entscheidung.`,pending.map(v=>{const e=emp(v.employeeId);return{title:e?.name||'Unbekannt',text:`${e?.department||''} · ${period(v.from,v.to)}`,jump:{department:e?.department||state.departments[0],date:v.from,vacationId:v.id}}}),false));
+ }
+ state.departments.forEach(dep=>{
+  const allowed=Number(state.departmentMaxAway?.[dep]??1),days=departmentPeakDaysInYearV56(dep,year,allowed);
+  if(days.length){
+   const peak=Math.max(...days.map(x=>x.entries.length));
+   cards.push(warningDetailsV55(`${dep} – Grenze überschritten:`,`Im Planungsjahr ${year} sind bis zu ${peak} Personen gleichzeitig abwesend. Zulässig sind ${allowed}.`,days.slice(0,31).map(x=>({title:x.date.toLocaleDateString('de-DE'),text:x.entries.map(v=>emp(v.employeeId)?.name||'Unbekannt').join(', '),jump:{department:dep,date:iso(x.date),day:x.date.getDate()}})),true));
+  }
+ });
+ const leaderAllowed=Number(state.leaderSettings?.maxAway??1),leaderDays=leaderPeakDaysInYearV56(year,leaderAllowed);
+ if(leaderDays.length){
+  const peak=Math.max(...leaderDays.map(x=>x.entries.length));
+  cards.push(warningDetailsV55('Leiterplan – Grenze überschritten:',`Im Planungsjahr ${year} sind bis zu ${peak} Leitungen gleichzeitig abwesend. Zulässig sind ${leaderAllowed}.`,leaderDays.slice(0,31).map(x=>({title:x.date.toLocaleDateString('de-DE'),text:x.entries.map(v=>emp(v.employeeId)?.name||'Unbekannt').join(', '),jump:{department:'__leaders__',date:iso(x.date),day:x.date.getDate()}})),true));
+ }
+ $('warnings').innerHTML=cards.join('')||`<div class="capacity-ok"><strong>Alles in Ordnung:</strong> Im Planungsjahr ${year} ist keine eingestellte Abwesenheitsgrenze überschritten.</div>`;
+
+ const rows=state.vacations.filter(v=>v.type==='Urlaub'&&v.status!=='Geplant'&&localDate(v.to)>=windowRange.start&&localDate(v.from)<=windowRange.end).sort((a,b)=>localDate(a.from)-localDate(b.from));
+ $('upcomingTable').innerHTML='<thead><tr><th>Name</th><th>KW</th><th>Abteilung</th><th>Zeitraum</th><th>Status</th></tr></thead><tbody>'+
+ rows.map(v=>{const e=emp(v.employeeId),shownFrom=localDate(v.from)<windowRange.start?iso(windowRange.start):v.from,shownTo=localDate(v.to)>windowRange.end?iso(windowRange.end):v.to;return `<tr><td><strong>${esc(e?.name)}</strong></td><td>${weekLabel(shownFrom,shownTo)}</td><td>${esc(e?.department)}</td><td>${period(v.from,v.to)}</td><td>${statusBadge(v.status)}</td></tr>`}).join('')+
+ (rows.length?'':`<tr><td colspan="5" class="muted">Im Vier-Wochen-Zeitraum ab ${windowRange.start.toLocaleDateString('de-DE')} ist kein Urlaub eingetragen.</td></tr>`)+
+ '</tbody>';
+ renderDepartmentVacationSummary();
+};
+
+function installPlanningYearV56(){
+ populatePlanningYearV56();
+ const select=$('planningYear');if(select)select.onchange=()=>setPlanningYearV56(select.value);
+ if($('previousPlanningYear'))$('previousPlanningYear').onclick=()=>setPlanningYearV56(getPlanningYearV56()-1);
+ if($('nextPlanningYear'))$('nextPlanningYear').onclick=()=>setPlanningYearV56(getPlanningYearV56()+1);
+ setPlanningYearV56(getPlanningYearV56(),{render:false});
+}
+
+const jumpToMonthPlanV56Base=window.jumpToMonthPlanV54;
+window.jumpToMonthPlanV54=function(options={}){
+ if(options.date)setPlanningYearV56(localDate(options.date).getFullYear(),{render:false});
+ return jumpToMonthPlanV56Base(options);
+};
+
+setTimeout(()=>{installPlanningYearV56();renderPageOnlyV55(selectedPageV56());},0);
+

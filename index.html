@@ -8,14 +8,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=5.5.0">
+  <link rel="stylesheet" href="style.css?v=5.6.0">
 </head>
 <body>
 <section id="loginPage" class="login-page">
   <div class="login-card">
     <div class="brand-mark">U</div>
     <h1>Urlaubsplaner</h1>
-    <p class="subtitle">Version 5.5 · GitHub Pages + Supabase</p>
+    <p class="subtitle">Version 5.6 · GitHub Pages + Supabase</p>
     <label for="loginName">Name</label><select id="loginName"></select>
     <label for="loginPin">PIN</label><input id="loginPin" type="password" inputmode="numeric" placeholder="PIN eingeben">
     <button id="loginButton" class="button primary full">Anmelden</button>
@@ -26,7 +26,13 @@
 
 <div id="application" class="hidden">
   <header>
-    <div><div class="brand">Urlaubsplaner · Berlin</div><small>Version 5.5 · Supabase</small></div>
+    <div class="brand-area"><div class="brand">Urlaubsplaner · Berlin</div><small>Version 5.6 · Supabase</small></div>
+    <div class="planning-year-control" aria-label="Globales Planungsjahr">
+      <button id="previousPlanningYear" class="button light year-arrow" type="button" aria-label="Vorheriges Planungsjahr">‹</button>
+      <label for="planningYear">Planungsjahr</label>
+      <select id="planningYear"></select>
+      <button id="nextPlanningYear" class="button light year-arrow" type="button" aria-label="Nächstes Planungsjahr">›</button>
+    </div>
     <div class="header-right"><div id="globalSyncLamp" class="sync-lamp sync-lamp-local" title="Synchronisationsstatus"><span class="sync-lamp-dot"></span><span id="globalSyncLampText">Lokal</span></div><span id="loggedInUser"></span><button id="installAppButton" class="button primary hidden">App installieren</button><button id="logoutButton" class="button light">Abmelden</button></div>
   </header>
   <nav id="navigation">
@@ -53,12 +59,12 @@
         <article class="metric date-metric"><span>Heute</span><strong id="dashboardDate">–</strong><small id="dashboardWeekday"></small></article>
       </div>
       <div class="panel"><div class="panel-heading"><h2>Aktuelle Hinweise</h2><span id="todayLabel" class="badge"></span></div><div id="warnings"></div></div>
-      <div class="panel"><div class="panel-heading"><div><h2>Urlauber der nächsten 4 Wochen</h2><p class="muted">Laufende und kommende Urlaube bis einschließlich 28 Tage ab heute.</p></div></div><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
+      <div class="panel"><div class="panel-heading"><div><h2>Urlauber der nächsten 4 Wochen</h2><p class="muted">Vier-Wochen-Zeitraum innerhalb des gewählten Planungsjahres.</p></div></div><div class="table-wrapper"><table id="upcomingTable"></table></div></div>
       <div class="panel">
         <div class="panel-heading">
           <div>
             <h2>Urlaubsstand nach Abteilung</h2>
-            <p class="muted">Aktuelles Kalenderjahr. „Noch nicht verplant“ berücksichtigt alle Urlaubszeiträume außer abgelehnten Anträgen.</p>
+            <p class="muted">Auswertung für das gewählte Planungsjahr. „Noch nicht verplant“ berücksichtigt alle Urlaubszeiträume außer abgelehnten Anträgen.</p>
           </div>
           <span id="departmentVacationYear" class="badge"></span>
         </div>
@@ -242,7 +248,7 @@
     </section>
   </main>
 </div>
-<script src="core/storage.js?v=5.5.0"></script><script src="data/default-data.js?v=5.5.0"></script><script src="app.js?v=5.5.0"></script>
+<script src="core/storage.js?v=5.6.0"></script><script src="data/default-data.js?v=5.6.0"></script><script src="app.js?v=5.6.0"></script>
 <script>
 if ('serviceWorker' in navigator) {
  window.addEventListener('load', async () => {

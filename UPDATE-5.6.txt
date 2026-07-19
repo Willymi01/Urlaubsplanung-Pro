@@ -1,0 +1,20 @@
+URLAUBSPLANER 5.6 – MEHRJAHRESPLANUNG
+
+Neu:
+- Globales Planungsjahr im Kopfbereich mit Pfeiltasten und Auswahl.
+- Dashboard, Urlaubsstand, offene Anträge und Grenzwertmeldungen beziehen sich auf das gewählte Jahr.
+- Monatsplan behält den gewählten Monat und wechselt nur das Jahr.
+- Jahresplan wird automatisch auf das Planungsjahr gestellt.
+- Wochenübersicht wird auf dasselbe Jahr gesetzt.
+- PDF/Excel des Monatsplans verwenden automatisch den Monat im Planungsjahr.
+- Sprungtasten aus Dashboard-Meldungen wechseln bei Bedarf automatisch in das richtige Jahr.
+- Planungsjahr ist eine lokale Oberflächeneinstellung und verändert den Supabase-Datenbestand nicht.
+
+Hinweis:
+Für ein zukünftiges Planungsjahr zeigt „Nächste 4 Wochen“ den Zeitraum ab 1. Januar.
+Für das laufende Jahr beginnt der Zeitraum am heutigen Tag.
+
+Installation:
+1. Alle Dateien in GitHub hochladen und vorhandene ersetzen.
+2. GitHub Pages veröffentlichen lassen.
+3. Strg+F5 drücken und die installierte App einmal neu starten.
